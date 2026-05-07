@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+enum UserRole {
+  admin
+  mentor
+  mentee
+}
+
+model Profile {
+  id                  String     @id @default(uuid())
+  role                UserRole
+  full_name           String
+  email               String     @unique
+  avatar_url          String?
+  department          String?
+  year                Int?
+  section             String?
+  usn                 String?    @unique
+  employee_id         String?    @unique
+  designation         String?
+  phone               String?
+  address             String?
+  linkedin_url        String?
+  github_url          String?
+  year_of_joining     Int?
+  is_profile_complete Boolean    @default(false)
+  is_active           Boolean    @default(true)
+  created_at          DateTime   @default(now())
+  updated_at          DateTime   @updatedAt
+
+  // Relationships
+  allocationsAsMentor Allocation[] @relation("MentorAllocations")
+  allocationsAsMentee Allocation[] @relation("MenteeAllocations")
+  interactionsAsMentor Interaction[] @relation("MentorInteractions")
+  interactionsAsMentee Interaction[] @relation("MenteeInteractions")
+  graceRequests       GraceRequest[]
+  achievements        Achievement[]
+  coursesTeaching     Course[]
+  courseEnrollments   CourseEnrollment[]
+  submissions         Submission[]
+  feedPosts           FeedPost[]
+  auditLogs           AuditLogEntry[]
+}
+
+model Allocation {
+  id           String   @id @default(uuid())
+  mentor_id    String
+  mentee_id    String
+  allocated_at DateTime @default(now())
+  is_active    Boolean  @default(true)
+
+  mentor       Profile  @relation("MentorAllocations", fields: [mentor_id], references: [id])
+  mentee       Profile  @relation("MenteeAllocations", fields: [mentee_id], references: [id])
+}
+
+model Interaction {
+  id                    String   @id @default(uuid())
+  mentor_id             String
+  mentee_id             String
+  date                  DateTime
+  duration_minutes      Int?
+  type                  String?
+  topics                String?
+  remarks               String?
+  follow_up_required    Boolean  @default(false)
+  follow_up_notes       String?
+  next_interaction_date DateTime?
+  mode                  String?
+  is_acknowledged       Boolean  @default(false)
+  acknowledged_at       DateTime?
+  is_follow_up_resolved Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  mentor                Profile  @relation("MentorInteractions", fields: [mentor_id], references: [id])
+  mentee                Profile  @relation("MenteeInteractions", fields: [mentee_id], references: [id])
+}
+
+model Grade {
+  id             String   @id @default(uuid())
+  student_id     String
+  semester       Int
+  subject_name   String
+  subject_code   String?
+  internal_marks Float?
+  external_marks Float?
+  total_marks    Float?
+  grade_letter   String?
+  credits        Float?
+  grade_points   Float?
+  sgpa           Float?
+  cgpa           Float?
+  backlogs       Int      @default(0)
+  academic_year  String?
+  created_at     DateTime @default(now())
+}
+
+model AttendanceRecord {
+  id            String   @id @default(uuid())
+  student_id    String
+  subject_name  String
+  subject_code  String?
+  date          DateTime
+  status        String   // Present, Absent, Late
+  marked_by     String?
+  semester      Int?
+  academic_year String?
+  created_at    DateTime @default(now())
+}
+
+model GraceRequest {
+  id             String   @id @default(uuid())
+  student_id     String
+  reason         String
+  reason_type    String   // Medical, Event, Other
+  document_url   String?
+  status         String   // Pending, Approved, Rejected, Forwarded
+  mentor_remarks String?
+  admin_remarks  String?
+  reviewed_by    String?
+  date_from      DateTime?
+  date_to        DateTime?
+  subject_name   String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  student        Profile  @relation(fields: [student_id], references: [id])
+}
+
+model Achievement {
+  id               String   @id @default(uuid())
+  student_id       String
+  title            String
+  category         String
+  issuing_body     String?
+  date             DateTime?
+  level            String?
+  description      String?
+  file_url         String?
+  nba_points       Float    @default(0)
+  status           String   // Pending, Verified, Rejected
+  rejection_reason String?
+  verified_by      String?
+  verified_at      DateTime?
+  created_at       DateTime @default(now())
+
+  student          Profile  @relation(fields: [student_id], references: [id])
+}
+
+model FacultyAchievement {
+  id           String   @id @default(uuid())
+  faculty_id   String
+  title        String
+  type         String
+  date         DateTime?
+  issuing_body String?
+  level        String?
+  description  String?
+  file_url     String?
+  created_at   DateTime @default(now())
+}
+
+model Course {
+  id            String   @id @default(uuid())
+  faculty_id    String
+  name          String
+  code          String?
+  semester      Int?
+  department    String?
+  academic_year String?
+  created_at    DateTime @default(now())
+
+  faculty       Profile  @relation(fields: [faculty_id], references: [id])
+  enrollments   CourseEnrollment[]
+  materials     CourseMaterial[]
+  assignments   Assignment[]
+}
+
+model CourseEnrollment {
+  id          String   @id @default(uuid())
+  student_id  String
+  course_id   String
+  enrolled_at DateTime @default(now())
+  status      String   // Active, Dropped, Completed
+
+  student     Profile  @relation(fields: [student_id], references: [id])
+  course      Course   @relation(fields: [course_id], references: [id])
+}
+
+model CourseMaterial {
+  id          String   @id @default(uuid())
+  course_id   String
+  title       String
+  description String?
+  file_url    String
+  file_type   String?
+  uploaded_by String?
+  created_at  DateTime @default(now())
+
+  course      Course   @relation(fields: [course_id], references: [id])
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  course_id   String
+  title       String
+  description String?
+  deadline    DateTime
+  max_marks   Float?
+  file_url    String?
+  created_by  String?
+  created_at  DateTime @default(now())
+
+  course      Course   @relation(fields: [course_id], references: [id])
+  submissions Submission[]
+}
+
+model Submission {
+  id            String   @id @default(uuid())
+  assignment_id String
+  student_id    String
+  file_url      String?
+  submitted_at  DateTime @default(now())
+  marks         Float?
+  remarks       String?
+  graded_by     String?
+  graded_at     DateTime?
+  status        String   // Submitted, Graded, Late
+
+  assignment    Assignment @relation(fields: [assignment_id], references: [id])
+  student       Profile    @relation(fields: [student_id], references: [id])
+}
+
+model FeedPost {
+  id                String   @id @default(uuid())
+  title             String
+  content           String?
+  type              String?
+  target_department String?
+  target_year       Int?
+  posted_by         String?
+  expires_at        DateTime?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  author            Profile? @relation(fields: [posted_by], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  user_id    String
+  title      String
+  message    String?
+  category   String?
+  is_read    Boolean  @default(false)
+  link       String?
+  created_at DateTime @default(now())
+}
+
+model AuditLogEntry {
+  id          String   @id @default(uuid())
+  user_id     String?
+  action      String
+  entity_type String?
+  entity_id   String?
+  details     Json?
+  created_at  DateTime @default(now())
+
+  user        Profile? @relation(fields: [user_id], references: [id])
+}
+
+model CalendarEvent {
+  id            String   @id @default(uuid())
+  title         String
+  type          String?
+  date          DateTime
+  end_date      DateTime?
+  department    String?
+  academic_year String?
+  created_at    DateTime @default(now())
+}
+
+model NbaScoringConfig {
+  id         String   @id @default(uuid())
+  category   String
+  level      String
+  points     Float
+  created_at DateTime @default(now())
+}

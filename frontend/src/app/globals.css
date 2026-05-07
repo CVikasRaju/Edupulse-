@@ -1,0 +1,377 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════
+   EduPulse — Global Styles & Design Tokens
+   "Warm Slate" Aesthetic
+   ═══════════════════════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    --bg: #0F0F0F;
+    --surface: #1A1A1A;
+    --surface-border: #2A2A2A;
+    --accent: #E8A87C;
+    --accent-hover: #D4956A;
+    --secondary: #7C9E87;
+    --highlight: #C084FC;
+    --text-primary: #F5F0EB;
+    --text-muted: #8A8A8A;
+    --danger: #E07070;
+    --success: #6FCF97;
+    --radius-card: 16px;
+    --radius-button: 12px;
+    --radius-input: 10px;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-inter), system-ui, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-jakarta), system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #444;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(232, 168, 124, 0.3);
+    color: #F5F0EB;
+  }
+}
+
+@layer components {
+  /* ── Card Styles ── */
+  .card {
+    @apply bg-surface rounded-card border border-surface-border;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card:hover {
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4), 
+                0 0 0 1px rgba(232,168,124,0.08), 
+                inset 0 1px 0 rgba(255,255,255,0.02);
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    border-color: rgba(232, 168, 124, 0.15);
+  }
+
+  /* ── Button Base ── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-body font-medium 
+           rounded-button transition-all duration-200 cursor-pointer 
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-background px-5 py-2.5;
+  }
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-accent-hover;
+    box-shadow: 0 0 20px rgba(232, 168, 124, 0.25);
+  }
+
+  .btn-secondary {
+    @apply btn bg-secondary text-background px-5 py-2.5;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    @apply bg-secondary-hover;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-text-primary px-4 py-2 border border-surface-border;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    @apply bg-surface border-accent/20;
+  }
+
+  .btn-danger {
+    @apply btn bg-danger text-white px-5 py-2.5;
+  }
+  .btn-danger:hover:not(:disabled) {
+    @apply bg-danger-hover;
+  }
+
+  .btn-icon {
+    @apply btn p-2 bg-transparent text-text-muted;
+  }
+  .btn-icon:hover {
+    @apply text-text-primary bg-surface;
+  }
+
+  .btn-sm { @apply text-xs px-3 py-1.5; }
+  .btn-lg { @apply text-base px-6 py-3; }
+
+  /* ── Input Styles ── */
+  .input {
+    @apply w-full bg-surface border border-surface-border rounded-input 
+           px-4 py-2.5 text-text-primary placeholder:text-text-muted 
+           outline-none font-body text-sm transition-all duration-200;
+  }
+
+  .input:focus {
+    @apply border-accent/40;
+    box-shadow: 0 0 0 3px rgba(232, 168, 124, 0.08);
+  }
+
+  .input-error {
+    @apply border-danger/50;
+  }
+
+  .input-error:focus {
+    box-shadow: 0 0 0 3px rgba(224, 112, 112, 0.08);
+  }
+
+  .label {
+    @apply block text-sm font-medium text-text-primary mb-1.5;
+  }
+
+  .input-hint {
+    @apply text-xs text-text-muted mt-1;
+  }
+
+  .input-error-msg {
+    @apply text-xs text-danger mt-1;
+  }
+
+  /* ── Badge Styles ── */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full 
+           text-xs font-medium font-body;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent-light text-accent;
+  }
+
+  .badge-secondary {
+    @apply badge bg-secondary-light text-secondary;
+  }
+
+  .badge-highlight {
+    @apply badge bg-highlight-light text-highlight;
+  }
+
+  .badge-danger {
+    @apply badge bg-danger-light text-danger;
+  }
+
+  .badge-success {
+    @apply badge bg-success-light text-success;
+  }
+
+  /* ── Skeleton Loader ── */
+  .skeleton {
+    @apply rounded-button;
+    background: linear-gradient(
+      90deg,
+      #1A1A1A 25%,
+      #252525 50%,
+      #1A1A1A 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+
+  /* ── Toast Notification ── */
+  .toast {
+    @apply fixed bottom-6 right-6 z-[100] bg-surface border border-surface-border 
+           rounded-card px-5 py-4 shadow-card max-w-sm;
+    animation: toast-in 0.4s ease-out;
+  }
+
+  .toast-accent { @apply border-l-4 border-l-accent; }
+  .toast-success { @apply border-l-4 border-l-success; }
+  .toast-danger { @apply border-l-4 border-l-danger; }
+  .toast-highlight { @apply border-l-4 border-l-highlight; }
+
+  /* ── Data Table ── */
+  .data-table {
+    @apply w-full text-sm text-left;
+  }
+
+  .data-table thead {
+    @apply border-b border-surface-border;
+  }
+
+  .data-table th {
+    @apply px-4 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider;
+  }
+
+  .data-table td {
+    @apply px-4 py-3 text-text-primary;
+  }
+
+  .data-table tbody tr {
+    @apply border-b border-surface-border/50 transition-colors duration-150;
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-accent-light/30;
+  }
+
+  /* ── Bento Grid ── */
+  .bento-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: minmax(140px, auto);
+  }
+
+  @media (max-width: 1024px) {
+    .bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .bento-large { grid-column: span 2; grid-row: span 2; }
+  .bento-wide { grid-column: span 2; }
+  .bento-tall { grid-row: span 2; }
+
+  /* ── Drawer/Modal ── */
+  .drawer-overlay {
+    @apply fixed inset-0 z-50 bg-black/60 backdrop-blur-sm;
+  }
+
+  .drawer-panel {
+    @apply fixed right-0 top-0 h-full z-50 bg-surface border-l border-surface-border 
+           shadow-drawer overflow-y-auto;
+    width: min(480px, 90vw);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    @apply fixed left-0 top-0 h-screen bg-surface border-r border-surface-border 
+           flex flex-col z-40;
+    width: 260px;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted 
+           rounded-button mx-3 transition-all duration-200 cursor-pointer;
+  }
+
+  .sidebar-link:hover {
+    @apply bg-accent-light text-text-primary;
+  }
+
+  .sidebar-link-active {
+    @apply bg-accent-light text-accent font-medium;
+  }
+
+  /* ── Bottom Nav (Mobile) ── */
+  .bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-surface-border 
+           flex items-center justify-around py-2 px-4;
+  }
+
+  .bottom-nav-item {
+    @apply flex flex-col items-center gap-0.5 text-text-muted text-xs 
+           transition-colors duration-200 cursor-pointer py-1 px-3;
+  }
+
+  .bottom-nav-item-active {
+    @apply text-accent;
+  }
+
+  /* ── Status Dot ── */
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+
+  .status-dot-success { @apply bg-success; }
+  .status-dot-warning { @apply bg-accent; }
+  .status-dot-danger { @apply bg-danger; }
+  .status-dot-highlight { @apply bg-highlight; }
+
+  /* ── File Drop Zone ── */
+  .drop-zone {
+    @apply border-2 border-dashed border-surface-border rounded-card p-8 
+           text-center transition-all duration-200 cursor-pointer;
+  }
+
+  .drop-zone:hover,
+  .drop-zone-active {
+    @apply border-accent/50 bg-accent-light;
+  }
+
+  /* ── Radial Progress ── */
+  .radial-progress {
+    @apply relative inline-flex items-center justify-center;
+  }
+
+  .radial-progress svg {
+    transform: rotate(-90deg);
+  }
+}
+
+@layer utilities {
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-accent to-secondary bg-clip-text text-transparent;
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(232, 168, 124, 0.15);
+  }
+
+  .glass {
+    @apply bg-surface/80 backdrop-blur-xl;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

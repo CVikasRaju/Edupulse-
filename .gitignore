@@ -57,3 +57,5 @@ pnpm-debug.log*
 # --- TESTING ---
 /coverage
 .nyc_output
+
+.vercel

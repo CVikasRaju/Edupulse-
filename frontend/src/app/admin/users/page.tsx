@@ -88,7 +88,7 @@ export default function AdminUsers() {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((u) => (
+              {filteredUsers.map((u: any) => (
                 <tr key={u.id} className="hover:bg-surface/50 transition-colors">
                   <td>
                     <div className="flex items-center gap-3">

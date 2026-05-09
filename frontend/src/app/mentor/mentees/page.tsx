@@ -90,7 +90,7 @@ export default function MentorMentees() {
           ))
         ) : (
           <div className="col-span-full py-12 text-center text-text-muted">
-            You don't have any mentees assigned yet.
+            You don&apos;t have any mentees assigned yet.
           </div>
         )}
       </div>

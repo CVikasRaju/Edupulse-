@@ -149,7 +149,7 @@ export default function StudentMentorship() {
                   {pendingAck.length} session{pendingAck.length > 1 ? "s" : ""} awaiting your acknowledgement
                 </div>
                 <div className="text-xs text-text-muted mt-0.5">
-                  Please acknowledge your mentor's interaction logs.
+                  Please acknowledge your mentor&apos;s interaction logs.
                 </div>
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function StudentMentorship() {
                     {interaction.remarks && (
                       <div className="mb-2">
                         <div className="text-xs text-text-muted font-medium mb-1">Mentor Remarks</div>
-                        <p className="text-sm text-text-muted italic">"{interaction.remarks}"</p>
+                        <p className="text-sm text-text-muted italic">&quot;{interaction.remarks}&quot;</p>
                       </div>
                     )}
 

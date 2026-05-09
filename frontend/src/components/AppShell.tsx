@@ -80,7 +80,7 @@ export default function AppShell({ role, children }: AppShellProps) {
   const userName = profile?.full_name ?? "Loading...";
   const userEmail = profile?.email ?? "";
   const userInitials = profile?.full_name
-    ? profile.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+    ? profile.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
     : "..";
 
   const handleSignOut = async () => {

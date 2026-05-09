@@ -132,7 +132,7 @@ function findDataProblems(
   const GENERIC_USN_REGEX = /\d{2}[A-Z]{2,}\d{3}/i;
   const problems: { type: "null_usn" | "invalid_usn" | "null_date"; rowIndex: number; column: string; currentValue: any }[] = [];
 
-  rows.forEach((row, idx) => {
+  rows.forEach((row: RawRow, idx: number) => {
     const usn = String(row[mapping.usnColumn] ?? "").trim();
 
     // Skip completely empty rows
@@ -159,7 +159,7 @@ function performLocalDetection(headers: string[], sampleRows: RawRow[]) {
 
   // First try: header keyword match
   let usnColumn: string | null = null;
-  const usnHeaderIdx = normHeaders.findIndex((h) => /\busn\b|roll[_\s-]?no?|reg(istration)?[_\s-]?no?|enrollment|student[_-]?id/i.test(h));
+  const usnHeaderIdx = normHeaders.findIndex((h: string) => /\busn\b|roll[_\s-]?no?|reg(istration)?[_\s-]?no?|enrollment|student[_-]?id/i.test(h));
   if (usnHeaderIdx !== -1) usnColumn = headers[usnHeaderIdx];
 
   // Second try: column with most USN-pattern values
@@ -181,7 +181,7 @@ function performLocalDetection(headers: string[], sampleRows: RawRow[]) {
   usnColumn = usnColumn || headers[0];
 
   // ---------- Name detection ----------
-  const nameHeaderIdx = normHeaders.findIndex((h) => /\bname\b|full[_-]?name|student[_-]?name/i.test(h));
+  const nameHeaderIdx = normHeaders.findIndex((h: string) => /\bname\b|full[_-]?name|student[_-]?name/i.test(h));
   const nameColumn = nameHeaderIdx !== -1 ? headers[nameHeaderIdx] : null;
 
   // ---------- Date column detection ----------
@@ -279,8 +279,8 @@ function performLocalDetection(headers: string[], sampleRows: RawRow[]) {
     for (const key in row) {
       if (key === usnColumn || key === nameColumn) continue;
       const val = String(row[key] ?? "").trim().toUpperCase();
-      if (PRESENT_MARKERS.map((x) => x.toUpperCase()).includes(val)) presentCounts[val] = (presentCounts[val] || 0) + 1;
-      if (ABSENT_MARKERS.map((x) => x.toUpperCase()).includes(val))  absentCounts[val]  = (absentCounts[val]  || 0) + 1;
+      if (PRESENT_MARKERS.map((x: string) => x.toUpperCase()).includes(val)) presentCounts[val] = (presentCounts[val] || 0) + 1;
+      if (ABSENT_MARKERS.map((x: string) => x.toUpperCase()).includes(val))  absentCounts[val]  = (absentCounts[val]  || 0) + 1;
     }
   }
 
@@ -351,7 +351,7 @@ async function handleResolveUsn(req: NextRequest) {
 
   cleanUsns.forEach((usn) => {
     // Case-insensitive match
-    const profile = data?.find((p) => p.usn?.trim().toUpperCase() === usn.toUpperCase());
+    const profile = data?.find((p: { usn: string | null }) => p.usn?.trim().toUpperCase() === usn.toUpperCase());
     if (profile) resolved[usn] = { id: profile.id, full_name: profile.full_name };
     else missing.push(usn);
   });
@@ -399,7 +399,7 @@ async function handleProcess(req: NextRequest) {
 
   // Map USN -> ID for quick lookup
   const usnToIdMap = new Map<string, string>();
-  profiles?.forEach(p => {
+  profiles?.forEach((p: { usn: string | null, id: string }) => {
     if (p.usn) usnToIdMap.set(p.usn.toUpperCase(), p.id);
   });
 

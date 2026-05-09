@@ -101,7 +101,7 @@ export async function getMentorDashboardData(mentorId: string) {
     prisma.course.findMany({ where: { faculty_id: mentorId } }),
   ]);
 
-  const menteeIds = allocations.map((a) => a.mentee_id);
+  const menteeIds = allocations.map((a: { mentee_id: string }) => a.mentee_id);
 
   const [pendingAchievements, pendingGraceRequests] = await Promise.all([
     prisma.achievement.findMany({
@@ -114,7 +114,7 @@ export async function getMentorDashboardData(mentorId: string) {
   ]);
 
   return {
-    mentees: allocations.map((a) => a.mentee),
+    mentees: allocations.map((a: { mentee: unknown }) => a.mentee),
     interactions,
     courses,
     pendingAchievements,
@@ -222,7 +222,7 @@ export async function getMentorAttendanceData(mentorId: string) {
     where: { mentor_id: mentorId, is_active: true },
     include: { mentee: true },
   });
-  const menteeIds = allocations.map((a) => a.mentee_id);
+  const menteeIds = allocations.map((a: { mentee_id: string }) => a.mentee_id);
   const [attendanceRecords, graceRequests] = await Promise.all([
     prisma.attendanceRecord.findMany({ where: { student_id: { in: menteeIds } }, orderBy: { date: "desc" } }),
     prisma.graceRequest.findMany({
@@ -231,7 +231,7 @@ export async function getMentorAttendanceData(mentorId: string) {
       orderBy: { created_at: "desc" },
     }),
   ]);
-  return { mentees: allocations.map((a) => a.mentee), attendanceRecords, graceRequests };
+  return { mentees: allocations.map((a: { mentee: unknown }) => a.mentee), attendanceRecords, graceRequests };
 }
 
 // ─────────────────────────────────────────
@@ -286,7 +286,7 @@ function computeSemesterGpas(grades: { semester: number; sgpa: number | null }[]
   return Object.entries(map)
     .map(([semester, gpas]) => ({
       semester: Number(semester),
-      gpa: Number((gpas.reduce((s, v) => s + v, 0) / gpas.length).toFixed(2)),
+      gpa: Number((gpas.reduce((s: number, v: number) => s + v, 0) / gpas.length).toFixed(2)),
     }))
-    .sort((a, b) => a.semester - b.semester);
+    .sort((a: { semester: number }, b: { semester: number }) => a.semester - b.semester);
 }

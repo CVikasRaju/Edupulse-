@@ -33,7 +33,7 @@ export async function getStudentDashboardData(studentId: string) {
   // Compute academic health
   const semesterGpas = computeSemesterGpas(grades);
   const latestCgpa = grades.length > 0 ? (grades[grades.length - 1]?.cgpa ?? 0) : 0;
-  const totalPresent = attendanceRecords.filter((a) => a.status === "Present").length;
+  const totalPresent = attendanceRecords.filter((a: { status: string }) => a.status === "Present").length;
   const attendancePct = attendanceRecords.length > 0
     ? Math.round((totalPresent / attendanceRecords.length) * 100)
     : 0;

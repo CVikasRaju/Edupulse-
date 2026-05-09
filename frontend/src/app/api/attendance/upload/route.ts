@@ -312,13 +312,23 @@ async function handleCheckDuplicates(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("AttendanceRecord")
-    .select("student_id, date, subject_name")
+    .select("student_id, date, subject_name, Profile(usn, full_name)")
     .in("student_id", studentIds)
     .eq("subject_name", subjectName)
     .in("date", dates);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ duplicates: data || [] });
+
+  // Flatten the response for the UI
+  const flattened = (data || []).map((d: any) => ({
+    student_id: d.student_id,
+    date: d.date,
+    subject_name: d.subject_name,
+    usn: d.Profile?.usn,
+    studentName: d.Profile?.full_name,
+  }));
+
+  return NextResponse.json({ duplicates: flattened });
 }
 
 // ─── Resolve USNs to Profile IDs ───────────────────────────────────────────
@@ -365,22 +375,44 @@ async function handleProcess(req: NextRequest) {
   const errors: string[] = [];
   let skipped = 0;
 
+  // 1. Collect all unique USNs from the file
+  const allUsns = new Set<string>();
   for (const row of rows) {
     const rawUsn = row[columnMapping.usn];
     const usn = String(rawUsn ?? "").trim();
+    if (usn && (USN_REGEX.test(usn) || GENERIC_USN_REGEX.test(usn))) {
+      allUsns.add(usn.toUpperCase());
+    }
+  }
 
-    // Skip rows with no USN or USN that doesn't match any known pattern
-    if (!usn || (!USN_REGEX.test(usn) && !GENERIC_USN_REGEX.test(usn))) continue;
+  if (allUsns.size === 0) {
+    return NextResponse.json({ inserted: 0, skipped: rows.length, errors: ["No valid USNs found in file"] });
+  }
 
-    // Resolve USN → student_id
-    const { data: profile } = await supabase
-      .from("Profile")
-      .select("id")
-      .ilike("usn", usn)
-      .single();
+  // 2. Resolve all USNs to Profile IDs in one query
+  const { data: profiles, error: profileError } = await supabase
+    .from("Profile")
+    .select("id, usn")
+    .in("usn", Array.from(allUsns));
 
-    if (!profile) {
-      errors.push(`USN not found in database: ${usn}`);
+  if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 });
+
+  // Map USN -> ID for quick lookup
+  const usnToIdMap = new Map<string, string>();
+  profiles?.forEach(p => {
+    if (p.usn) usnToIdMap.set(p.usn.toUpperCase(), p.id);
+  });
+
+  // 3. Process rows and generate records
+  for (const row of rows) {
+    const rawUsn = row[columnMapping.usn];
+    const usn = String(rawUsn ?? "").trim().toUpperCase();
+
+    const profileId = usnToIdMap.get(usn);
+    if (!profileId) {
+      if (usn && (USN_REGEX.test(usn) || GENERIC_USN_REGEX.test(usn))) {
+        errors.push(`USN not found in database: ${usn}`);
+      }
       continue;
     }
 
@@ -389,7 +421,6 @@ async function handleProcess(req: NextRequest) {
       const rawValue = String(row[column] ?? "").trim().toUpperCase();
       if (!rawValue || rawValue === "NULL" || rawValue === "-" || rawValue === "") continue;
 
-      // Determine status — support all marker types
       const isPresent = ["P", "1", "YES", "TRUE", "PRESENT", "✔️", "✅", "☑️", "👍"].includes(rawValue);
       const isAbsent  = ["A", "0", "NO", "FALSE", "ABSENT", "❌", "✖️", "👎"].includes(rawValue);
       if (!isPresent && !isAbsent) { skipped++; continue; }
@@ -399,12 +430,12 @@ async function handleProcess(req: NextRequest) {
       try {
         parsedDate = new Date(date).toISOString();
       } catch {
-        errors.push(`Invalid date: ${date}`);
+        errors.push(`Invalid date format: ${date}`);
         continue;
       }
 
       records.push({
-        student_id: profile.id,
+        student_id: profileId,
         subject_name: subjectName,
         subject_code: subjectCode || null,
         date: parsedDate,
@@ -420,7 +451,8 @@ async function handleProcess(req: NextRequest) {
     return NextResponse.json({ inserted: 0, skipped, errors });
   }
 
-  const { error } = await supabase
+  // 4. Batch Upsert (Max 1000 records at a time for safety, though Supabase handles more)
+  const { error: upsertError } = await supabase
     .from("AttendanceRecord")
     // @ts-ignore – ignoreDuplicates not typed in all SDK versions
     .upsert(records, {
@@ -428,15 +460,11 @@ async function handleProcess(req: NextRequest) {
       ignoreDuplicates: !overwriteDuplicates,
     });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 500 });
 
-  // Supabase upsert doesn't reliably return a count; use records.length as best estimate
-  const inserted = overwriteDuplicates ? records.length : records.length - duplicateCount(records, []);
-
-  return NextResponse.json({ inserted: records.length, skipped, errors });
-}
-
-// Placeholder – real duplicate count comes from the pre-check step
-function duplicateCount(_records: any[], _existing: any[]) {
-  return 0;
+  return NextResponse.json({
+    inserted: records.length,
+    skipped,
+    errors: errors.slice(0, 50) // Limit errors returned to client
+  });
 }

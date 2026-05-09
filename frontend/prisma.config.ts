@@ -1,11 +1,2 @@
-import { config } from "dotenv";
-config({ path: ".env.local" });
-
-import { defineConfig, env } from "prisma/config";
-
-export default defineConfig({
-  schema: "prisma/schema.prisma",
-  datasource: {
-    url: env("DIRECT_URL"),
-  },
-});
+// This file is not used by Prisma v5 — kept as placeholder for future migration
+export {};

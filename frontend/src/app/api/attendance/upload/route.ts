@@ -427,7 +427,8 @@ async function handleProcess(req: NextRequest) {
       onConflict: "student_id,subject_name,date",
       ignoreDuplicates: !overwriteDuplicates,
     })
-    .select("id", { count: "exact", head: true });
+    // @ts-ignore – count option not typed
+      .select("id", { count: "exact", head: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, BookOpen, Users, Shield } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
+import Image from "next/image";
 
 type Role = "mentee" | "mentor" | "admin";
 
@@ -107,15 +108,17 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center p-2 bg-surface rounded-2xl mb-4 shadow-xl border border-surface-border">
-            <img
-              src="/sahyadri-logo.png"
-              alt="Sahyadri College Logo"
-              className="w-auto h-16 object-contain"
-              onError={(e) => {
-                // Fallback if logo not found
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
+              <Image
+                src="/sahyadri-logo.png"
+                alt="Sahyadri College Logo"
+                width={64}
+                height={64}
+                className="w-auto h-16 object-contain"
+                onError={(e) => {
+                  // Fallback if logo not found
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
             <div className="w-16 h-16 flex items-center justify-center">
               <span className="text-3xl font-heading font-bold text-accent">EP</span>
             </div>

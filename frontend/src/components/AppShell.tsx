@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import Image from "next/image";
 import {
   GraduationCap,
   LayoutDashboard,
@@ -98,7 +99,7 @@ export default function AppShell({ role, children }: AppShellProps) {
       {/* Logo */}
       <div className={`flex items-center gap-3 px-4 py-5 border-b border-surface-border ${collapsed ? "justify-center" : ""}`}>
         <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 bg-surface rounded p-1 border border-surface-border shadow-sm">
-          <img src="/sahyadri-logo.png" alt="Sahyadri" className="max-w-full max-h-full object-contain" />
+          <Image src="/sahyadri-logo.png" alt="Sahyadri" width={64} height={64} className="max-w-full max-h-full object-contain" />
         </div>
         {!collapsed && (
           <div>

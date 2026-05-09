@@ -61,8 +61,8 @@ export async function getStudentDashboardData(studentId: string) {
 
   // NBA points
   const nbaScore = achievements
-    .filter((a) => a.status === "Verified")
-    .reduce((sum, a) => sum + (a.nba_points ?? 0), 0);
+    .filter((a: { status: string }) => a.status === "Verified")
+    .reduce((sum: number, a: { nba_points: number | null }) => sum + (a.nba_points ?? 0), 0);
 
   return {
     grades,
@@ -79,7 +79,7 @@ export async function getStudentDashboardData(studentId: string) {
       healthStatus,
     },
     nbaScore,
-    unreadCount: notifications.filter((n) => !n.is_read).length,
+    unreadCount: notifications.filter((n: { is_read: boolean }) => !n.is_read).length,
   };
 }
 

@@ -14,12 +14,15 @@ import {
   Phone,
   X,
   Loader2,
+  Send,
 } from "lucide-react";
 
 export default function StudentMentorship() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestStatus, setRequestStatus] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +45,39 @@ export default function StudentMentorship() {
 
     fetchData();
   }, []);
+
+  const handleSendRequest = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    setSendingRequest(true);
+    setRequestStatus(null);
+
+    try {
+      const res = await fetch("/api/session-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: formData.get("date"),
+          mode: formData.get("mode"),
+          type: formData.get("type"),
+          topics: formData.get("topics"),
+        }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        setRequestStatus({ ok: true, message: result.message || "Session request sent!" });
+        form.reset();
+        setTimeout(() => setShowRequestModal(false), 1200);
+      } else {
+        setRequestStatus({ ok: false, message: result.error || "Failed to send request" });
+      }
+    } catch {
+      setRequestStatus({ ok: false, message: "Something went wrong. Please try again." });
+    } finally {
+      setSendingRequest(false);
+    }
+  };
 
   const handleAcknowledge = async (id: string) => {
     const supabase = createClient();
@@ -247,7 +283,7 @@ export default function StudentMentorship() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); setShowRequestModal(false); }} className="p-5 space-y-4">
+            <form onSubmit={handleSendRequest} className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Preferred Date</label>
@@ -273,9 +309,23 @@ export default function StudentMentorship() {
                 <label className="label">Topics to Discuss</label>
                 <textarea name="topics" rows={3} required className="input py-2" placeholder="Briefly list the topics..." />
               </div>
+
+              {requestStatus && (
+                <div className={`text-sm rounded-input px-4 py-2.5 border ${
+                  requestStatus.ok
+                    ? "bg-success/10 text-success border-success/20"
+                    : "bg-danger/10 text-danger border-danger/20"
+                }`}>
+                  {requestStatus.message}
+                </div>
+              )}
+
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowRequestModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Send Request</button>
+                <button type="submit" disabled={sendingRequest} className="btn-primary">
+                  {sendingRequest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Send Request
+                </button>
               </div>
             </form>
           </div>

@@ -14,6 +14,8 @@ import {
   Star,
   ChevronRight,
   Loader2,
+  Bell,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -27,10 +29,12 @@ export default function MentorDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const [allocationsRes, interactionsRes, coursesRes] = await Promise.all([
+      const [allocationsRes, interactionsRes, coursesRes, notificationsRes, sessionsRes] = await Promise.all([
         supabase.from("Allocation").select("*, mentee:mentee_id(*)").eq("mentor_id", user.id).eq("is_active", true),
         supabase.from("Interaction").select("*").eq("mentor_id", user.id).order("date", { ascending: false }).limit(10),
         supabase.from("Course").select("*").eq("faculty_id", user.id),
+        supabase.from("Notification").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(15),
+        supabase.from("MentorSession").select("*, mentee:mentee_id(full_name, usn)").eq("mentor_id", user.id).eq("status", "scheduled").gte("date", new Date().toISOString()).order("date").limit(10),
       ]);
 
       const mentees = (allocationsRes.data ?? []).map((a: any) => a.mentee);
@@ -57,6 +61,8 @@ export default function MentorDashboard() {
         pendingAchievements: pendingAchRes.data ?? [],
         pendingGraceRequests: pendingGraceRes.data ?? [],
         nbaByMentee,
+        notifications: notificationsRes.data ?? [],
+        upcomingSessions: sessionsRes.data ?? [],
       });
       setLoading(false);
     };
@@ -82,15 +88,46 @@ export default function MentorDashboard() {
     );
   }
 
-  const { mentees, interactions, courses, pendingAchievements, pendingGraceRequests, nbaByMentee } = data;
+  const { mentees, interactions, courses, pendingAchievements, pendingGraceRequests, nbaByMentee, notifications, upcomingSessions } = data;
   const unacknowledged = interactions.filter((i: any) => !i.is_acknowledged);
   const recentInteractions = interactions.slice(0, 4);
+  const unreadNotifications = notifications.filter((n: any) => !n.is_read);
+
+  const handleMarkAllRead = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase
+      .from("Notification")
+      .update({ is_read: true })
+      .eq("user_id", user.id)
+      .eq("is_read", false);
+    setData((prev: any) => ({
+      ...prev,
+      notifications: (prev.notifications ?? []).map((n: any) => ({ ...n, is_read: true })),
+    }));
+  };
 
   return (
     <AppShell role="mentor">
-      <div className="mb-6">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">Welcome 👋</h1>
-        <p className="text-text-muted text-sm mt-0.5">Your mentor dashboard</p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-heading font-bold text-text-primary">Welcome 👋</h1>
+          <p className="text-text-muted text-sm mt-0.5">Your mentor dashboard</p>
+        </div>
+        {/* Notifications bell */}
+        <Link
+          href="/mentor/dashboard#notifications"
+          className="relative flex items-center gap-2 px-4 py-2 rounded-button bg-surface border border-surface-border hover:border-accent/40 transition-all"
+        >
+          <Bell className="w-4 h-4 text-accent" />
+          <span className="text-sm font-medium text-text-primary">Notifications</span>
+          {unreadNotifications.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-danger text-background text-[10px] font-bold flex items-center justify-center">
+              {unreadNotifications.length}
+            </span>
+          )}
+        </Link>
       </div>
 
       {/* Summary Cards */}
@@ -114,6 +151,92 @@ export default function MentorDashboard() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* Notifications & Upcoming Sessions strip */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6" id="notifications">
+        {/* Notifications */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading font-semibold text-text-primary flex items-center gap-2">
+              <Bell className="w-4 h-4 text-accent" />
+              Notifications
+            </h2>
+            <div className="flex items-center gap-3">
+              {unreadNotifications.length > 0 && (
+                <button onClick={handleMarkAllRead} className="text-[10px] text-accent hover:underline">
+                  Mark all read
+                </button>
+              )}
+              {unreadNotifications.length > 0 && (
+                <span className="badge badge-danger text-[10px]">{unreadNotifications.length} new</span>
+              )}
+            </div>
+          </div>
+          {notifications.length > 0 ? (
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {notifications.map((n: any) => (
+                <div
+                  key={n.id}
+                  className={`p-3 rounded-button border transition-colors ${
+                    !n.is_read
+                      ? "bg-accent/10 border-accent/30"
+                      : "bg-surface border-surface-border"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`text-sm font-medium ${!n.is_read ? "text-accent" : "text-text-primary"}`}>
+                      {n.title}
+                    </span>
+                    <span className="text-[10px] text-text-muted flex-shrink-0">
+                      {new Date(n.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </span>
+                  </div>
+                  {n.message && <p className="text-xs text-text-muted mt-0.5">{n.message}</p>}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-text-muted text-sm">No notifications yet.</p>
+          )}
+        </div>
+
+        {/* Upcoming Booked Sessions */}
+        <div className="card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading font-semibold text-text-primary flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-secondary" />
+              Upcoming Booked Sessions
+            </h2>
+            <Link href="/mentor/schedule" className="text-xs text-accent hover:underline">Manage</Link>
+          </div>
+          {upcomingSessions.length > 0 ? (
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {upcomingSessions.map((s: any) => (
+                <div key={s.id} className="flex items-center gap-3 p-2.5 rounded-button bg-surface border border-surface-border">
+                  <div className="text-center flex-shrink-0 w-11">
+                    <div className="text-base font-heading font-bold text-secondary">
+                      {new Date(s.date).getDate()}
+                    </div>
+                    <div className="text-[9px] text-text-muted uppercase">
+                      {new Date(s.date).toLocaleDateString("en-IN", { month: "short" })}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-text-primary truncate">{s.mentee?.full_name ?? "Student"}</div>
+                    <div className="text-xs text-text-muted">
+                      {s.start_time} - {s.end_time}
+                      {s.topic ? ` · ${s.topic}` : ""}
+                    </div>
+                  </div>
+                  <span className="badge badge-accent text-[10px]">{s.type ?? "1-on-1"}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-text-muted text-sm">No upcoming booked sessions.</p>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

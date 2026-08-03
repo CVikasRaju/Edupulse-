@@ -4,9 +4,9 @@
 
 -- 1. Profiles
 INSERT INTO public."Profile" (id, role, full_name, email, department, year, section, usn, employee_id, designation, is_profile_complete, is_active, updated_at) VALUES
-('admin-001', 'admin', 'Demo Admin', 'admin@sahyadri.edu.in', 'Administration', NULL, NULL, NULL, 'SAH-ADM-001', 'Principal', true, true, NOW()),
-('mentor-001', 'mentor', 'Demo Mentor', 'priya.shetty@sahyadri.edu.in', 'Computer Science', NULL, NULL, NULL, 'SAH-CS-042', 'Associate Professor', true, true, NOW()),
-('student-001', 'mentee', 'Demo Student', 'aditya.s@sahyadri.edu.in', 'Computer Science', 3, 'A', '4SH21CS001', NULL, NULL, true, true, NOW());
+('admin-001', 'admin', 'Demo Admin', 'admin1@sahyadri.edu.in', 'Administration', NULL, NULL, NULL, 'EMP-ADM-001', 'Principal', true, true, NOW()),
+('mentor-001', 'mentor', 'Demo Mentor', 'teacher@sahyadri.edu.in', 'Computer Science', NULL, NULL, NULL, 'EMP-CS-001', 'Associate Professor', true, true, NOW()),
+('student-001', 'mentee', 'Demo Student', 'student@sahyadri.edu.in', 'Computer Science', 3, 'A', '4SH21CS900', NULL, NULL, true, true, NOW());
 
 -- 2. Allocations
 INSERT INTO public."Allocation" (id, mentor_id, mentee_id, is_active) VALUES

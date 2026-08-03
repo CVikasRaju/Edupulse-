@@ -76,8 +76,21 @@ export default function LoginPage() {
         return;
       }
 
-      // Step 3: Redirect based on role from DB
+      // Step 3: Verify the account role matches the selected login tab
       const role = profile.role as Role;
+      if (role !== selectedRole) {
+        // Role mismatch — the user selected one role tab but the account is another
+        const expectedLabel = ROLE_LABELS[selectedRole].label;
+        const actualLabel = ROLE_LABELS[role]?.label ?? role;
+        await supabase.auth.signOut();
+        setError(
+          `Invalid credentials for the selected role (${expectedLabel}).\nThis account is registered as ${actualLabel}. Please select the correct tab and try again.`
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Step 4: Redirect based on role from DB
       if (role === "mentee") router.push("/student/dashboard");
       else if (role === "mentor") router.push("/mentor/dashboard");
       else if (role === "admin") router.push("/admin/dashboard");

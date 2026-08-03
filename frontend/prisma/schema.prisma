@@ -48,6 +48,11 @@ model Profile {
   submissions         Submission[]
   feedPosts           FeedPost[]
   auditLogs           AuditLogEntry[]
+  alertsReceived      Alert[]           @relation("AlertStudent")
+  alertsTriggeredBy   Alert[]           @relation("AlertTriggeredBy")
+  availabilities      MentorAvailability[]
+  sessionsAsMentor    MentorSession[]   @relation("SessionMentor")
+  sessionsAsMentee    MentorSession[]   @relation("SessionMentee")
 }
 
 model Allocation {
@@ -294,4 +299,90 @@ model NbaScoringConfig {
   level      String
   points     Float
   created_at DateTime @default(now())
+}
+
+// ══════════════════════════════════════════
+// Alert & Threshold System
+// ══════════════════════════════════════════
+
+model AlertRule {
+  id              String   @id @default(uuid())
+  name            String
+  type            String   // attendance_drop, grade_decline, engagement_gap
+  metric          String   // attendance_pct, sgpa, cgpa, days_since_interaction
+  operator        String   // lt, gt, lte, gte, eq
+  threshold       Float
+  consecutive     Int      @default(1)   // how many consecutive breaches trigger alert
+  severity        String   @default("warning") // info, warning, critical
+  is_active       Boolean  @default(true)
+  created_by      String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  alerts          Alert[]
+}
+
+model Alert {
+  id              String    @id @default(uuid())
+  rule_id         String
+  student_id      String
+  mentor_id       String?
+  title           String
+  message         String?
+  severity        String    // info, warning, critical
+  status          String    @default("active") // active, acknowledged, resolved, dismissed
+  metric_value    Float?
+  threshold_value Float?
+  context         Json?
+  acknowledged_at DateTime?
+  resolved_at     DateTime?
+  created_at      DateTime  @default(now())
+
+  rule            AlertRule @relation(fields: [rule_id], references: [id])
+  student         Profile   @relation("AlertStudent", fields: [student_id], references: [id])
+  triggeredBy     Profile?  @relation("AlertTriggeredBy", fields: [mentor_id], references: [id])
+}
+
+// ══════════════════════════════════════════
+// Mentorship Scheduling System
+// ══════════════════════════════════════════
+
+model MentorAvailability {
+  id              String   @id @default(uuid())
+  mentor_id       String
+  day_of_week     Int      // 0=Sunday, 1=Monday, ... 6=Saturday
+  start_time      String   // HH:MM format
+  end_time        String   // HH:MM format
+  duration_minutes Int     @default(30)
+  location        String?
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  mentor          Profile  @relation(fields: [mentor_id], references: [id])
+  sessions        MentorSession[]
+
+  @@unique([mentor_id, day_of_week, start_time])
+}
+
+model MentorSession {
+  id              String            @id @default(uuid())
+  mentor_id       String
+  mentee_id       String
+  availability_id String?
+  date            DateTime
+  start_time      String            // HH:MM
+  end_time        String            // HH:MM
+  duration_minutes Int
+  status          String            @default("scheduled") // scheduled, completed, cancelled, no_show
+  type            String            @default("1-on-1") // 1-on-1, group, emergency
+  topic           String?
+  notes           String?
+  meeting_link    String?
+  location        String?
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+
+  mentor          Profile           @relation("SessionMentor", fields: [mentor_id], references: [id])
+  mentee          Profile           @relation("SessionMentee", fields: [mentee_id], references: [id])
+  availability    MentorAvailability? @relation(fields: [availability_id], references: [id])
 }

@@ -38,6 +38,7 @@ const studentNav: NavItem[] = [
   { label: "Courses", href: "/student/courses", icon: ClipboardList },
   { label: "Achievements", href: "/student/achievements", icon: Trophy },
   { label: "Mentorship", href: "/student/mentorship", icon: Users },
+  { label: "Schedule", href: "/student/schedule", icon: CalendarDays },
   { label: "Feed", href: "/student/feed", icon: Bell },
   { label: "Calendar", href: "/student/calendar", icon: CalendarDays },
   { label: "Settings", href: "/student/settings", icon: Settings },
@@ -45,7 +46,9 @@ const studentNav: NavItem[] = [
 
 const mentorNav: NavItem[] = [
   { label: "Dashboard", href: "/mentor/dashboard", icon: LayoutDashboard },
+  { label: "Performance", href: "/mentor/performance", icon: BarChart3 },
   { label: "My Mentees", href: "/mentor/mentees", icon: Users },
+  { label: "Schedule", href: "/mentor/schedule", icon: CalendarDays },
   { label: "Courses", href: "/mentor/courses", icon: BookOpen },
   { label: "Attendance", href: "/mentor/attendance", icon: UserCheck },
   { label: "Achievements", href: "/mentor/achievements", icon: Trophy },
@@ -55,7 +58,9 @@ const mentorNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Performance", href: "/admin/performance", icon: BarChart3 },
   { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Alert Rules", href: "/admin/alerts", icon: Bell },
   { label: "Courses", href: "/admin/courses", icon: ClipboardList },
   { label: "Allocations", href: "/admin/allocations", icon: UserCheck },
   { label: "Achievements", href: "/admin/achievements", icon: Trophy },

@@ -329,3 +329,127 @@ export interface PendingAction {
   dueDate?: string;
   priority: "high" | "medium" | "low";
 }
+
+// ══════════════════════════════════════════
+// Alert & Threshold System
+// ══════════════════════════════════════════
+
+export type AlertRuleType = "attendance_drop" | "grade_decline" | "engagement_gap";
+export type AlertSeverity = "info" | "warning" | "critical";
+export type AlertStatus = "active" | "acknowledged" | "resolved" | "dismissed";
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  type: AlertRuleType;
+  metric: string;
+  operator: string;
+  threshold: number;
+  consecutive: number;
+  severity: AlertSeverity;
+  is_active: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Alert {
+  id: string;
+  rule_id: string;
+  student_id: string;
+  mentor_id?: string;
+  title: string;
+  message?: string;
+  severity: AlertSeverity;
+  status: AlertStatus;
+  metric_value?: number;
+  threshold_value?: number;
+  context?: Record<string, unknown>;
+  acknowledged_at?: string;
+  resolved_at?: string;
+  created_at: string;
+  rule?: AlertRule;
+  student?: Profile;
+  triggeredBy?: Profile;
+}
+
+// ══════════════════════════════════════════
+// Scheduling System
+// ══════════════════════════════════════════
+
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type SessionStatus = "scheduled" | "completed" | "cancelled" | "no_show";
+export type SessionType = "1-on-1" | "group" | "emergency";
+
+export interface MentorAvailability {
+  id: string;
+  mentor_id: string;
+  day_of_week: DayOfWeek;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  location?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  mentor?: Profile;
+}
+
+export interface MentorSession {
+  id: string;
+  mentor_id: string;
+  mentee_id: string;
+  availability_id?: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  duration_minutes: number;
+  status: SessionStatus;
+  type: SessionType;
+  topic?: string;
+  notes?: string;
+  meeting_link?: string;
+  location?: string;
+  created_at: string;
+  updated_at: string;
+  mentor?: Profile;
+  mentee?: Profile;
+  availability?: MentorAvailability;
+}
+
+// ══════════════════════════════════════════
+// Performance Matrix
+// ══════════════════════════════════════════
+
+export interface MenteePerformance {
+  student: Profile;
+  cgpa: number;
+  attendancePct: number;
+  sgpaTrend: { semester: number; gpa: number }[];
+  attendanceTrend: { month: string; percentage: number }[];
+  riskLevel: "low" | "medium" | "high" | "critical";
+  riskFactors: string[];
+  lastInteraction?: string;
+  daysSinceInteraction: number;
+  nbaScore: number;
+  activeAlerts: number;
+  totalSessions: number;
+}
+
+export interface FacultyDashboardData {
+  mentees: MenteePerformance[];
+  riskCounts: { low: number; medium: number; high: number; critical: number };
+  totalAlerts: number;
+  upcomingSessions: MentorSession[];
+  recentAlerts: Alert[];
+}
+
+export interface AdminDashboardData {
+  // 全校 overview
+  totalStudents: number;
+  totalFaculty: number;
+  riskDistribution: { low: number; medium: number; high: number; critical: number };
+  departmentStats: { department: string; avgCgpa: number; avgAttendance: number; atRiskCount: number }[];
+  topAlerts: Alert[];
+  mentorActivity: { mentor: Profile; menteeCount: number; sessionCount: number; alertCount: number }[];
+}

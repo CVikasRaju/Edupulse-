@@ -297,6 +297,82 @@ CREATE TABLE "NbaScoringConfig" (
     CONSTRAINT "NbaScoringConfig_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "AlertRule" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "metric" TEXT NOT NULL,
+    "operator" TEXT NOT NULL,
+    "threshold" DOUBLE PRECISION NOT NULL,
+    "consecutive" INTEGER NOT NULL DEFAULT 1,
+    "severity" TEXT NOT NULL DEFAULT 'warning',
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_by" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AlertRule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Alert" (
+    "id" TEXT NOT NULL,
+    "rule_id" TEXT NOT NULL,
+    "student_id" TEXT NOT NULL,
+    "mentor_id" TEXT,
+    "title" TEXT NOT NULL,
+    "message" TEXT,
+    "severity" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'active',
+    "metric_value" DOUBLE PRECISION,
+    "threshold_value" DOUBLE PRECISION,
+    "context" JSONB,
+    "acknowledged_at" TIMESTAMP(3),
+    "resolved_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Alert_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MentorAvailability" (
+    "id" TEXT NOT NULL,
+    "mentor_id" TEXT NOT NULL,
+    "day_of_week" INTEGER NOT NULL,
+    "start_time" TEXT NOT NULL,
+    "end_time" TEXT NOT NULL,
+    "duration_minutes" INTEGER NOT NULL DEFAULT 30,
+    "location" TEXT,
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "MentorAvailability_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MentorSession" (
+    "id" TEXT NOT NULL,
+    "mentor_id" TEXT NOT NULL,
+    "mentee_id" TEXT NOT NULL,
+    "availability_id" TEXT,
+    "date" TIMESTAMP(3) NOT NULL,
+    "start_time" TEXT NOT NULL,
+    "end_time" TEXT NOT NULL,
+    "duration_minutes" INTEGER NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'scheduled',
+    "type" TEXT NOT NULL DEFAULT '1-on-1',
+    "topic" TEXT,
+    "notes" TEXT,
+    "meeting_link" TEXT,
+    "location" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "MentorSession_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Profile_email_key" ON "Profile"("email");
 
@@ -350,3 +426,27 @@ ALTER TABLE "FeedPost" ADD CONSTRAINT "FeedPost_posted_by_fkey" FOREIGN KEY ("po
 
 -- AddForeignKey
 ALTER TABLE "AuditLogEntry" ADD CONSTRAINT "AuditLogEntry_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "Profile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Alert" ADD CONSTRAINT "Alert_rule_id_fkey" FOREIGN KEY ("rule_id") REFERENCES "AlertRule"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Alert" ADD CONSTRAINT "Alert_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Alert" ADD CONSTRAINT "Alert_mentor_id_fkey" FOREIGN KEY ("mentor_id") REFERENCES "Profile"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MentorAvailability" ADD CONSTRAINT "MentorAvailability_mentor_id_fkey" FOREIGN KEY ("mentor_id") REFERENCES "Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MentorSession" ADD CONSTRAINT "MentorSession_mentor_id_fkey" FOREIGN KEY ("mentor_id") REFERENCES "Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MentorSession" ADD CONSTRAINT "MentorSession_mentee_id_fkey" FOREIGN KEY ("mentee_id") REFERENCES "Profile"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MentorSession" ADD CONSTRAINT "MentorSession_availability_id_fkey" FOREIGN KEY ("availability_id") REFERENCES "MentorAvailability"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MentorAvailability_mentor_id_day_of_week_start_time_key" ON "MentorAvailability"("mentor_id", "day_of_week", "start_time");

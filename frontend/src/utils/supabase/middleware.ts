@@ -4,8 +4,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/student", "/mentor", "/admin"];
@@ -14,6 +14,11 @@ const AUTH_ROUTES = ["/login"];
 
 export const updateSession = async (request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
+
+  // If env vars are missing (e.g. during Vercel build), skip auth checks
+  if (!supabaseUrl || !supabaseKey) {
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {

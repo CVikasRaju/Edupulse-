@@ -285,15 +285,43 @@ export interface AuditLogEntry {
   user?: Profile;
 }
 
+export type EventType =
+  | "Exam"
+  | "Holiday"
+  | "Event"
+  | "Submission"
+  | "Workshop"
+  | "Hackathon"
+  | "Seminar"
+  | "Club"
+  | "Other";
+
 export interface CalendarEvent {
   id: string;
   title: string;
-  type?: "Exam" | "Holiday" | "Event" | "Submission" | "Other";
+  type?: EventType;
   date: string;
   end_date?: string;
   department?: string;
   academic_year?: string;
+  description?: string;
+  location?: string;
+  capacity?: number;
+  created_by?: string;
+  is_active?: boolean;
   created_at: string;
+}
+
+export type EventRegistrationStatus = "registered" | "attended" | "cancelled";
+
+export interface EventRegistration {
+  id: string;
+  event_id: string;
+  student_id: string;
+  status: EventRegistrationStatus;
+  registered_at: string;
+  student?: Profile;
+  event?: CalendarEvent;
 }
 
 export interface NbaScoringConfig {

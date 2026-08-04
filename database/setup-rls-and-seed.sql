@@ -126,6 +126,34 @@ CREATE POLICY "Users read attendance" ON public."AttendanceRecord"
   USING (true);
 
 -- ==========================================
+-- Course Materials (Notes) storage bucket + access
+-- ==========================================
+-- Storage bucket for uploaded study notes (PDFs, docs, etc.)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('course-materials', 'course-materials', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow public read of files in the course-materials bucket
+DROP POLICY IF EXISTS "Public read course materials" ON storage.objects;
+CREATE POLICY "Public read course materials" ON storage.objects
+  FOR SELECT
+  USING (bucket_id = 'course-materials');
+
+-- Allow authenticated users (mentors) to upload files
+DROP POLICY IF EXISTS "Authenticated upload course materials" ON storage.objects;
+CREATE POLICY "Authenticated upload course materials" ON storage.objects
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (bucket_id = 'course-materials');
+
+-- Allow authenticated users to delete files they uploaded
+DROP POLICY IF EXISTS "Authenticated delete own course materials" ON storage.objects;
+CREATE POLICY "Authenticated delete own course materials" ON storage.objects
+  FOR DELETE
+  TO authenticated
+  USING (bucket_id = 'course-materials' AND owner = auth.uid());
+
+-- ==========================================
 -- Seed default alert rules (from alerts engine)
 -- ==========================================
 INSERT INTO public."AlertRule" ("name", "type", "metric", "operator", "threshold", "consecutive", "severity", "is_active", "created_at")

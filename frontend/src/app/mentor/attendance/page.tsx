@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
-import { CheckCircle2, XCircle, Clock, Search, Loader2, Upload } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Search,
+  Loader2,
+  Upload,
+  AlertTriangle,
+  MessageSquare,
+} from "lucide-react";
 import Link from "next/link";
 
 export default function MentorAttendance() {
@@ -12,6 +21,16 @@ export default function MentorAttendance() {
   const [selectedMentee, setSelectedMentee] = useState<string | null>(null);
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
   const [loadingAttendance, setLoadingAttendance] = useState(false);
+  // Grace request review state
+  const [graceRequests, setGraceRequests] = useState<any[]>([]);
+  const [actingOn, setActingOn] = useState<string | null>(null);
+  const [graceMsg, setGraceMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!graceMsg) return;
+    const t = setTimeout(() => setGraceMsg(null), 4000);
+    return () => clearTimeout(t);
+  }, [graceMsg]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -27,6 +46,21 @@ export default function MentorAttendance() {
       const menteeList = allocations?.map((a: any) => a.Profile) || [];
       setMentees(menteeList);
       if (menteeList.length > 0) setSelectedMentee(menteeList[0].id);
+
+      // Pending grace requests from this mentor's mentees
+      const menteeIds = menteeList.map((m: any) => m.id);
+      if (menteeIds.length > 0) {
+        const { data } = await supabase
+          .from("GraceRequest")
+          .select("*, student:student_id(id, full_name, usn)")
+          .in("student_id", menteeIds)
+          .eq("status", "Pending")
+          .order("created_at", { ascending: false });
+        setGraceRequests(data || []);
+      } else {
+        setGraceRequests([]);
+      }
+
       setLoading(false);
     };
     fetch();
@@ -48,6 +82,43 @@ export default function MentorAttendance() {
     fetch();
   }, [selectedMentee]);
 
+  const handleGraceDecision = async (id: string, status: "Approved" | "Rejected") => {
+    setActingOn(id);
+    setGraceMsg(null);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const request = graceRequests.find((r: any) => r.id === id);
+
+    const { error } = await supabase
+      .from("GraceRequest")
+      .update({ status, mentor_remarks: status === "Approved" ? "Approved by mentor" : "Rejected by mentor", reviewed_by: user?.id ?? null })
+      .eq("id", id);
+
+    if (error) {
+      setGraceMsg({ ok: false, text: `Failed to update request: ${error.message}` });
+    } else {
+      setGraceMsg({
+        ok: true,
+        text: `${request?.student?.full_name ?? "Student"}'s grace request ${status === "Approved" ? "approved" : "rejected"}.`,
+      });
+      setGraceRequests((prev) => prev.filter((r) => r.id !== id));
+
+      // Notify the student of the decision
+      try {
+        await supabase.from("Notification").insert({
+          user_id: request?.student_id,
+          title: status === "Approved" ? "Grace Request Approved" : "Grace Request Rejected",
+          message: `Your grace request for ${request?.subject_name ?? "attendance"} was ${status.toLowerCase()} by your mentor.`,
+          category: "Academic",
+          link: "/student/academics",
+        });
+      } catch {
+        // best-effort
+      }
+    }
+    setActingOn(null);
+  };
+
   const subjectSummary = attendanceData.reduce((acc: any, rec: any) => {
     if (!acc[rec.subject_name]) acc[rec.subject_name] = { present: 0, total: 0 };
     acc[rec.subject_name].total++;
@@ -61,13 +132,75 @@ export default function MentorAttendance() {
     <AppShell role="mentor">
       <div className="flex items-start justify-between flex-wrap gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-text-primary">Attendance Tracker</h1>
-          <p className="text-text-muted text-sm mt-0.5">Monitor attendance for your mentees</p>
+          <h1 className="text-2xl font-heading font-bold text-text-primary">Attendance & Grace Requests</h1>
+          <p className="text-text-muted text-sm mt-0.5">Monitor attendance and review student grace requests</p>
         </div>
         <Link href="/mentor/attendance/upload" className="btn-primary flex items-center gap-2">
           <Upload className="w-4 h-4" />
           Upload Sheet
         </Link>
+      </div>
+
+      {graceMsg && (
+        <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
+          graceMsg.ok ? "bg-success/10 text-success border-success/20" : "bg-danger/10 text-danger border-danger/20"
+        }`}>
+          {graceMsg.text}
+        </div>
+      )}
+
+      {/* Pending Grace Requests */}
+      <div className="card p-5 mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertTriangle className="w-4 h-4 text-accent" />
+          <h2 className="font-heading font-semibold text-text-primary">Pending Grace Requests</h2>
+          {graceRequests.length > 0 && (
+            <span className="badge badge-danger text-[10px] ml-auto">{graceRequests.length} pending</span>
+          )}
+        </div>
+        {graceRequests.length > 0 ? (
+          <div className="space-y-3">
+            {graceRequests.map((req: any) => (
+              <div key={req.id} className="p-4 rounded-button bg-surface border border-surface-border flex items-start gap-3 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-text-primary">{req.student?.full_name ?? "Student"}</span>
+                    <span className="text-xs text-text-muted font-mono">{req.student?.usn}</span>
+                    <span className="badge badge-accent text-[10px]">{req.reason_type}</span>
+                  </div>
+                  <p className="text-sm text-text-muted mt-1">{req.reason}</p>
+                  {req.subject_name && <p className="text-xs text-text-muted mt-0.5">Subject: {req.subject_name}</p>}
+                  {req.date_from && req.date_to && (
+                    <p className="text-xs text-text-muted mt-0.5">
+                      {new Date(req.date_from).toLocaleDateString("en-IN")} → {new Date(req.date_to).toLocaleDateString("en-IN")}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleGraceDecision(req.id, "Approved")}
+                    disabled={actingOn === req.id}
+                    className="btn-sm bg-success/10 text-success border border-success/20 hover:bg-success/20 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                  </button>
+                  <button
+                    onClick={() => handleGraceDecision(req.id, "Rejected")}
+                    disabled={actingOn === req.id}
+                    className="btn-sm bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 disabled:opacity-50"
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-text-muted text-sm flex items-center justify-center gap-2">
+            <MessageSquare className="w-4 h-4 opacity-40" />
+            No pending grace requests.
+          </div>
+        )}
       </div>
 
       {mentees.length > 0 ? (

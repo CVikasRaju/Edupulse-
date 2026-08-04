@@ -1,10 +1,12 @@
 // ══════════════════════════════════════════
 // EduPulse — Mentor Session API
-// GET/POST /api/scheduling/sessions
+// GET/POST/PATCH /api/scheduling/sessions
+//
+// Uses the Supabase client (same proven pattern as the
+// rest of the app) instead of Prisma.
 // ══════════════════════════════════════════
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET(request: NextRequest) {
@@ -24,32 +26,36 @@ export async function GET(request: NextRequest) {
     const to = searchParams.get("to");
 
     // Get user profile to determine role
-    const profile = await prisma.profile.findUnique({
-      where: { id: user.id },
-    });
+    const { data: profile } = await supabase
+      .from("Profile")
+      .select("id, role")
+      .eq("id", user.id)
+      .maybeSingle();
 
-    const where: Record<string, unknown> = {};
+    let query = supabase.from("MentorSession").select("*");
 
     if (profile?.role === "mentor") {
-      where.mentor_id = user.id;
+      query = query.eq("mentor_id", user.id);
     } else if (profile?.role === "mentee") {
-      where.mentee_id = user.id;
+      query = query.eq("mentee_id", user.id);
     }
 
-    if (status) where.status = status;
-    if (from || to) {
-      where.date = {};
-      if (from) (where.date as Record<string, unknown>).gte = new Date(from);
-      if (to) (where.date as Record<string, unknown>).lte = new Date(to);
+    if (status) query = query.eq("status", status);
+    if (from) query = query.gte("date", new Date(from).toISOString());
+    if (to) query = query.lte("date", new Date(to).toISOString());
+
+    query = query.order("date", { ascending: true }).order("start_time", { ascending: true });
+
+    const { data: sessions, error } = await query;
+
+    if (error) {
+      return NextResponse.json(
+        { error: `Failed to fetch sessions: ${error.message}` },
+        { status: 500 }
+      );
     }
 
-    const sessions = await prisma.mentorSession.findMany({
-      where,
-      include: { mentor: true, mentee: true },
-      orderBy: [{ date: "asc" }, { start_time: "asc" }],
-    });
-
-    return NextResponse.json({ sessions });
+    return NextResponse.json({ sessions: sessions ?? [] });
   } catch (error) {
     console.error("Sessions fetch error:", error);
     return NextResponse.json(
@@ -97,40 +103,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for scheduling conflicts (no double-booking)
-    const conflict = await prisma.mentorSession.findFirst({
-      where: {
-        mentor_id,
-        date: new Date(date),
-        status: { notIn: ["cancelled", "no_show"] },
-        OR: [
-          {
-            start_time: { lte: start_time },
-            end_time: { gt: start_time },
-          },
-          {
-            start_time: { lt: end_time },
-            end_time: { gte: end_time },
-          },
-          {
-            start_time: { gte: start_time },
-            end_time: { lte: end_time },
-          },
-        ],
-      },
-    });
+    const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+    if (!TIME_RE.test(start_time) || !TIME_RE.test(end_time)) {
+      return NextResponse.json(
+        { error: "Invalid time format (expected HH:MM)" },
+        { status: 400 }
+      );
+    }
 
-    if (conflict) {
+    const isoDate = new Date(date).toISOString();
+
+    // Check for scheduling conflicts (no double-booking)
+    const { data: conflicts, error: conflictError } = await supabase
+      .from("MentorSession")
+      .select("id, date, start_time, end_time")
+      .eq("mentor_id", mentor_id)
+      .eq("date", isoDate)
+      .not("status", "in", '("cancelled","no_show")')
+      .or(
+        `and(start_time.lte.${start_time},end_time.gt.${start_time}),and(start_time.lt.${end_time},end_time.gte.${end_time}),and(start_time.gte.${start_time},end_time.lte.${end_time})`
+      );
+
+    if (conflictError) {
+      return NextResponse.json(
+        { error: `Failed to check session conflicts: ${conflictError.message}` },
+        { status: 500 }
+      );
+    }
+
+    if (conflicts && conflicts.length > 0) {
       return NextResponse.json(
         {
-          error:
-            "This time slot conflicts with an existing session",
-          conflict: {
-            id: conflict.id,
-            date: conflict.date,
-            start_time: conflict.start_time,
-            end_time: conflict.end_time,
-          },
+          error: "This time slot conflicts with an existing session",
+          conflict: conflicts[0],
         },
         { status: 409 }
       );
@@ -138,9 +143,11 @@ export async function POST(request: NextRequest) {
 
     // Verify availability exists (if provided)
     if (availability_id) {
-      const availability = await prisma.mentorAvailability.findUnique({
-        where: { id: availability_id },
-      });
+      const { data: availability } = await supabase
+        .from("MentorAvailability")
+        .select("id, is_active")
+        .eq("id", availability_id)
+        .maybeSingle();
 
       if (!availability || !availability.is_active) {
         return NextResponse.json(
@@ -150,32 +157,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const session = await prisma.mentorSession.create({
-      data: {
+    const { data: session, error: insertError } = await supabase
+      .from("MentorSession")
+      .insert({
         mentor_id,
         mentee_id,
-        availability_id,
-        date: new Date(date),
+        availability_id: availability_id || null,
+        date: isoDate,
         start_time,
         end_time,
         duration_minutes: duration_minutes ?? 30,
         status: "scheduled",
         type: type ?? "1-on-1",
-        topic,
-        notes,
-        meeting_link,
-        location,
-      },
-      include: { mentor: true, mentee: true },
-    });
+        topic: topic || null,
+        notes: notes || null,
+        meeting_link: meeting_link || null,
+        location: location || null,
+      })
+      .select("*, mentor:mentor_id(id, full_name, email), mentee:mentee_id(id, full_name, usn)")
+      .single();
 
-    // Create notifications for both mentor and mentee
-    const menteeProfile = await prisma.profile.findUnique({
-      where: { id: mentee_id },
-    });
+    if (insertError) {
+      console.error("Session insert error:", insertError.message);
+      return NextResponse.json(
+        { error: `Failed to create session: ${insertError.message}` },
+        { status: 500 }
+      );
+    }
 
-    await prisma.notification.createMany({
-      data: [
+    // Notify both mentor and mentee (best-effort)
+    const { data: menteeProfile } = await supabase
+      .from("Profile")
+      .select("full_name")
+      .eq("id", mentee_id)
+      .maybeSingle();
+
+    try {
+      await supabase.from("Notification").insert([
         {
           user_id: mentor_id,
           title: "New Session Booked",
@@ -190,8 +208,10 @@ export async function POST(request: NextRequest) {
           category: "Mentorship",
           link: "/student/mentorship",
         },
-      ],
-    });
+      ]);
+    } catch (notifErr) {
+      console.error("Session notification error (non-fatal):", notifErr);
+    }
 
     return NextResponse.json({ session }, { status: 201 });
   } catch (error) {
@@ -229,11 +249,19 @@ export async function PATCH(request: NextRequest) {
     if (notes !== undefined) updateData.notes = notes;
     if (topic !== undefined) updateData.topic = topic;
 
-    const session = await prisma.mentorSession.update({
-      where: { id },
-      data: updateData,
-      include: { mentor: true, mentee: true },
-    });
+    const { data: session, error } = await supabase
+      .from("MentorSession")
+      .update(updateData)
+      .eq("id", id)
+      .select("*, mentor:mentor_id(id, full_name, email), mentee:mentee_id(id, full_name, usn)")
+      .single();
+
+    if (error) {
+      return NextResponse.json(
+        { error: `Failed to update session: ${error.message}` },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ session });
   } catch (error) {

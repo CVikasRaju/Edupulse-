@@ -138,6 +138,43 @@ CREATE POLICY "Users read allocations" ON public."Allocation"
   FOR SELECT TO authenticated
   USING (true);
 
+-- CourseEnrollment: mentors/admins create enrollments (course -> student sync)
+DROP POLICY IF EXISTS "Users create enrollments" ON public."CourseEnrollment";
+CREATE POLICY "Users create enrollments" ON public."CourseEnrollment"
+  FOR INSERT TO authenticated
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users read enrollments" ON public."CourseEnrollment";
+CREATE POLICY "Users read enrollments" ON public."CourseEnrollment"
+  FOR SELECT TO authenticated
+  USING (true);
+
+-- CalendarEvent: admins create/delete, everyone reads (student calendar sync)
+DROP POLICY IF EXISTS "Users read calendar events" ON public."CalendarEvent";
+CREATE POLICY "Users read calendar events" ON public."CalendarEvent"
+  FOR SELECT TO authenticated
+  USING (true);
+
+DROP POLICY IF EXISTS "Admins manage calendar events" ON public."CalendarEvent";
+CREATE POLICY "Admins manage calendar events" ON public."CalendarEvent"
+  FOR ALL TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- GraceRequest: mentors update (approve/reject) requests from their mentees
+DROP POLICY IF EXISTS "Users update grace requests" ON public."GraceRequest";
+CREATE POLICY "Users update grace requests" ON public."GraceRequest"
+  FOR UPDATE TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- Achievement: mentors update (verify/reject) student achievements
+DROP POLICY IF EXISTS "Users update achievements" ON public."Achievement";
+CREATE POLICY "Users update achievements" ON public."Achievement"
+  FOR UPDATE TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
 -- AttendanceRecord: students see own
 DROP POLICY IF EXISTS "Users read attendance" ON public."AttendanceRecord";
 CREATE POLICY "Users read attendance" ON public."AttendanceRecord"

@@ -64,6 +64,7 @@ const adminNav: NavItem[] = [
   { label: "Courses", href: "/admin/courses", icon: ClipboardList },
   { label: "Allocations", href: "/admin/allocations", icon: UserCheck },
   { label: "Achievements", href: "/admin/achievements", icon: Trophy },
+  { label: "Calendar", href: "/admin/calendar", icon: CalendarDays },
   { label: "Feed", href: "/admin/feed", icon: Bell },
   { label: "Reports", href: "/admin/reports", icon: BarChart3 },
   { label: "Audit Log", href: "/admin/audit", icon: FileText },

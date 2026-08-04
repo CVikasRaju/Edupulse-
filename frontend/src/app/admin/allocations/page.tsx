@@ -34,6 +34,15 @@ export default function AdminAllocations() {
     setLoading(false);
   };
 
+  const handleToggleAllocation = async (id: string, isActive: boolean) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("Allocation")
+      .update({ is_active: !isActive })
+      .eq("id", id);
+    if (!error) fetchData();
+  };
+
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
@@ -101,7 +110,14 @@ export default function AdminAllocations() {
                     </span>
                   </td>
                   <td>
-                    <button className="text-accent text-xs font-semibold hover:underline">Edit</button>
+                    <button
+                      onClick={() => handleToggleAllocation(a.id, a.is_active)}
+                      className={`text-xs font-semibold hover:underline ${
+                        a.is_active ? "text-danger" : "text-success"
+                      }`}
+                    >
+                      {a.is_active ? "Deactivate" : "Reactivate"}
+                    </button>
                   </td>
                 </tr>
               ))}

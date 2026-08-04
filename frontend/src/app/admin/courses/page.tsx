@@ -3,13 +3,19 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
-import { BookOpen, Plus, X, Loader2, Users } from "lucide-react";
+import { BookOpen, Plus, X, Loader2, Users, UserPlus, CheckCircle2 } from "lucide-react";
 
 export default function AdminCourses() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [faculty, setFaculty] = useState<any[]>([]);
+  // Enroll modal state
+  const [enrollCourse, setEnrollCourse] = useState<any>(null);
+  const [students, setStudents] = useState<any[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollMsg, setEnrollMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -41,6 +47,61 @@ export default function AdminCourses() {
     window.location.reload();
   };
 
+  const openEnroll = async (course: any) => {
+    setEnrollCourse(course);
+    setSelectedStudents([]);
+    setEnrollMsg(null);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("Profile")
+      .select("id, full_name, usn, department")
+      .eq("role", "mentee")
+      .order("full_name");
+    setStudents(data || []);
+  };
+
+  const toggleStudent = (id: string) => {
+    setSelectedStudents((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  };
+
+  const handleEnroll = async () => {
+    if (!enrollCourse || selectedStudents.length === 0) return;
+    setEnrolling(true);
+    setEnrollMsg(null);
+    const supabase = createClient();
+
+    const { data: existing } = await supabase
+      .from("CourseEnrollment")
+      .select("student_id")
+      .eq("course_id", enrollCourse.id);
+    const already = new Set((existing ?? []).map((e: any) => e.student_id));
+    const toEnroll = selectedStudents.filter((id) => !already.has(id));
+
+    if (toEnroll.length === 0) {
+      setEnrollMsg({ ok: true, text: "All selected students are already enrolled." });
+      setEnrolling(false);
+      return;
+    }
+
+    const { error } = await supabase.from("CourseEnrollment").insert(
+      toEnroll.map((student_id) => ({
+        student_id,
+        course_id: enrollCourse.id,
+        status: "Active",
+      }))
+    );
+
+    if (error) {
+      setEnrollMsg({ ok: false, text: `Enrollment failed: ${error.message}` });
+    } else {
+      setEnrollMsg({ ok: true, text: `Enrolled ${toEnroll.length} student${toEnroll.length > 1 ? "s" : ""} in ${enrollCourse.name}.` });
+      setSelectedStudents([]);
+    }
+    setEnrolling(false);
+  };
+
   if (loading) return <AppShell role="admin"><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div></AppShell>;
 
   return (
@@ -53,9 +114,17 @@ export default function AdminCourses() {
         <button onClick={() => setShowModal(true)} className="btn-primary"><Plus className="w-4 h-4" />Add Course</button>
       </div>
 
+      {enrollMsg && (
+        <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
+          enrollMsg.ok ? "bg-success/10 text-success border-success/20" : "bg-danger/10 text-danger border-danger/20"
+        }`}>
+          {enrollMsg.text}
+        </div>
+      )}
+
       <div className="card overflow-hidden">
         <table className="data-table">
-          <thead><tr><th>Course</th><th>Code</th><th>Faculty</th><th>Semester</th><th>Academic Year</th></tr></thead>
+          <thead><tr><th>Course</th><th>Code</th><th>Faculty</th><th>Semester</th><th>Academic Year</th><th>Actions</th></tr></thead>
           <tbody>
             {courses.length > 0 ? courses.map((c) => (
               <tr key={c.id}>
@@ -64,9 +133,14 @@ export default function AdminCourses() {
                 <td>{c.Profile?.full_name}</td>
                 <td><span className="badge badge-secondary">Sem {c.semester}</span></td>
                 <td>{c.academic_year}</td>
+                <td>
+                  <button onClick={() => openEnroll(c)} className="text-accent text-xs font-semibold hover:underline flex items-center gap-1">
+                    <UserPlus className="w-3.5 h-3.5" /> Enroll Students
+                  </button>
+                </td>
               </tr>
             )) : (
-              <tr><td colSpan={5} className="text-center py-8 text-text-muted">No courses yet.</td></tr>
+              <tr><td colSpan={6} className="text-center py-8 text-text-muted">No courses yet.</td></tr>
             )}
           </tbody>
         </table>
@@ -99,6 +173,62 @@ export default function AdminCourses() {
                 <button type="submit" className="btn-primary">Create</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {enrollCourse && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="card w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-5 border-b border-surface-border">
+              <div>
+                <h2 className="font-heading font-bold text-text-primary">Enroll Students</h2>
+                <p className="text-xs text-text-muted">{enrollCourse.name} · {enrollCourse.code}</p>
+              </div>
+              <button onClick={() => setEnrollCourse(null)} className="btn-icon"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto flex-1">
+              {students.length > 0 ? (
+                <div className="space-y-2">
+                  {students.map((s) => (
+                    <label
+                      key={s.id}
+                      className={`flex items-center gap-3 p-3 rounded-button border cursor-pointer transition-colors ${
+                        selectedStudents.includes(s.id)
+                          ? "bg-accent/10 border-accent/40"
+                          : "bg-surface border-surface-border hover:border-accent/30"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedStudents.includes(s.id)}
+                        onChange={() => toggleStudent(s.id)}
+                        className="w-4 h-4 accent-accent"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-text-primary truncate">{s.full_name}</div>
+                        <div className="text-xs text-text-muted">{s.usn}{s.department ? ` · ${s.department}` : ""}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-10 text-text-muted">
+                  <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p>No students found.</p>
+                </div>
+              )}
+            </div>
+            <div className="p-5 border-t border-surface-border flex items-center justify-between gap-3">
+              <span className="text-xs text-text-muted">{selectedStudents.length} selected</span>
+              <div className="flex gap-3">
+                <button onClick={() => setEnrollCourse(null)} className="btn-ghost">Cancel</button>
+                <button onClick={handleEnroll} disabled={enrolling || selectedStudents.length === 0} className="btn-primary">
+                  {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Enroll Selected
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

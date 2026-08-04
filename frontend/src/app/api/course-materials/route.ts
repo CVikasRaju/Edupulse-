@@ -5,10 +5,12 @@
 //          student: notes for courses they are enrolled in
 // POST   /api/course-materials — upload a note (mentor only, must teach the course)
 // DELETE /api/course-materials?id=... — delete a note (mentor who owns the course)
+//
+// Uses the Supabase client (same proven pattern as the rest of the app)
+// instead of Prisma.
 // ══════════════════════════════════════════
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 
 export async function GET() {
@@ -22,41 +24,61 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const profile = await prisma.profile.findUnique({ where: { id: user.id } });
+    const { data: profile } = await supabase
+      .from("Profile")
+      .select("id, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    let materials: any[];
+    let materials: any[] = [];
 
     if (profile.role === "mentor") {
       // Notes for courses this mentor teaches
-      materials = await prisma.courseMaterial.findMany({
-        where: { course: { faculty_id: user.id } },
-        include: { course: true },
-        orderBy: { created_at: "desc" },
-      });
+      const courseRes = await supabase
+        .from("Course")
+        .select("id")
+        .eq("faculty_id", user.id);
+      const courseIds = (courseRes.data ?? []).map((c: any) => c.id);
+
+      if (courseIds.length > 0) {
+        const { data, error } = await supabase
+          .from("CourseMaterial")
+          .select("*, course:course_id(id, name, code, faculty_id)")
+          .in("course_id", courseIds)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        materials = data ?? [];
+      }
     } else if (profile.role === "mentee") {
       // Notes for courses the student is enrolled in
-      const enrollments = await prisma.courseEnrollment.findMany({
-        where: { student_id: user.id, status: "Active" },
-        select: { course_id: true },
-      });
-      const courseIds = enrollments.map((e) => e.course_id);
-      materials =
-        courseIds.length > 0
-          ? await prisma.courseMaterial.findMany({
-              where: { course_id: { in: courseIds } },
-              include: { course: { select: { id: true, name: true, code: true } } },
-              orderBy: { created_at: "desc" },
-            })
-          : [];
+      const enrollRes = await supabase
+        .from("CourseEnrollment")
+        .select("course_id")
+        .eq("student_id", user.id)
+        .eq("status", "Active");
+      const courseIds = (enrollRes.data ?? []).map((e: any) => e.course_id);
+
+      if (courseIds.length > 0) {
+        const { data, error } = await supabase
+          .from("CourseMaterial")
+          .select("*, course:course_id(id, name, code)")
+          .in("course_id", courseIds)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        materials = data ?? [];
+      }
     } else {
       // Admin — all materials
-      materials = await prisma.courseMaterial.findMany({
-        include: { course: { include: { faculty: { select: { id: true, full_name: true } } } } },
-        orderBy: { created_at: "desc" },
-      });
+      const { data, error } = await supabase
+        .from("CourseMaterial")
+        .select("*, course:course_id(id, name, code, faculty_id)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      materials = data ?? [];
     }
 
     return NextResponse.json({ materials });
@@ -77,7 +99,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const profile = await prisma.profile.findUnique({ where: { id: user.id } });
+    const { data: profile } = await supabase
+      .from("Profile")
+      .select("id, full_name, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
     if (!profile || profile.role !== "mentor") {
       return NextResponse.json(
         { error: "Only faculty can upload notes" },
@@ -96,9 +123,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the mentor actually teaches this course
-    const course = await prisma.course.findFirst({
-      where: { id: course_id, faculty_id: user.id },
-    });
+    const { data: course } = await supabase
+      .from("Course")
+      .select("id, name, code")
+      .eq("id", course_id)
+      .eq("faculty_id", user.id)
+      .maybeSingle();
+
     if (!course) {
       return NextResponse.json(
         { error: "You can only upload notes to courses you teach" },
@@ -106,32 +137,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const material = await prisma.courseMaterial.create({
-      data: {
+    const { data: material, error: insertError } = await supabase
+      .from("CourseMaterial")
+      .insert({
         course_id,
         title,
         description: description || null,
         file_url,
         file_type: file_type || null,
         uploaded_by: user.id,
-      },
-    });
+      })
+      .select("*")
+      .single();
 
-    // Notify all enrolled students that new notes were uploaded
-    const enrollments = await prisma.courseEnrollment.findMany({
-      where: { course_id, status: "Active" },
-      select: { student_id: true },
-    });
-    if (enrollments.length > 0) {
-      await prisma.notification.createMany({
-        data: enrollments.map((e) => ({
-          user_id: e.student_id,
-          title: "New Notes Uploaded",
-          message: `${profile.full_name} uploaded "${title}" for ${course.name}${course.code ? ` (${course.code})` : ""}.`,
-          category: "Academic",
-          link: "/student/courses",
-        })),
-      });
+    if (insertError) {
+      console.error("Course material insert error:", insertError.message);
+      return NextResponse.json(
+        { error: `Failed to upload note: ${insertError.message}` },
+        { status: 500 }
+      );
+    }
+
+    // Notify all enrolled students that new notes were uploaded (best-effort)
+    const enrollRes = await supabase
+      .from("CourseEnrollment")
+      .select("student_id")
+      .eq("course_id", course_id)
+      .eq("status", "Active");
+
+    const studentIds = (enrollRes.data ?? []).map((e: any) => e.student_id);
+    if (studentIds.length > 0) {
+      try {
+        await supabase.from("Notification").insert(
+          studentIds.map((sid: string) => ({
+            user_id: sid,
+            title: "New Notes Uploaded",
+            message: `${profile.full_name} uploaded "${title}" for ${course.name}${course.code ? ` (${course.code})` : ""}.`,
+            category: "Academic",
+            link: "/student/courses",
+          }))
+        );
+      } catch (notifErr) {
+        console.error("Course material notification error (non-fatal):", notifErr);
+      }
     }
 
     return NextResponse.json({ material }, { status: 201 });
@@ -152,7 +200,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const profile = await prisma.profile.findUnique({ where: { id: user.id } });
+    const { data: profile } = await supabase
+      .from("Profile")
+      .select("id, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
     if (!profile || profile.role !== "mentor") {
       return NextResponse.json(
         { error: "Only faculty can delete notes" },
@@ -166,25 +219,36 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify the material belongs to a course this mentor teaches
-    const material = await prisma.courseMaterial.findFirst({
-      where: { id, course: { faculty_id: user.id } },
-    });
-    if (!material) {
+    const { data: material } = await supabase
+      .from("CourseMaterial")
+      .select("*, course:course_id(faculty_id)")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!material || material.course?.faculty_id !== user.id) {
       return NextResponse.json(
         { error: "Note not found or you do not own it" },
         { status: 404 }
       );
     }
 
-    await prisma.courseMaterial.delete({ where: { id } });
+    const { error: deleteError } = await supabase
+      .from("CourseMaterial")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      return NextResponse.json(
+        { error: `Failed to delete note: ${deleteError.message}` },
+        { status: 500 }
+      );
+    }
 
     // Best-effort cleanup: remove the uploaded file from Supabase Storage
-    // (only for files in our course-materials bucket, not pasted links)
-    if (material.file_url.includes("/storage/v1/object/public/course-materials/")) {
+    if (material.file_url?.includes("/storage/v1/object/public/course-materials/")) {
       try {
         const filePath = material.file_url.split("/storage/v1/object/public/course-materials/")[1];
-        const storageClient = await createClient();
-        await storageClient.storage.from("course-materials").remove([filePath]);
+        await supabase.storage.from("course-materials").remove([filePath]);
       } catch (storageErr) {
         // Non-fatal: row is already deleted; orphan cleanup is best-effort
         console.error("Storage cleanup error:", storageErr);

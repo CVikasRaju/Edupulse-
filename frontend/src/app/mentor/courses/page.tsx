@@ -15,6 +15,7 @@ import {
   ExternalLink,
   StickyNote,
   AlertCircle,
+  Users,
 } from "lucide-react";
 
 const STORAGE_BUCKET = "course-materials";
@@ -34,6 +35,14 @@ export default function MentorCourses() {
   const [error, setError] = useState("");
   const [modalError, setModalError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [enrollMsg, setEnrollMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    if (!enrollMsg) return;
+    const t = setTimeout(() => setEnrollMsg(null), 4000);
+    return () => clearTimeout(t);
+  }, [enrollMsg]);
 
   const loadMaterials = useCallback(async () => {
     try {
@@ -76,6 +85,76 @@ export default function MentorCourses() {
     });
     setShowCourseModal(false);
     window.location.reload();
+  };
+
+  // Enroll this mentor's allocated mentees into a course they teach.
+  // This is what makes courses (and their notes) visible to students.
+  const handleEnrollMentees = async (course: any) => {
+    setEnrollingId(course.id);
+    setEnrollMsg(null);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setEnrollingId(null); return; }
+
+    // All mentees allocated to this mentor
+    const { data: allocations } = await supabase
+      .from("Allocation")
+      .select("mentee_id")
+      .eq("mentor_id", user.id)
+      .eq("is_active", true);
+    const menteeIds = (allocations ?? []).map((a: any) => a.mentee_id);
+
+    if (menteeIds.length === 0) {
+      setEnrollMsg({ ok: false, text: "You have no allocated mentees to enroll." });
+      setEnrollingId(null);
+      return;
+    }
+
+    // Existing enrollments to avoid unique-constraint errors
+    const { data: existing } = await supabase
+      .from("CourseEnrollment")
+      .select("student_id")
+      .eq("course_id", course.id);
+    const alreadyEnrolled = new Set((existing ?? []).map((e: any) => e.student_id));
+
+    const toEnroll = menteeIds.filter((id: string) => !alreadyEnrolled.has(id));
+    if (toEnroll.length === 0) {
+      setEnrollMsg({ ok: true, text: "All your mentees are already enrolled in this course." });
+      setEnrollingId(null);
+      return;
+    }
+
+    const { error } = await supabase.from("CourseEnrollment").insert(
+      toEnroll.map((student_id: string) => ({
+        student_id,
+        course_id: course.id,
+        status: "Active",
+      }))
+    );
+
+    if (error) {
+      // If the DB enforces uniqueness at insert time, try upsert semantics
+      if (String(error.message).toLowerCase().includes("duplicate")) {
+        const { error: upErr } = await supabase.from("CourseEnrollment").upsert(
+          toEnroll.map((student_id: string) => ({
+            student_id,
+            course_id: course.id,
+            status: "Active",
+          })),
+          { onConflict: "student_id,course_id" }
+        );
+        if (upErr) {
+          setEnrollMsg({ ok: false, text: `Enrollment failed: ${upErr.message}` });
+        } else {
+          setEnrollMsg({ ok: true, text: `Enrolled ${toEnroll.length} mentee${toEnroll.length > 1 ? "s" : ""} in ${course.name}.` });
+        }
+      } else {
+        setEnrollMsg({ ok: false, text: `Enrollment failed: ${error.message}` });
+      }
+    } else {
+      setEnrollMsg({ ok: true, text: `Enrolled ${toEnroll.length} mentee${toEnroll.length > 1 ? "s" : ""} in ${course.name}.` });
+    }
+    setEnrollingId(null);
   };
 
   const openNotes = (course: any) => {
@@ -200,6 +279,14 @@ export default function MentorCourses() {
         </div>
       )}
 
+      {enrollMsg && (
+        <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
+          enrollMsg.ok ? "bg-success/10 text-success border-success/20" : "bg-danger/10 text-danger border-danger/20"
+        }`}>
+          {enrollMsg.text}
+        </div>
+      )}
+
       {courses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((c) => {
@@ -209,6 +296,17 @@ export default function MentorCourses() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="p-2.5 rounded-xl bg-accent/10 text-accent w-fit mb-4"><BookOpen className="w-5 h-5" /></div>
                   <span className="badge badge-secondary">{mats.length} note{mats.length === 1 ? "" : "s"}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEnrollMentees(c)}
+                    disabled={enrollingId === c.id}
+                    className="btn-ghost btn-sm text-xs"
+                    title="Enroll your allocated mentees so they can see this course & its notes"
+                  >
+                    {enrollingId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
+                    Enroll Mentees
+                  </button>
                 </div>
                 <h3 className="font-heading font-bold text-text-primary">{c.name}</h3>
                 <p className="font-mono text-xs text-text-muted mt-1">{c.code}</p>

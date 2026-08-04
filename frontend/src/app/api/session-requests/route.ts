@@ -1,10 +1,12 @@
 // ══════════════════════════════════════════
 // EduPulse — Session Request API
 // POST /api/session-requests — student requests a session with mentor
+//
+// Uses the Supabase client (same proven pattern as the
+// rest of the app) instead of Prisma.
 // ══════════════════════════════════════════
 
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -19,10 +21,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Ensure the logged-in user is a mentee
-    const profile = await prisma.profile.findUnique({
-      where: { id: user.id },
-    });
-    if (profile?.role !== "mentee") {
+    const { data: profile } = await supabase
+      .from("Profile")
+      .select("id, full_name, role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== "mentee") {
       return NextResponse.json(
         { error: "Only students can request sessions" },
         { status: 403 }
@@ -37,33 +42,41 @@ export async function POST(request: NextRequest) {
     }
 
     // Find the student's allocated mentor
-    const allocation = await prisma.allocation.findFirst({
-      where: { mentee_id: user.id, is_active: true },
-      include: { mentor: true },
-    });
+    const { data: allocation } = await supabase
+      .from("Allocation")
+      .select("mentor:mentor_id(id, full_name)")
+      .eq("mentee_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
 
-    if (!allocation?.mentor) {
+    const mentor = allocation?.mentor as { id: string; full_name: string } | undefined;
+
+    if (!mentor) {
       return NextResponse.json(
         { error: "No mentor allocated to you yet" },
         { status: 400 }
       );
     }
 
-    const mentor = allocation.mentor;
-    const topicLabel = type === "Academic" ? "Academic Guidance"
-      : type === "Career" ? "Career & Placement"
-      : "Personal/General";
+    const topicLabel =
+      type === "Academic"
+        ? "Academic Guidance"
+        : type === "Career"
+        ? "Career & Placement"
+        : "Personal/General";
 
-    // Notify the mentor of the session request
-    await prisma.notification.create({
-      data: {
+    // Notify the mentor of the session request (best-effort)
+    try {
+      await supabase.from("Notification").insert({
         user_id: mentor.id,
         title: "Session Request",
         message: `${profile.full_name} requested a ${topicLabel} session on ${new Date(date).toLocaleDateString("en-IN")} (${mode}). Topic: ${topics || "Not specified"}`,
         category: "Mentorship",
         link: "/mentor/schedule",
-      },
-    });
+      });
+    } catch (notifErr) {
+      console.error("Session request notification error (non-fatal):", notifErr);
+    }
 
     return NextResponse.json(
       { success: true, message: "Session request sent to your mentor" },

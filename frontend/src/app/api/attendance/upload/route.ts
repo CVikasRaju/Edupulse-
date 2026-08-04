@@ -54,7 +54,7 @@ async function handleAnalyze(req: NextRequest) {
   // Collect null/missing value problems across ALL rows
   const problems = findDataProblems(headers, allRows ?? sampleRows, localMapping);
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `You are an expert at analyzing Indian college attendance spreadsheets.
 

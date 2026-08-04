@@ -235,7 +235,8 @@ async function analyzeWithFallback(
   resumeText: string | null,
   prompt: string
 ): Promise<AnalysisResult> {
-  const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+  // Only currently-available models (gemini-1.5-flash was retired by Google)
+  const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"];
   let lastError: unknown = null;
 
   for (const modelName of models) {
@@ -266,7 +267,10 @@ async function analyzeWithFallback(
       // Try the next model (handles model-unavailable / rate-limit errors)
     }
   }
-  throw lastError instanceof Error ? lastError : new Error("AI analysis failed. Please try again.");
+  console.error("Resume analysis failed on all models:", lastError);
+  throw new Error(
+    "The AI service is busy or rate-limited right now. Please wait a minute and try again."
+  );
 }
 
 // ─── Robust JSON extraction from model output ───────────────────────────────

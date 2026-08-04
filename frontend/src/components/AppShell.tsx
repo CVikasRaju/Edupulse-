@@ -22,6 +22,7 @@ import {
   UserCheck,
   BarChart3,
   FileText,
+  FileSearch,
 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { useUser } from "@/hooks/useUser";
@@ -37,6 +38,7 @@ const studentNav: NavItem[] = [
   { label: "Academics", href: "/student/academics", icon: BookOpen },
   { label: "Courses", href: "/student/courses", icon: ClipboardList },
   { label: "Achievements", href: "/student/achievements", icon: Trophy },
+  { label: "Resume AI", href: "/student/resume", icon: FileSearch },
   { label: "Mentorship", href: "/student/mentorship", icon: Users },
   { label: "Schedule", href: "/student/schedule", icon: CalendarDays },
   { label: "Feed", href: "/student/feed", icon: Bell },

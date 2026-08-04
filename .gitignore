@@ -17,6 +17,7 @@ antigravity/
 push-env.ps1
 push-env*.ps1
 test-db.js
+**/test-db.js
 
 # --- DEPENDENCIES ---
 node_modules/

@@ -16,6 +16,8 @@ push-env.ps1
 push-env*.ps1
 test-db.js
 **/test-db.js
+create-auth-users.js
+**/create-auth-users.js
 
 # --- DEPENDENCIES ---
 /node_modules

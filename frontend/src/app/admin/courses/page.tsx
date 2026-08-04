@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import { BookOpen, Plus, X, Loader2, Users, UserPlus, CheckCircle2 } from "lucide-react";
 
 export default function AdminCourses() {
@@ -36,6 +37,7 @@ export default function AdminCourses() {
     const fd = new FormData(e.currentTarget);
     const supabase = createClient();
     await supabase.from("Course").insert({
+      id: newId(),
       faculty_id: fd.get("faculty_id") as string,
       name: fd.get("name") as string,
       code: fd.get("code") as string,
@@ -87,6 +89,7 @@ export default function AdminCourses() {
 
     const { error } = await supabase.from("CourseEnrollment").insert(
       toEnroll.map((student_id) => ({
+        id: newId(),
         student_id,
         course_id: enrollCourse.id,
         status: "Active",

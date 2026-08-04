@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
-import { UserPlus, Search, Filter, X, Loader2, Users } from "lucide-react";
+import { newId } from "@/lib/id";
+import { UserPlus, Search, Filter, X, Loader2, Users, AlertCircle } from "lucide-react";
 
 export default function AdminAllocations() {
   const [loading, setLoading] = useState(true);
@@ -11,6 +12,8 @@ export default function AdminAllocations() {
   const [mentors, setMentors] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -45,19 +48,25 @@ export default function AdminAllocations() {
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
     const fd = new FormData(e.currentTarget);
     const supabase = createClient();
     
     const { error } = await supabase.from("Allocation").insert({
+      id: newId(),
       mentor_id: fd.get("mentor") as string,
       mentee_id: fd.get("student") as string,
       is_active: true
     });
 
-    if (!error) {
+    if (error) {
+      setFormError(error.message || "Failed to create allocation. Please try again.");
+    } else {
       setShowModal(false);
       fetchData();
     }
+    setSubmitting(false);
   };
 
   if (loading) {
@@ -134,6 +143,12 @@ export default function AdminAllocations() {
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2 text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-3">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span className="break-all">{formError}</span>
+                </div>
+              )}
               <div>
                 <label className="label">Select Mentor</label>
                 <select name="mentor" required className="input bg-surface border-surface-border text-text-primary px-3 rounded-input outline-none">
@@ -148,7 +163,9 @@ export default function AdminAllocations() {
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Confirm Allocation</button>
+                <button type="submit" disabled={submitting} className="btn-primary">
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Confirm Allocation
+                </button>
               </div>
             </form>
           </div>

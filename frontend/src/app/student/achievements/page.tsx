@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
-import { Plus, Trophy, Award, Search, Filter, Calendar, X, Loader2 } from "lucide-react";
+import { newId } from "@/lib/id";
+import { Plus, Trophy, Award, Search, Filter, Calendar, X, Loader2, AlertCircle } from "lucide-react";
 
 export default function StudentAchievements() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [achievements, setAchievements] = useState<any[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     const fetchAchs = async () => {
@@ -30,12 +33,15 @@ export default function StudentAchievements() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
     const fd = new FormData(e.currentTarget);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setSubmitting(false); return; }
 
     const { error } = await supabase.from("Achievement").insert({
+      id: newId(),
       student_id: user.id,
       title: fd.get("title") as string,
       category: fd.get("category") as string,
@@ -46,10 +52,13 @@ export default function StudentAchievements() {
       nba_points: 0
     });
 
-    if (!error) {
+    if (error) {
+      setFormError(error.message || "Failed to add achievement. Please try again.");
+    } else {
       setShowModal(false);
       window.location.reload();
     }
+    setSubmitting(false);
   };
 
   if (loading) {
@@ -109,6 +118,12 @@ export default function StudentAchievements() {
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2 text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-3">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span className="break-all">{formError}</span>
+                </div>
+              )}
               <div>
                 <label className="label">Title</label>
                 <input type="text" name="title" required className="input" placeholder="e.g. Smart India Hackathon" />
@@ -137,7 +152,9 @@ export default function StudentAchievements() {
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Add Achievement</button>
+                <button type="submit" disabled={submitting} className="btn-primary">
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Add Achievement
+                </button>
               </div>
             </form>
           </div>

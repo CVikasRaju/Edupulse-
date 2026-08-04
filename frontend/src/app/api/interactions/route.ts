@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { newId } from "@/lib/id";
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,6 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const record = {
+      id: newId(),
       mentor_id: user.id,
       mentee_id,
       date: new Date(date).toISOString(),
@@ -94,6 +96,7 @@ export async function POST(request: NextRequest) {
       next_interaction_date: next_interaction_date
         ? new Date(next_interaction_date).toISOString()
         : null,
+      updated_at: new Date().toISOString(),
     };
 
     const { data: interaction, error: insertError } = await supabase
@@ -120,6 +123,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await supabase.from("Notification").insert({
+        id: newId(),
         user_id: mentee_id,
         title: "New Interaction Logged",
         message: notificationMessage,

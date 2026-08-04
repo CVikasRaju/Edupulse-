@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { newId } from "@/lib/id";
 
 export async function GET(request: NextRequest) {
   try {
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
     const { data: availability, error: insertError } = await supabase
       .from("MentorAvailability")
       .insert({
+        id: newId(),
         mentor_id: user.id,
         day_of_week,
         start_time,
@@ -122,6 +124,7 @@ export async function POST(request: NextRequest) {
         duration_minutes: duration_minutes ?? 30,
         location: location || null,
         is_active: true,
+        updated_at: new Date().toISOString(),
       })
       .select("*")
       .single();

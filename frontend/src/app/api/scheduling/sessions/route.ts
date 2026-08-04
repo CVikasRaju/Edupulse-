@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { newId } from "@/lib/id";
 
 export async function GET(request: NextRequest) {
   try {
@@ -160,6 +161,7 @@ export async function POST(request: NextRequest) {
     const { data: session, error: insertError } = await supabase
       .from("MentorSession")
       .insert({
+        id: newId(),
         mentor_id,
         mentee_id,
         availability_id: availability_id || null,
@@ -173,6 +175,7 @@ export async function POST(request: NextRequest) {
         notes: notes || null,
         meeting_link: meeting_link || null,
         location: location || null,
+        updated_at: new Date().toISOString(),
       })
       .select("*, mentor:mentor_id(id, full_name, email), mentee:mentee_id(id, full_name, usn)")
       .single();
@@ -195,6 +198,7 @@ export async function POST(request: NextRequest) {
     try {
       await supabase.from("Notification").insert([
         {
+          id: newId(),
           user_id: mentor_id,
           title: "New Session Booked",
           message: `Session with ${menteeProfile?.full_name ?? "student"} on ${new Date(date).toLocaleDateString("en-IN")}`,
@@ -202,6 +206,7 @@ export async function POST(request: NextRequest) {
           link: "/mentor/dashboard",
         },
         {
+          id: newId(),
           user_id: mentee_id,
           title: "Session Scheduled",
           message: `Your mentorship session is scheduled for ${new Date(date).toLocaleDateString("en-IN")} at ${start_time}`,

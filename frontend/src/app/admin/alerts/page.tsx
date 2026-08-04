@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import {
   Bell,
   Shield,
@@ -90,6 +91,7 @@ export default function AdminAlertsPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       const { data, error } = await supabase.from("AlertRule").insert({
+        id: newId(),
         name: formName,
         type: formType,
         metric: formMetric,
@@ -99,6 +101,7 @@ export default function AdminAlertsPage() {
         severity: formSeverity,
         is_active: true,
         created_by: user?.id,
+        updated_at: new Date().toISOString(),
       }).select().single();
 
       if (!error && data) {

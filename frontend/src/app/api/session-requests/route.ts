@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { newId } from "@/lib/id";
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
     // Notify the mentor of the session request (best-effort)
     try {
       await supabase.from("Notification").insert({
+        id: newId(),
         user_id: mentor.id,
         title: "Session Request",
         message: `${profile.full_name} requested a ${topicLabel} session on ${new Date(date).toLocaleDateString("en-IN")} (${mode}). Topic: ${topics || "Not specified"}`,

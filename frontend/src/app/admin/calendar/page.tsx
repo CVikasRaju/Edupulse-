@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import {
   CalendarDays,
   Plus,
@@ -48,6 +49,7 @@ export default function AdminCalendar() {
     const supabase = createClient();
 
     const { error } = await supabase.from("CalendarEvent").insert({
+      id: newId(),
       title: fd.get("title") as string,
       type: fd.get("type") as string,
       date: new Date(fd.get("date") as string).toISOString(),

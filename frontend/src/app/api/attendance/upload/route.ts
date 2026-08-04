@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { createClient } from "@/utils/supabase/server";
+import { newId } from "@/lib/id";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -435,6 +436,7 @@ async function handleProcess(req: NextRequest) {
       }
 
       records.push({
+        id: newId(),
         student_id: profileId,
         subject_name: subjectName,
         subject_code: subjectCode || null,

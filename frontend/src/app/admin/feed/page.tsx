@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import { Bell, Plus, X, Loader2, Trash2 } from "lucide-react";
 
 export default function AdminFeed() {
@@ -32,6 +33,7 @@ export default function AdminFeed() {
     const supabase = createClient();
     
     const { error } = await supabase.from("FeedPost").insert({
+      id: newId(),
       title: fd.get("title") as string,
       content: fd.get("content") as string,
       type: fd.get("type") as string,

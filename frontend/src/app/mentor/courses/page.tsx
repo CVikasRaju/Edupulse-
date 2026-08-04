@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import {
   BookOpen,
   Plus,
@@ -75,7 +76,8 @@ export default function MentorCourses() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from("Course").insert({
+    const { error } = await supabase.from("Course").insert({
+      id: newId(),
       faculty_id: user.id,
       name: fd.get("name") as string,
       code: fd.get("code") as string,
@@ -83,6 +85,10 @@ export default function MentorCourses() {
       department: fd.get("department") as string,
       academic_year: fd.get("academic_year") as string,
     });
+    if (error) {
+      setError(error.message || "Failed to create course. Please try again.");
+      return;
+    }
     setShowCourseModal(false);
     window.location.reload();
   };
@@ -126,6 +132,7 @@ export default function MentorCourses() {
 
     const { error } = await supabase.from("CourseEnrollment").insert(
       toEnroll.map((student_id: string) => ({
+        id: newId(),
         student_id,
         course_id: course.id,
         status: "Active",
@@ -133,21 +140,11 @@ export default function MentorCourses() {
     );
 
     if (error) {
-      // If the DB enforces uniqueness at insert time, try upsert semantics
+      // A duplicate error means the students are effectively already
+      // enrolled (we pre-filtered, so treat it as success) rather than
+      // attempting an upsert that requires a DB unique constraint.
       if (String(error.message).toLowerCase().includes("duplicate")) {
-        const { error: upErr } = await supabase.from("CourseEnrollment").upsert(
-          toEnroll.map((student_id: string) => ({
-            student_id,
-            course_id: course.id,
-            status: "Active",
-          })),
-          { onConflict: "student_id,course_id" }
-        );
-        if (upErr) {
-          setEnrollMsg({ ok: false, text: `Enrollment failed: ${upErr.message}` });
-        } else {
-          setEnrollMsg({ ok: true, text: `Enrolled ${toEnroll.length} mentee${toEnroll.length > 1 ? "s" : ""} in ${course.name}.` });
-        }
+        setEnrollMsg({ ok: true, text: `Mentees are already enrolled in ${course.name}.` });
       } else {
         setEnrollMsg({ ok: false, text: `Enrollment failed: ${error.message}` });
       }

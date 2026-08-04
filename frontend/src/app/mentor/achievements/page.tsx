@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import {
   Trophy,
   Award,
@@ -13,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Users,
+  AlertCircle,
 } from "lucide-react";
 
 export default function MentorAchievements() {
@@ -24,6 +26,8 @@ export default function MentorAchievements() {
   const [actingOn, setActingOn] = useState<string | null>(null);
   const [verifyMsg, setVerifyMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [tab, setTab] = useState<"verify" | "mine">("verify");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     if (!verifyMsg) return;
@@ -87,6 +91,7 @@ export default function MentorAchievements() {
       // Notify the student
       try {
         await supabase.from("Notification").insert({
+          id: newId(),
           user_id: ach?.student_id,
           title: status === "Verified" ? "Achievement Verified" : "Achievement Rejected",
           message: `Your achievement "${ach?.title}" was ${status.toLowerCase()} by your mentor.`,
@@ -102,11 +107,14 @@ export default function MentorAchievements() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
     const fd = new FormData(e.currentTarget);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("FacultyAchievement").insert({
+    if (!user) { setSubmitting(false); return; }
+    const { error } = await supabase.from("FacultyAchievement").insert({
+      id: newId(),
       faculty_id: user.id,
       title: fd.get("title") as string,
       type: fd.get("type") as string,
@@ -114,8 +122,13 @@ export default function MentorAchievements() {
       level: fd.get("level") as string,
       date: new Date(fd.get("date") as string).toISOString(),
     });
-    setShowModal(false);
-    window.location.reload();
+    if (error) {
+      setFormError(error.message || "Failed to add achievement. Please try again.");
+    } else {
+      setShowModal(false);
+      window.location.reload();
+    }
+    setSubmitting(false);
   };
 
   if (loading) return <AppShell role="mentor"><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div></AppShell>;
@@ -239,6 +252,12 @@ export default function MentorAchievements() {
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2 text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-3">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span className="break-all">{formError}</span>
+                </div>
+              )}
               <div><label className="label">Title</label><input type="text" name="title" required className="input" placeholder="e.g. Published paper in IEEE" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="label">Type</label>
@@ -256,7 +275,9 @@ export default function MentorAchievements() {
               <div><label className="label">Date</label><input type="date" name="date" required className="input" style={{ colorScheme: "dark" }} /></div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Save</button>
+                <button type="submit" disabled={submitting} className="btn-primary">
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save
+                </button>
               </div>
             </form>
           </div>

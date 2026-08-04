@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import {
   CheckCircle2,
   XCircle,
@@ -106,6 +107,7 @@ export default function MentorAttendance() {
       // Notify the student of the decision
       try {
         await supabase.from("Notification").insert({
+          id: newId(),
           user_id: request?.student_id,
           title: status === "Approved" ? "Grace Request Approved" : "Grace Request Rejected",
           message: `Your grace request for ${request?.subject_name ?? "attendance"} was ${status.toLowerCase()} by your mentor.`,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { newId } from "@/lib/id";
 import {
   BookOpen,
   CheckCircle2,
@@ -13,6 +14,7 @@ import {
   Upload,
   X,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 
 type Tab = "attendance" | "grades" | "assignments" | "grace";
@@ -22,6 +24,8 @@ export default function StudentAcademics() {
   const [activeTab, setActiveTab] = useState<Tab>("attendance");
   const [showGraceModal, setShowGraceModal] = useState(false);
   const [data, setData] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,13 +73,16 @@ export default function StudentAcademics() {
 
   const handleCreateGrace = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSubmitting(true);
+    setFormError("");
     const fd = new FormData(e.currentTarget);
     const supabase = createClient();
     
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setSubmitting(false); return; }
 
     const { error } = await supabase.from("GraceRequest").insert({
+      id: newId(),
       student_id: user.id,
       reason: fd.get("reason") as string,
       reason_type: fd.get("type") as string,
@@ -83,13 +90,17 @@ export default function StudentAcademics() {
       subject_name: fd.get("subject") as string,
       date_from: new Date(fd.get("dateFrom") as string).toISOString(),
       date_to: new Date(fd.get("dateTo") as string).toISOString(),
+      updated_at: new Date().toISOString(),
     });
 
-    if (!error) {
+    if (error) {
+      setFormError(error.message || "Failed to submit grace request. Please try again.");
+    } else {
       setShowGraceModal(false);
       // Refresh data
       window.location.reload();
     }
+    setSubmitting(false);
   };
 
   if (loading) {
@@ -289,6 +300,12 @@ export default function StudentAcademics() {
               <button onClick={() => setShowGraceModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleCreateGrace} className="p-5 space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2 text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-3">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span className="break-all">{formError}</span>
+                </div>
+              )}
               <div>
                 <label className="label">Subject</label>
                 <input type="text" name="subject" required className="input" placeholder="Subject name..." />
@@ -313,7 +330,9 @@ export default function StudentAcademics() {
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowGraceModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Submit</button>
+                <button type="submit" disabled={submitting} className="btn-primary">
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Submit
+                </button>
               </div>
             </form>
           </div>

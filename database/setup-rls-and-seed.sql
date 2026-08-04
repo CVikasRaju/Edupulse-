@@ -212,17 +212,68 @@ CREATE POLICY "Authenticated delete own course materials" ON storage.objects
 -- ==========================================
 -- Seed default alert rules (from alerts engine)
 -- ==========================================
-INSERT INTO public."AlertRule" ("name", "type", "metric", "operator", "threshold", "consecutive", "severity", "is_active", "created_at")
+INSERT INTO public."AlertRule" ("id", "name", "type", "metric", "operator", "threshold", "consecutive", "severity", "is_active", "created_at", "updated_at")
 VALUES
-  ('Low Attendance', 'attendance_drop', 'attendance_pct', 'lt', 75, 1, 'warning', true, NOW()),
-  ('Critical Attendance', 'attendance_drop', 'attendance_pct', 'lt', 60, 1, 'critical', true, NOW()),
-  ('Low CGPA', 'grade_decline', 'cgpa', 'lt', 5.5, 1, 'warning', true, NOW()),
-  ('Critical CGPA', 'grade_decline', 'cgpa', 'lt', 4.0, 1, 'critical', true, NOW()),
-  ('Consecutive Low SGPA', 'grade_decline', 'consecutive_low_sgpa', 'gte', 2, 2, 'critical', true, NOW()),
-  ('No Mentor Contact', 'engagement_gap', 'days_since_interaction', 'gt', 30, 1, 'warning', true, NOW()),
-  ('Long Engagement Gap', 'engagement_gap', 'days_since_interaction', 'gt', 60, 1, 'critical', true, NOW()),
-  ('Attendance Dropping', 'attendance_drop', 'attendance_drop', 'gte', 15, 1, 'warning', true, NOW())
+  (gen_random_uuid(), 'Low Attendance', 'attendance_drop', 'attendance_pct', 'lt', 75, 1, 'warning', true, NOW(), NOW()),
+  (gen_random_uuid(), 'Critical Attendance', 'attendance_drop', 'attendance_pct', 'lt', 60, 1, 'critical', true, NOW(), NOW()),
+  (gen_random_uuid(), 'Low CGPA', 'grade_decline', 'cgpa', 'lt', 5.5, 1, 'warning', true, NOW(), NOW()),
+  (gen_random_uuid(), 'Critical CGPA', 'grade_decline', 'cgpa', 'lt', 4.0, 1, 'critical', true, NOW(), NOW()),
+  (gen_random_uuid(), 'Consecutive Low SGPA', 'grade_decline', 'consecutive_low_sgpa', 'gte', 2, 2, 'critical', true, NOW(), NOW()),
+  (gen_random_uuid(), 'No Mentor Contact', 'engagement_gap', 'days_since_interaction', 'gt', 30, 1, 'warning', true, NOW(), NOW()),
+  (gen_random_uuid(), 'Long Engagement Gap', 'engagement_gap', 'days_since_interaction', 'gt', 60, 1, 'critical', true, NOW(), NOW()),
+  (gen_random_uuid(), 'Attendance Dropping', 'attendance_drop', 'attendance_drop', 'gte', 15, 1, 'warning', true, NOW(), NOW())
 ON CONFLICT DO NOTHING;
+
+-- ==========================================
+-- SAFETY NET: add DB-side defaults for id/updated_at
+-- (Optional but recommended — makes inserts work even
+--  if a future code path forgets to send an id)
+-- ==========================================
+DO $$
+DECLARE
+  t TEXT;
+  tbl regclass;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'Profile', 'Allocation', 'Interaction', 'Grade', 'AttendanceRecord',
+    'GraceRequest', 'Achievement', 'FacultyAchievement', 'Course',
+    'CourseEnrollment', 'CourseMaterial', 'Assignment', 'Submission',
+    'FeedPost', 'Notification', 'AuditLogEntry', 'CalendarEvent',
+    'NbaScoringConfig', 'AlertRule', 'Alert', 'MentorAvailability',
+    'MentorSession'
+  ]
+  LOOP
+    -- Skip tables that don't exist (keeps the block from aborting)
+    tbl := to_regclass(format('public.%I', t));
+    IF tbl IS NOT NULL THEN
+      EXECUTE format(
+        'ALTER TABLE %s ALTER COLUMN "id" SET DEFAULT gen_random_uuid()',
+        tbl
+      );
+    END IF;
+  END LOOP;
+END $$;
+
+DO $$
+DECLARE
+  t TEXT;
+  tbl regclass;
+BEGIN
+  FOREACH t IN ARRAY ARRAY[
+    'Profile', 'Interaction', 'GraceRequest', 'FeedPost',
+    'AlertRule', 'MentorAvailability', 'MentorSession'
+  ]
+  LOOP
+    tbl := to_regclass(format('public.%I', t));
+    IF tbl IS NOT NULL THEN
+      -- Add NOW() default to "updated_at" where it is missing
+      EXECUTE format(
+        'ALTER TABLE %s ALTER COLUMN "updated_at" SET DEFAULT CURRENT_TIMESTAMP',
+        tbl
+      );
+    END IF;
+  END LOOP;
+END $$;
 
 -- ==========================================
 -- Done! 

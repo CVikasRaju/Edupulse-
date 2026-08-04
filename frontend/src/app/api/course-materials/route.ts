@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { newId } from "@/lib/id";
 
 export async function GET() {
   try {
@@ -140,6 +141,7 @@ export async function POST(request: NextRequest) {
     const { data: material, error: insertError } = await supabase
       .from("CourseMaterial")
       .insert({
+        id: newId(),
         course_id,
         title,
         description: description || null,
@@ -170,6 +172,7 @@ export async function POST(request: NextRequest) {
       try {
         await supabase.from("Notification").insert(
           studentIds.map((sid: string) => ({
+            id: newId(),
             user_id: sid,
             title: "New Notes Uploaded",
             message: `${profile.full_name} uploaded "${title}" for ${course.name}${course.code ? ` (${course.code})` : ""}.`,

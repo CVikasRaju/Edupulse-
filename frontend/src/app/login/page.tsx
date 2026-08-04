@@ -76,16 +76,14 @@ export default function LoginPage() {
         return;
       }
 
-      // Step 3: Verify the account role matches the selected login tab
+      // Step 3: Verify the account role matches the selected login tab.
+      // IMPORTANT: On mismatch we return the SAME generic message as a failed
+      // login so we never reveal that an email/password combo is valid or what
+      // role an account holds (prevents account/role enumeration).
       const role = profile.role as Role;
       if (role !== selectedRole) {
-        // Role mismatch — the user selected one role tab but the account is another
-        const expectedLabel = ROLE_LABELS[selectedRole].label;
-        const actualLabel = ROLE_LABELS[role]?.label ?? role;
         await supabase.auth.signOut();
-        setError(
-          `Invalid credentials for the selected role (${expectedLabel}).\nThis account is registered as ${actualLabel}. Please select the correct tab and try again.`
-        );
+        setError("Invalid email or password.");
         setLoading(false);
         return;
       }

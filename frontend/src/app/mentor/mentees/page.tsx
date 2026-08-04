@@ -41,6 +41,13 @@ export default function MentorMentees() {
     next_interaction_date: "",
   });
   const [interactionError, setInteractionError] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     const fetchMentees = async () => {
@@ -149,6 +156,7 @@ export default function MentorMentees() {
 
       if (res.ok) {
         setInteractionMentee(null);
+        setToast(`Interaction saved for ${interactionMentee.full_name ?? "student"} ✓`);
         // Refresh details if profile modal is open for same student
         if (selectedMentee?.id === interactionMentee.id) {
           await fetchMenteeDetails(interactionMentee.id);
@@ -182,6 +190,11 @@ export default function MentorMentees() {
 
   return (
     <AppShell role="mentor">
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-button bg-success text-background text-sm font-semibold shadow-lg animate-fade-in">
+          {toast}
+        </div>
+      )}
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary tracking-tight">Your Mentees</h1>

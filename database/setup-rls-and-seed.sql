@@ -113,6 +113,25 @@ CREATE POLICY "Users read interactions" ON public."Interaction"
   FOR SELECT TO authenticated
   USING (true);
 
+-- Interaction: mentors can log interactions (used by /api/interactions)
+DROP POLICY IF EXISTS "Mentors create interactions" ON public."Interaction";
+CREATE POLICY "Mentors create interactions" ON public."Interaction"
+  FOR INSERT TO authenticated
+  WITH CHECK (true);
+
+-- Interaction: mentors and mentees can update (acknowledge, resolve follow-ups)
+DROP POLICY IF EXISTS "Users update interactions" ON public."Interaction";
+CREATE POLICY "Users update interactions" ON public."Interaction"
+  FOR UPDATE TO authenticated
+  USING (true)
+  WITH CHECK (true);
+
+-- Notification: authenticated users can create notifications (used by APIs)
+DROP POLICY IF EXISTS "Users create notifications" ON public."Notification";
+CREATE POLICY "Users create notifications" ON public."Notification"
+  FOR INSERT TO authenticated
+  WITH CHECK (true);
+
 -- Allocation: everyone can read
 DROP POLICY IF EXISTS "Users read allocations" ON public."Allocation";
 CREATE POLICY "Users read allocations" ON public."Allocation"

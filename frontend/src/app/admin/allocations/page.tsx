@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import { UserPlus, Search, Filter, X, Loader2, Users, AlertCircle } from "lucide-react";
 
 export default function AdminAllocations() {
@@ -81,6 +83,7 @@ export default function AdminAllocations() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Mentor-Mentee Allocations</h1>
@@ -90,7 +93,9 @@ export default function AdminAllocations() {
           <UserPlus className="w-4 h-4" /> New Allocation
         </button>
       </div>
+      </Reveal>
 
+      <Reveal>
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table">
@@ -134,10 +139,20 @@ export default function AdminAllocations() {
           </table>
         </div>
       </div>
+      </Reveal>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">New Pairing</h2>
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
@@ -168,8 +183,8 @@ export default function AdminAllocations() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

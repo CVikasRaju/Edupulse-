@@ -119,7 +119,7 @@ function ScoreRing({ score }: { score: number }) {
           cy={size / 2}
           r={r}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="rgb(var(--glass) / 0.08)"
           strokeWidth={stroke}
         />
         <motion.circle
@@ -418,7 +418,7 @@ export default function StudentResumeAnalyzer() {
                       onClick={() => { setRole(r); setCustomRole(""); setError(""); }}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
                         selected
-                          ? "bg-accent text-background border-accent shadow-glow"
+                          ? "bg-accent text-ink border-accent shadow-glow"
                           : "bg-surface border-surface-border text-text-muted hover:border-accent/40 hover:text-text-primary"
                       }`}
                     >
@@ -452,7 +452,6 @@ export default function StudentResumeAnalyzer() {
                 rows={4}
                 placeholder="Paste the job description to get a precise match analysis against the actual requirements…"
                 className="input resize-none"
-                style={{ colorScheme: "dark" }}
               />
             </div>
 

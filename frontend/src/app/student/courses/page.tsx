@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -14,7 +15,11 @@ import {
   StickyNote,
   ExternalLink,
   Bell,
+  Sparkles,
 } from "lucide-react";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import TiltCard from "@/components/ui/TiltCard";
+import Reveal from "@/components/ui/Reveal";
 
 export default function StudentCourses() {
   const [loading, setLoading] = useState(true);
@@ -67,42 +72,50 @@ export default function StudentCourses() {
       <FileText className="w-4 h-4" />
     );
 
-  if (loading) return <AppShell role="student"><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div></AppShell>;
+  if (loading) return <AppShell role="student"><div className="flex items-center justify-center h-64 gap-3"><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><Sparkles className="w-8 h-8 text-accent" /></motion.div></div></AppShell>;
 
   const totalNotes = materials.length;
 
   return (
     <AppShell role="student">
-      <div className="mb-8">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">My Courses</h1>
-        <p className="text-text-muted text-sm mt-0.5">Courses you are enrolled in & notes shared by your faculty</p>
-      </div>
+      <Reveal>
+        <div className="mb-8">
+          <h1 className="text-2xl font-heading font-bold text-text-primary">My Courses</h1>
+          <p className="text-text-muted text-sm mt-0.5">Courses you are enrolled in & notes shared by your faculty</p>
+        </div>
+      </Reveal>
 
       {enrollments.length > 0 ? (
         <div className="space-y-6">
           {/* Summary strip */}
           <div className="flex items-center gap-4 flex-wrap">
-            <div className="card px-5 py-3 flex items-center gap-3">
-              <BookOpen className="w-5 h-5 text-accent" />
-              <div>
-                <div className="text-lg font-heading font-bold text-text-primary">{enrollments.length}</div>
-                <div className="text-xs text-text-muted">Courses</div>
+            <Reveal delay={0.05}>
+              <div className="card px-5 py-3 flex items-center gap-3">
+                <BookOpen className="w-5 h-5 text-accent" />
+                <div>
+                  <div className="text-lg font-heading font-bold text-text-primary"><AnimatedCounter value={enrollments.length} /></div>
+                  <div className="text-xs text-text-muted">Courses</div>
+                </div>
               </div>
-            </div>
-            <div className="card px-5 py-3 flex items-center gap-3">
-              <StickyNote className="w-5 h-5 text-accent" />
-              <div>
-                <div className="text-lg font-heading font-bold text-text-primary">{totalNotes}</div>
-                <div className="text-xs text-text-muted">Notes Available</div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="card px-5 py-3 flex items-center gap-3">
+                <StickyNote className="w-5 h-5 text-accent" />
+                <div>
+                  <div className="text-lg font-heading font-bold text-text-primary"><AnimatedCounter value={totalNotes} /></div>
+                  <div className="text-xs text-text-muted">Notes Available</div>
+                </div>
               </div>
-            </div>
+            </Reveal>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-            {enrollments.map((e) => {
+            {enrollments.map((e, idx) => {
               const mats = courseMaterials(e.Course?.id);
               return (
-                <div key={e.id} className="card p-5 group hover:border-accent/40 transition-all duration-300">
+                <Reveal key={e.id} delay={Math.min(idx * 0.06, 0.4)}>
+                <TiltCard intensity={5} className="h-full">
+                <div className="card p-5 group hover:border-accent/40 transition-all duration-300 h-full">
                   <div className="flex items-start justify-between gap-3">
                     <div className="p-2.5 rounded-xl bg-accent/10 text-accent w-fit mb-4 group-hover:scale-110 transition-transform">
                       <BookOpen className="w-5 h-5" />
@@ -153,16 +166,20 @@ export default function StudentCourses() {
                     )}
                   </div>
                 </div>
+                </TiltCard>
+                </Reveal>
               );
             })}
           </div>
         </div>
       ) : (
+        <Reveal>
         <div className="card py-16 text-center text-text-muted">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30 animate-float" />
           <p>You are not enrolled in any courses yet.</p>
           <p className="text-sm mt-1">Contact your admin to get enrolled.</p>
         </div>
+        </Reveal>
       )}
     </AppShell>
   );

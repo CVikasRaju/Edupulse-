@@ -1,6 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { X, Users, GraduationCap, Mail, CalendarDays } from "lucide-react";
+import HoverCard from "@/components/ui/HoverCard";
 
 interface Registrant {
   id: string;
@@ -25,8 +27,19 @@ interface RegistrantsModalProps {
 export default function RegistrantsModal({ event, registrants, onClose }: RegistrantsModalProps) {
   const capacity = event.capacity;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="card w-full max-w-lg shadow-2xl max-h-[88vh] flex flex-col">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.97 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="card w-full max-w-lg shadow-2xl max-h-[88vh] flex flex-col"
+      >
         <div className="flex items-center justify-between p-5 border-b border-surface-border">
           <div className="min-w-0">
             <h2 className="font-heading font-bold text-text-primary truncate">{event.title}</h2>
@@ -75,9 +88,21 @@ export default function RegistrantsModal({ event, registrants, onClose }: Regist
                     .toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-text-primary truncate">
-                    {r.student?.full_name ?? "Unknown student"}
-                  </div>
+                  <HoverCard
+                    className="w-full"
+                    person={{
+                      full_name: r.student?.full_name,
+                      usn: r.student?.usn,
+                      email: r.student?.email,
+                      department: r.student?.department,
+                      year: r.student?.year,
+                      role: "Student",
+                    }}
+                  >
+                    <div className="text-sm font-medium text-text-primary truncate w-full">
+                      {r.student?.full_name ?? "Unknown student"}
+                    </div>
+                  </HoverCard>
                   <div className="text-xs text-text-muted flex items-center gap-2 flex-wrap">
                     {r.student?.usn && (
                       <span className="flex items-center gap-1">
@@ -104,7 +129,7 @@ export default function RegistrantsModal({ event, registrants, onClose }: Regist
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

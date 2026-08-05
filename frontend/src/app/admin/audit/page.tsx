@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
 import { FileText, Loader2 } from "lucide-react";
 
 export default function AdminAudit() {
@@ -27,11 +28,14 @@ export default function AdminAudit() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="mb-8">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Audit Log</h1>
         <p className="text-text-muted text-sm mt-0.5">System activity trail</p>
       </div>
+      </Reveal>
 
+      <Reveal>
       <div className="card overflow-hidden">
         <table className="data-table">
           <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Entity</th></tr></thead>
@@ -54,6 +58,7 @@ export default function AdminAudit() {
           </tbody>
         </table>
       </div>
+      </Reveal>
     </AppShell>
   );
 }

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   CheckCircle2,
   XCircle,
@@ -132,6 +134,7 @@ export default function MentorAttendance() {
 
   return (
     <AppShell role="mentor">
+      <Reveal>
       <div className="flex items-start justify-between flex-wrap gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Attendance & Grace Requests</h1>
@@ -142,6 +145,7 @@ export default function MentorAttendance() {
           Upload Sheet
         </Link>
       </div>
+      </Reveal>
 
       {graceMsg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -152,6 +156,7 @@ export default function MentorAttendance() {
       )}
 
       {/* Pending Grace Requests */}
+      <Reveal>
       <div className="card p-5 mb-8">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="w-4 h-4 text-accent" />
@@ -204,13 +209,14 @@ export default function MentorAttendance() {
           </div>
         )}
       </div>
+      </Reveal>
 
       {mentees.length > 0 ? (
         <>
           <div className="flex gap-2 flex-wrap mb-6">
             {mentees.map((m) => (
               <button key={m.id} onClick={() => setSelectedMentee(m.id)}
-                className={`px-4 py-2 rounded-button text-sm font-medium transition-all ${selectedMentee === m.id ? "bg-accent text-background" : "bg-surface text-text-muted hover:text-text-primary"}`}>
+                className={`px-4 py-2 rounded-button text-sm font-medium transition-all ${selectedMentee === m.id ? "bg-accent text-ink" : "bg-surface text-text-muted hover:text-text-primary"}`}>
                 {m.full_name}
               </button>
             ))}
@@ -219,6 +225,7 @@ export default function MentorAttendance() {
           {loadingAttendance ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-accent" /></div>
           ) : Object.keys(subjectSummary).length > 0 ? (
+            <Reveal>
             <div className="card overflow-hidden">
               <table className="data-table">
                 <thead><tr><th>Subject</th><th>Present</th><th>Total</th><th>Percentage</th><th>Status</th></tr></thead>
@@ -245,6 +252,7 @@ export default function MentorAttendance() {
                 </tbody>
               </table>
             </div>
+            </Reveal>
           ) : (
             <div className="card py-12 text-center text-text-muted">No attendance records for this student yet.</div>
           )}

@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import TiltCard from "@/components/ui/TiltCard";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   TrendingUp,
@@ -269,6 +273,7 @@ export default function MentorPerformancePage() {
   return (
     <AppShell role="mentor">
       {/* Header */}
+      <Reveal>
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Performance Overview</h1>
@@ -281,6 +286,7 @@ export default function MentorPerformancePage() {
           {evaluating ? "Evaluating..." : "Run Risk Scan"}
         </button>
       </div>
+      </Reveal>
 
       {/* Risk Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -290,16 +296,22 @@ export default function MentorPerformancePage() {
           { label: "Watch", value: riskCounts.medium, icon: Eye, color: "bg-accent/10 text-accent" },
           { label: "At Risk", value: riskCounts.high, icon: AlertTriangle, color: "bg-danger/10 text-danger" },
           { label: "Critical", value: riskCounts.critical, icon: AlertTriangle, color: "bg-danger/15 text-danger" },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="card p-4">
+        ].map(({ label, value, icon: Icon, color }, idx) => (
+          <Reveal key={label} delay={idx * 0.06}>
+          <TiltCard intensity={5} className="h-full">
+          <div className="card p-4 h-full">
             <div className="flex items-center justify-between mb-2">
               <span className="text-text-muted text-xs">{label}</span>
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>
                 <Icon className="w-3.5 h-3.5" />
               </div>
             </div>
-            <div className="text-2xl font-heading font-bold text-text-primary">{value}</div>
+            <div className="text-2xl font-heading font-bold text-text-primary">
+              <AnimatedCounter value={value} />
+            </div>
           </div>
+          </TiltCard>
+          </Reveal>
         ))}
       </div>
 
@@ -317,7 +329,7 @@ export default function MentorPerformancePage() {
             onClick={() => setFilter(key)}
             className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
               filter === key
-                ? "bg-accent text-background"
+                ? "bg-accent text-ink"
                 : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
             }`}
           >
@@ -337,11 +349,11 @@ export default function MentorPerformancePage() {
           {filtered.length === 0 ? (
             <div className="card p-12 text-center text-text-muted">No mentees match this filter.</div>
           ) : (
-            filtered.map((mentee: any) => (
+            filtered.map((mentee: any, idx: number) => (
+              <Reveal key={mentee.student.id} delay={Math.min(idx * 0.04, 0.3)}>
               <div
-                key={mentee.student.id}
                 onClick={() => setSelectedMentee(mentee)}
-                className={`card p-5 cursor-pointer transition-all hover:border-accent/30 ${
+                className={`card p-5 cursor-pointer transition-all hover:border-accent/30 hover:-translate-y-0.5 duration-300 ${
                   mentee.riskLevel === "critical"
                     ? "border-danger/30"
                     : mentee.riskLevel === "high"
@@ -454,6 +466,7 @@ export default function MentorPerformancePage() {
                   <ChevronRight className="w-4 h-4 text-text-muted flex-shrink-0 mt-1" />
                 </div>
               </div>
+              </Reveal>
             ))
           )}
         </div>
@@ -552,8 +565,17 @@ export default function MentorPerformancePage() {
 
       {/* Mentee Detail Modal */}
       {selectedMentee && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-y-auto">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-2xl shadow-2xl max-h-[85vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border sticky top-0 bg-surface z-10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-accent/15 flex items-center justify-center text-accent font-bold">
@@ -662,8 +684,8 @@ export default function MentorPerformancePage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

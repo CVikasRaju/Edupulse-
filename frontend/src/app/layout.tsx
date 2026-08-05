@@ -45,8 +45,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jakarta.variable} ${jetbrains.variable}`}
+      suppressHydrationWarning
     >
       <body className="font-body bg-background text-text-primary min-h-screen">
+        {/* Apply saved theme before first paint to avoid a flash.
+            Resolves "system" mode against the OS preference. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('edupulse-theme');var m=(t==='light'||t==='dark'||t==='system')?t:'system';var dark=(m==='dark')||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',dark?'dark':'light');}catch(e){}})();`,
+          }}
+        />
         {children}
       </body>
     </html>

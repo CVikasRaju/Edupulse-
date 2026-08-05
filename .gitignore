@@ -21,6 +21,25 @@ test-db.js
 create-auth-users.js
 **/create-auth-users.js
 
+# --- REAL PERSONAL DATA (student/staff PII) ---
+# Program spreadsheets contain real student names, emails & USNs - never commit
+docs/*.xlsx
+docs/*.csv
+docs/*.xls
+**/*Actual Program*.*
+
+# --- LOCAL DATABASE & SEED DUMPS ---
+*.sql.bak
+*.sql.old
+seed-local.sql
+**/seed-local.sql
+
+# --- LOCAL ENV EXAMPLES WITH REAL VALUES ---
+.env.example
+.env.sample
+vercel.env
+*.env.local.backup
+
 # --- DEPENDENCIES ---
 node_modules/
 jspm_packages/

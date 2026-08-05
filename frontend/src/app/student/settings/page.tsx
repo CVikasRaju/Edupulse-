@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
+import TiltCard from "@/components/ui/TiltCard";
 import { User, Mail, Phone, MapPin, Linkedin, Github, Save, Loader2 } from "lucide-react";
 
 export default function StudentSettings() {
@@ -48,13 +50,17 @@ export default function StudentSettings() {
 
   return (
     <AppShell role="student">
+      <Reveal>
       <div className="mb-8">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Profile Settings</h1>
         <p className="text-text-muted text-sm mt-0.5">Update your personal information</p>
       </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="card p-6 flex flex-col items-center text-center gap-3">
+        <Reveal className="lg:col-span-1">
+        <TiltCard intensity={5} className="h-full">
+        <div className="card p-6 flex flex-col items-center text-center gap-3 h-full">
           <div className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center text-accent text-3xl font-bold">
             {profile?.full_name?.[0] ?? "?"}
           </div>
@@ -69,7 +75,10 @@ export default function StudentSettings() {
           </div>
           <p className="font-mono text-sm text-text-muted">{profile?.usn}</p>
         </div>
+        </TiltCard>
+        </Reveal>
 
+        <Reveal delay={0.1} className="lg:col-span-2">
         <div className="lg:col-span-2 card p-6">
           <form onSubmit={handleSave} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -105,6 +114,7 @@ export default function StudentSettings() {
             </div>
           </form>
         </div>
+        </Reveal>
       </div>
     </AppShell>
   );

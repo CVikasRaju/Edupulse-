@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
 import { Bell, Calendar, Megaphone, AlertCircle, Loader2 } from "lucide-react";
 
 const TYPE_ICON: Record<string, React.ElementType> = {
@@ -34,17 +35,20 @@ export default function StudentFeed() {
 
   return (
     <AppShell role="student">
+      <Reveal>
       <div className="mb-8">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Campus Feed</h1>
         <p className="text-text-muted text-sm mt-0.5">Latest announcements and events</p>
       </div>
+      </Reveal>
 
       <div className="space-y-4">
         {posts.length > 0 ? (
-          posts.map((post) => {
+          posts.map((post, idx) => {
             const Icon = TYPE_ICON[post.type] || Bell;
             return (
-              <div key={post.id} className="card p-5 flex items-start gap-4">
+              <Reveal key={post.id} delay={Math.min(idx * 0.05, 0.35)}>
+              <div className="card p-5 flex items-start gap-4 hover:border-accent/30 hover:-translate-y-0.5 transition-all duration-300">
                 <div className="p-2.5 rounded-xl bg-accent/10 text-accent mt-0.5 flex-shrink-0">
                   <Icon className="w-4 h-4" />
                 </div>
@@ -57,6 +61,7 @@ export default function StudentFeed() {
                   <p className="text-text-muted text-sm mt-1">{post.content}</p>
                 </div>
               </div>
+              </Reveal>
             );
           })
         ) : (

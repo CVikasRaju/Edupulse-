@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import {
@@ -14,7 +15,11 @@ import {
   Trophy,
   GraduationCap,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
+import TiltCard from "@/components/ui/TiltCard";
+import Reveal from "@/components/ui/Reveal";
+import HoverCard from "@/components/ui/HoverCard";
 
 export default function MentorMentees() {
   const [loading, setLoading] = useState(true);
@@ -175,8 +180,10 @@ export default function MentorMentees() {
   if (loading) {
     return (
       <AppShell role="mentor">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        <div className="flex items-center justify-center h-64 gap-3">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+            <Sparkles className="w-8 h-8 text-accent" />
+          </motion.div>
         </div>
       </AppShell>
     );
@@ -190,11 +197,19 @@ export default function MentorMentees() {
 
   return (
     <AppShell role="mentor">
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-button bg-success text-background text-sm font-semibold shadow-lg animate-fade-in">
-          {toast}
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.95 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-button bg-success text-ink text-sm font-semibold shadow-lg"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <Reveal>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary tracking-tight">Your Mentees</h1>
@@ -210,13 +225,27 @@ export default function MentorMentees() {
           />
         </div>
       </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.length > 0 ? (
-          filtered.map((m) => (
-            <div key={m.id} className="card p-5 group hover:border-accent/40 transition-all duration-300">
+          filtered.map((m, idx) => (
+            <Reveal key={m.id} delay={Math.min(idx * 0.06, 0.4)}>
+            <TiltCard intensity={5} className="h-full">
+            <div className="card p-5 group hover:border-accent/40 transition-all duration-300 h-full">
+              <HoverCard
+                person={{
+                  full_name: m.full_name,
+                  usn: m.usn,
+                  email: m.email,
+                  department: m.department,
+                  year: m.year,
+                  section: m.section,
+                  role: "Mentee",
+                }}
+              >
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-lg">
+                <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-lg" style={{ boxShadow: "0 0 14px rgb(var(--accent) / 0.2)" }}>
                   {m.full_name?.[0] ?? "?"}
                 </div>
                 <div>
@@ -224,6 +253,7 @@ export default function MentorMentees() {
                   <p className="text-text-muted text-xs font-mono">{m.usn}</p>
                 </div>
               </div>
+              </HoverCard>
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-xs text-text-muted">
                   <span>Department</span>
@@ -235,14 +265,16 @@ export default function MentorMentees() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => openProfile(m)} className="btn-ghost btn-sm flex-1 text-xs">
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => openProfile(m)} className="btn-ghost btn-sm flex-1 text-xs">
                   <User className="w-3.5 h-3.5" /> View Details
-                </button>
-                <button onClick={() => openInteractionModal(m)} className="btn-primary btn-sm flex-1 text-xs">
+                </motion.button>
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => openInteractionModal(m)} className="btn-primary btn-sm flex-1 text-xs">
                   <MessageSquare className="w-3.5 h-3.5" /> Add Interaction
-                </button>
+                </motion.button>
               </div>
             </div>
+            </TiltCard>
+            </Reveal>
           ))
         ) : (
           <div className="col-span-full py-12 text-center text-text-muted">
@@ -441,7 +473,7 @@ export default function MentorMentees() {
                     value={interactionForm.date}
                     onChange={(e) => setInteractionForm({ ...interactionForm, date: e.target.value })}
                     className="input"
-                    style={{ colorScheme: "dark" }}
+
                   />
                 </div>
                 <div>
@@ -534,7 +566,7 @@ export default function MentorMentees() {
                       value={interactionForm.next_interaction_date}
                       onChange={(e) => setInteractionForm({ ...interactionForm, next_interaction_date: e.target.value })}
                       className="input"
-                      style={{ colorScheme: "dark" }}
+
                     />
                   </div>
                 </>

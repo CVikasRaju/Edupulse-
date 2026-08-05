@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
@@ -17,7 +18,10 @@ import {
   StickyNote,
   AlertCircle,
   Users,
+  Sparkles,
 } from "lucide-react";
+import TiltCard from "@/components/ui/TiltCard";
+import Reveal from "@/components/ui/Reveal";
 
 const STORAGE_BUCKET = "course-materials";
 
@@ -257,17 +261,19 @@ export default function MentorCourses() {
       <FileText className="w-4 h-4" />
     );
 
-  if (loading) return <AppShell role="mentor"><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div></AppShell>;
+  if (loading) return <AppShell role="mentor"><div className="flex items-center justify-center h-64 gap-3"><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><Sparkles className="w-8 h-8 text-accent" /></motion.div></div></AppShell>;
 
   return (
     <AppShell role="mentor">
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-text-primary">My Courses</h1>
-          <p className="text-text-muted text-sm mt-0.5">Courses you teach & study notes you share</p>
+      <Reveal>
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-text-primary">My Courses</h1>
+            <p className="text-text-muted text-sm mt-0.5">Courses you teach & study notes you share</p>
+          </div>
+          <motion.button whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCourseModal(true)} className="btn-primary"><Plus className="w-4 h-4" />Add Course</motion.button>
         </div>
-        <button onClick={() => setShowCourseModal(true)} className="btn-primary"><Plus className="w-4 h-4" />Add Course</button>
-      </div>
+      </Reveal>
 
       {error && (
         <div className="mb-4 flex items-start gap-2 text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-3">
@@ -286,10 +292,12 @@ export default function MentorCourses() {
 
       {courses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {courses.map((c) => {
+          {courses.map((c, idx) => {
             const mats = courseMaterials(c.id);
             return (
-              <div key={c.id} className="card p-5 group hover:border-accent/40 transition-colors flex flex-col">
+              <Reveal key={c.id} delay={Math.min(idx * 0.06, 0.4)}>
+              <TiltCard intensity={5} className="h-full">
+              <div className="card p-5 group hover:border-accent/40 transition-colors flex flex-col h-full">
                 <div className="flex items-start justify-between gap-3">
                   <div className="p-2.5 rounded-xl bg-accent/10 text-accent w-fit mb-4"><BookOpen className="w-5 h-5" /></div>
                   <span className="badge badge-secondary">{mats.length} note{mats.length === 1 ? "" : "s"}</span>
@@ -329,34 +337,54 @@ export default function MentorCourses() {
                   </div>
                 )}
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => openNotes(c)}
                   className="mt-4 btn-primary btn-sm w-full justify-center"
                 >
                   <StickyNote className="w-3.5 h-3.5" />
                   {mats.length > 0 ? "Manage Notes" : "Upload Notes"}
-                </button>
+                </motion.button>
               </div>
+              </TiltCard>
+              </Reveal>
             );
           })}
         </div>
       ) : (
+        <Reveal>
         <div className="card py-16 text-center text-text-muted">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30 animate-float" />
           <p>No courses added yet.</p>
-          <button onClick={() => setShowCourseModal(true)} className="btn-primary btn-sm mt-4">
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCourseModal(true)} className="btn-primary btn-sm mt-4">
             <Plus className="w-3.5 h-3.5" />Add your first course
-          </button>
+          </motion.button>
         </div>
+        </Reveal>
       )}
 
       {/* ── Add Course Modal ── */}
+      <AnimatePresence>
       {showCourseModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowCourseModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            onClick={(e) => e.stopPropagation()}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Add Course</h2>
-              <button onClick={() => setShowCourseModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
+              <motion.button whileHover={{ rotate: 90 }} onClick={() => setShowCourseModal(false)} className="btn-icon"><X className="w-5 h-5" /></motion.button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-4">
               <div><label className="label">Course Name</label><input name="name" required className="input" placeholder="e.g. Database Systems" /></div>
@@ -370,23 +398,38 @@ export default function MentorCourses() {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowCourseModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Create Course</button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} type="submit" className="btn-primary">Create Course</motion.button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* ── Upload Notes Modal ── */}
+      <AnimatePresence>
       {showNotesModal && selectedCourse && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowNotesModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            onClick={(e) => e.stopPropagation()}
+            className="card w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <div>
                 <h2 className="font-heading font-bold text-text-primary">Study Notes</h2>
                 <p className="text-xs text-text-muted mt-0.5">{selectedCourse.name} · {selectedCourse.code}</p>
               </div>
-              <button onClick={() => setShowNotesModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
+              <motion.button whileHover={{ rotate: 90 }} onClick={() => setShowNotesModal(false)} className="btn-icon"><X className="w-5 h-5" /></motion.button>
             </div>
 
             <div className="p-5 overflow-y-auto space-y-5">
@@ -499,15 +542,16 @@ export default function MentorCourses() {
 
                 <div className="flex justify-end gap-3 pt-1">
                   <button type="button" onClick={() => setShowNotesModal(false)} className="btn-ghost">Close</button>
-                  <button type="submit" disabled={uploading} className="btn-primary">
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} type="submit" disabled={uploading} className="btn-primary">
                     {uploading ? <><Loader2 className="w-4 h-4 animate-spin" />Uploading…</> : <><Upload className="w-4 h-4" />Upload Note</>}
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </AppShell>
   );
 }

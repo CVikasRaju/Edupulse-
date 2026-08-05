@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   Users,
   Calendar,
@@ -104,13 +106,16 @@ export default function StudentMentorship() {
 
   return (
     <AppShell role="student">
+      <Reveal>
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Mentorship</h1>
         <p className="text-text-muted text-sm mt-0.5">Your mentor &amp; interaction history</p>
       </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Mentor Profile Card */}
+        <Reveal className="lg:col-span-1">
         <div className="lg:col-span-1">
           {mentor ? (
             <div className="card p-6 text-center">
@@ -174,6 +179,7 @@ export default function StudentMentorship() {
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Interaction Timeline */}
         <div className="lg:col-span-2">
@@ -192,8 +198,9 @@ export default function StudentMentorship() {
           )}
 
           <div className="space-y-4">
-            {interactions.map((interaction: any) => (
-              <div key={interaction.id} className="card p-5">
+            {interactions.map((interaction: any, idx: number) => (
+              <Reveal key={interaction.id} delay={Math.min(idx * 0.05, 0.35)}>
+              <div className="card p-5 hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -261,6 +268,7 @@ export default function StudentMentorship() {
                   )}
                 </div>
               </div>
+              </Reveal>
             ))}
 
             {interactions.length === 0 && (
@@ -275,8 +283,17 @@ export default function StudentMentorship() {
 
       {/* Request Session Modal */}
       {showRequestModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-lg shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Request Mentor Session</h2>
               <button onClick={() => setShowRequestModal(false)} className="btn-icon">
@@ -287,7 +304,7 @@ export default function StudentMentorship() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Preferred Date</label>
-                  <input type="date" name="date" required className="input text-sm" style={{ colorScheme: "dark" }} />
+                  <input type="date" name="date" required className="input text-sm" />
                 </div>
                 <div>
                   <label className="label">Meeting Mode</label>
@@ -328,8 +345,8 @@ export default function StudentMentorship() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

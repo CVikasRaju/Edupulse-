@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import { Bell, Plus, X, Loader2, Trash2 } from "lucide-react";
 
 export default function AdminFeed() {
@@ -66,6 +68,7 @@ export default function AdminFeed() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Campus Feed</h1>
@@ -73,11 +76,13 @@ export default function AdminFeed() {
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary btn-sm"><Plus className="w-4 h-4" />New Post</button>
       </div>
+      </Reveal>
 
       <div className="space-y-4">
         {posts.length > 0 ? (
-          posts.map((post) => (
-            <div key={post.id} className="card p-5 flex items-start justify-between gap-4 group">
+          posts.map((post, idx) => (
+            <Reveal key={post.id} delay={Math.min(idx * 0.05, 0.3)}>
+            <div className="card p-5 flex items-start justify-between gap-4 group hover:border-accent/30 hover:-translate-y-0.5 transition-all duration-300">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="badge badge-accent">{post.type}</span>
@@ -90,6 +95,7 @@ export default function AdminFeed() {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
+            </Reveal>
           ))
         ) : (
           <div className="text-center py-12 text-text-muted card">No announcements yet.</div>
@@ -97,8 +103,17 @@ export default function AdminFeed() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-lg shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">New Announcement</h2>
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
@@ -128,8 +143,8 @@ export default function AdminFeed() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

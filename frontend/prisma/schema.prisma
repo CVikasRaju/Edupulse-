@@ -33,6 +33,7 @@ model Profile {
   year_of_joining     Int?
   is_profile_complete Boolean    @default(false)
   is_active           Boolean    @default(true)
+  theme_preference    String     @default("system") // system | light | dark
   created_at          DateTime   @default(now())
   updated_at          DateTime   @updatedAt
 

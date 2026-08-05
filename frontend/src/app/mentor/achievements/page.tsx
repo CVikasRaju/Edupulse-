@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   Trophy,
   Award,
@@ -135,6 +137,7 @@ export default function MentorAchievements() {
 
   return (
     <AppShell role="mentor">
+      <Reveal>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Achievements</h1>
@@ -142,6 +145,7 @@ export default function MentorAchievements() {
         </div>
         <button onClick={() => setShowModal(true)} className="btn-primary"><Plus className="w-4 h-4" />Add Achievement</button>
       </div>
+      </Reveal>
 
       {verifyMsg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -156,7 +160,7 @@ export default function MentorAchievements() {
         <button
           onClick={() => setTab("verify")}
           className={`flex items-center gap-2 px-4 py-2 rounded-button text-sm font-medium transition-all ${
-            tab === "verify" ? "bg-accent text-background" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
+            tab === "verify" ? "bg-accent text-ink" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
           }`}
         >
           <Users className="w-4 h-4" />
@@ -166,7 +170,7 @@ export default function MentorAchievements() {
         <button
           onClick={() => setTab("mine")}
           className={`flex items-center gap-2 px-4 py-2 rounded-button text-sm font-medium transition-all ${
-            tab === "mine" ? "bg-accent text-background" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
+            tab === "mine" ? "bg-accent text-ink" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
           }`}
         >
           <Trophy className="w-4 h-4" />
@@ -177,8 +181,9 @@ export default function MentorAchievements() {
       {tab === "verify" && (
         <div className="space-y-3">
           {pendingAchs.length > 0 ? (
-            pendingAchs.map((a) => (
-              <div key={a.id} className="card p-4 flex items-start gap-3 flex-wrap">
+            pendingAchs.map((a, idx) => (
+              <Reveal key={a.id} delay={Math.min(idx * 0.05, 0.3)}>
+              <div className="card p-4 flex items-start gap-3 flex-wrap hover:border-accent/30 hover:-translate-y-0.5 transition-all duration-300">
                 <div className="p-2.5 rounded-xl bg-highlight/10 text-highlight flex-shrink-0">
                   <Trophy className="w-4 h-4" />
                 </div>
@@ -211,6 +216,7 @@ export default function MentorAchievements() {
                   </button>
                 </div>
               </div>
+              </Reveal>
             ))
           ) : (
             <div className="card py-12 text-center text-text-muted">
@@ -223,8 +229,9 @@ export default function MentorAchievements() {
 
       {tab === "mine" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {achievements.length > 0 ? achievements.map((a) => (
-            <div key={a.id} className="card p-5 hover:border-accent/40 transition-colors group">
+          {achievements.length > 0 ? achievements.map((a, idx) => (
+            <Reveal key={a.id} delay={Math.min(idx * 0.06, 0.35)}>
+            <div className="card p-5 hover:border-accent/40 hover:-translate-y-1 transition-all duration-300 group">
               <div className="flex items-start justify-between mb-3">
                 <div className="p-2.5 rounded-xl bg-accent/10 text-accent group-hover:scale-110 transition-transform">
                   <Trophy className="w-5 h-5" />
@@ -238,6 +245,7 @@ export default function MentorAchievements() {
                 {a.level && <span className="flex items-center gap-1"><Award className="w-3 h-3" />{a.level}</span>}
               </div>
             </div>
+            </Reveal>
           )) : (
             <div className="col-span-full py-12 text-center text-text-muted card"><Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" /><p>No achievements yet. Add your first one!</p></div>
           )}
@@ -245,8 +253,17 @@ export default function MentorAchievements() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Add Achievement</h2>
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
@@ -272,7 +289,7 @@ export default function MentorAchievements() {
                 </div>
               </div>
               <div><label className="label">Issuing Body / Journal</label><input name="issuing_body" required className="input" placeholder="e.g. IEEE Transactions" /></div>
-              <div><label className="label">Date</label><input type="date" name="date" required className="input" style={{ colorScheme: "dark" }} /></div>
+              <div><label className="label">Date</label><input type="date" name="date" required className="input" /></div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancel</button>
                 <button type="submit" disabled={submitting} className="btn-primary">
@@ -280,8 +297,8 @@ export default function MentorAchievements() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

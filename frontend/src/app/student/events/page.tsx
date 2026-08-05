@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/AppShell";
+import Reveal from "@/components/ui/Reveal";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
 import { useUser } from "@/hooks/useUser";
@@ -142,15 +144,15 @@ export default function StudentEvents() {
           .filter(Boolean)
           .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const renderCard = (e: any) => {
+  const renderCard = (e: any, idx: number) => {
     const parts = eventDateParts(e.date);
     const registered = isRegistered(e.id);
     const full = isFull(e);
     const regCount = countFor(e.id);
     return (
+      <Reveal key={e.id} delay={Math.min(idx * 0.05, 0.35)} className="h-full">
       <div
-        key={e.id}
-        className="card p-5 flex flex-col hover:border-accent/30 transition-colors cursor-pointer"
+        className="card p-5 flex flex-col h-full hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
         onClick={() => setSelected(e)}
       >
         <div className="flex items-start justify-between gap-3">
@@ -199,7 +201,7 @@ export default function StudentEvents() {
                   ? "bg-success/15 text-success hover:bg-success/25"
                   : full
                     ? "bg-surface border border-surface-border text-text-muted cursor-not-allowed"
-                    : "bg-accent text-white hover:bg-accent/90"
+                    : "bg-accent text-ink hover:bg-accent/90"
               }`}
             >
               {busyId === e.id ? (
@@ -229,17 +231,20 @@ export default function StudentEvents() {
           )}
         </div>
       </div>
+      </Reveal>
     );
   };
 
   return (
     <AppShell role="student">
+      <Reveal>
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Events</h1>
         <p className="text-text-muted text-sm mt-0.5">
           Discover workshops, hackathons & seminars — register in one click
         </p>
       </div>
+      </Reveal>
 
       {msg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -296,7 +301,7 @@ export default function StudentEvents() {
 
       {list.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {list.map((e: any) => renderCard(e))}
+          {list.map((e: any, idx: number) => renderCard(e, idx))}
         </div>
       ) : (
         <div className="card py-16 text-center text-text-muted">
@@ -334,12 +339,20 @@ export default function StudentEvents() {
       )}
 
       {/* Detail modal */}
+      <AnimatePresence>
       {selected && (
-        <div
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
           onClick={() => setSelected(null)}
         >
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="card w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -419,9 +432,10 @@ export default function StudentEvents() {
                 </div>
               )}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </AppShell>
   );
 }

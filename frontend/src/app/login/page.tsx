@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, BookOpen, Users, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Loader2, BookOpen, Users, Shield, Sparkles } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
+import AuroraBackground from "@/components/ui/AuroraBackground";
+import BorderBeam from "@/components/ui/BorderBeam";
+import MagneticButton from "@/components/ui/MagneticButton";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 type Role = "mentee" | "mentor" | "admin";
 
@@ -12,6 +17,12 @@ const ROLE_LABELS = {
   mentee: { label: "Student", icon: BookOpen, desc: "Access your academics, achievements & mentorship" },
   mentor: { label: "Faculty / Mentor", icon: Users, desc: "Manage your mentees, courses & grades" },
   admin: { label: "Administrator", icon: Shield, desc: "Full platform oversight & management" },
+};
+
+const ROLE_COLORS: Record<Role, string> = {
+  mentee: "#E8A87C",
+  mentor: "#7C9E87",
+  admin: "#C084FC",
 };
 
 export default function LoginPage() {
@@ -103,70 +114,119 @@ export default function LoginPage() {
     }
   };
 
+  const activeColor = ROLE_COLORS[selectedRole];
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background glow orbs */}
-      <div
-        className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(232,168,124,0.07) 0%, transparent 70%)" }}
-      />
-      <div
-        className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full"
-        style={{ background: "radial-gradient(circle, rgba(124,158,135,0.06) 0%, transparent 70%)" }}
-      />
+      {/* Animated aurora + grid background */}
+      <AuroraBackground />
 
-      <div className="w-full max-w-md relative z-10">
+      {/* Floating decorative orbs */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <div className="absolute top-[12%] left-[14%] w-24 h-24 rounded-full bg-accent/10 blur-2xl animate-float" />
+        <div className="absolute bottom-[18%] right-[16%] w-32 h-32 rounded-full bg-highlight/10 blur-2xl animate-float-slow" />
+      </div>
+
+      {/* Theme toggle */}
+      <div className="absolute top-5 right-5 z-20">
+        <ThemeToggle />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md relative z-10"
+      >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-2 bg-surface rounded-2xl mb-4 shadow-xl border border-surface-border">
-              <Image
-                src="/sahyadri-logo.png"
-                alt="Sahyadri College Logo"
-                width={64}
-                height={64}
-                className="w-auto h-16 object-contain"
-                onError={(e) => {
-                  // Fallback if logo not found
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 18 }}
+          className="text-center mb-8"
+        >
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: 2 }}
+            className="inline-flex items-center justify-center p-2 bg-surface/70 backdrop-blur-xl rounded-2xl mb-4 shadow-xl border border-glass/10"
+          >
+            <Image
+              src="/sahyadri-logo.png"
+              alt="Sahyadri College Logo"
+              width={64}
+              height={64}
+              className="w-auto h-16 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
             <div className="w-16 h-16 flex items-center justify-center">
-              <span className="text-3xl font-heading font-bold text-accent">EP</span>
+              <span className="text-3xl font-heading font-bold text-gradient">EP</span>
             </div>
-          </div>
-          <h1 className="text-3xl font-heading font-bold text-text-primary tracking-tight">EduPulse</h1>
+          </motion.div>
+          <h1 className="text-3xl font-heading font-bold text-text-primary tracking-tight">
+            <span className="text-gradient">Edu</span>Pulse
+          </h1>
           <p className="text-text-muted text-sm mt-1">
             Sahyadri College of Engineering &amp; Management
           </p>
-        </div>
+        </motion.div>
 
         {/* Role Selector */}
-        <div className="card p-1.5 mb-6 grid grid-cols-3 gap-1">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="card p-1.5 mb-6 grid grid-cols-3 gap-1"
+        >
           {(Object.entries(ROLE_LABELS) as [Role, (typeof ROLE_LABELS)[Role]][]).map(
             ([role, { label, icon: Icon }]) => (
               <button
                 key={role}
                 type="button"
                 onClick={() => setSelectedRole(role)}
-                className={`flex flex-col items-center gap-1 py-2.5 px-2 rounded-button text-xs font-medium transition-all duration-200 ${
-                  selectedRole === role
-                    ? "bg-accent text-background shadow-sm"
-                    : "text-text-muted hover:text-text-primary hover:bg-surface"
+                className={`relative flex flex-col items-center gap-1 py-2.5 px-2 rounded-button text-xs font-medium transition-colors duration-200 ${
+                  selectedRole === role ? "text-ink" : "text-text-muted hover:text-text-primary hover:bg-glass/[0.04]"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {label}
+                {selectedRole === role && (
+                  <motion.span
+                    layoutId="login-role-pill"
+                    className="absolute inset-0 rounded-button"
+                    style={{
+                      background: `linear-gradient(135deg, ${activeColor}, ${activeColor}cc)`,
+                      boxShadow: `0 4px 18px ${activeColor}44`,
+                    }}
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  />
+                )}
+                <Icon className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{label}</span>
               </button>
             )
           )}
-        </div>
+        </motion.div>
 
-        <p className="text-center text-text-muted text-xs mb-5">
-          {ROLE_LABELS[selectedRole].desc}
-        </p>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={selectedRole}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.2 }}
+            className="text-center text-text-muted text-xs mb-5"
+          >
+            {ROLE_LABELS[selectedRole].desc}
+          </motion.p>
+        </AnimatePresence>
 
         {/* Form Card */}
-        <div className="card p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+        <BorderBeam always className="rounded-card">
+          <div className="card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="label">Email Address</label>
@@ -195,26 +255,37 @@ export default function LoginPage() {
                   required
                   autoComplete="current-password"
                 />
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                </motion.button>
               </div>
             </div>
 
-            {error && (
-              <div className="text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-2.5 whitespace-pre-line break-all">
-                {error}
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="text-danger text-sm bg-danger/10 border border-danger/20 rounded-input px-4 py-2.5 whitespace-pre-line break-all">
+                    {error}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <button
+            <MagneticButton
               id="login-btn"
               type="submit"
               disabled={loading}
+              strength={8}
               className="btn-primary w-full btn-lg"
             >
               {loading ? (
@@ -223,9 +294,12 @@ export default function LoginPage() {
                   Signing in…
                 </>
               ) : (
-                <>Sign In</>
+                <>
+                  Sign In
+                  <Sparkles className="w-4 h-4 opacity-70" />
+                </>
               )}
-            </button>
+            </MagneticButton>
           </form>
 
           <div className="mt-4 p-3 rounded-input bg-accent/5 border border-accent/10">
@@ -233,12 +307,19 @@ export default function LoginPage() {
               Use your Sahyadri College email and your assigned password.
             </p>
           </div>
-        </div>
+          </div>
+        </BorderBeam>
+        </motion.div>
 
-        <p className="text-center text-text-muted text-xs mt-6">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-center text-text-muted text-xs mt-6"
+        >
           © 2024 EduPulse · Sahyadri College of Engineering &amp; Management, Mangalore
-        </p>
-      </div>
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

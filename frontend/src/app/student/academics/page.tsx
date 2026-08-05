@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
@@ -15,7 +16,10 @@ import {
   X,
   Loader2,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import Reveal from "@/components/ui/Reveal";
 
 type Tab = "attendance" | "grades" | "assignments" | "grace";
 
@@ -106,8 +110,10 @@ export default function StudentAcademics() {
   if (loading) {
     return (
       <AppShell role="student">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        <div className="flex items-center justify-center h-64 gap-3">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+            <Sparkles className="w-8 h-8 text-accent" />
+          </motion.div>
         </div>
       </AppShell>
     );
@@ -129,45 +135,68 @@ export default function StudentAcademics() {
 
   return (
     <AppShell role="student">
-      <div className="mb-6">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">Academics</h1>
-        <p className="text-text-muted text-sm mt-0.5">Real-time attendance, grades & grace requests</p>
-      </div>
+      <Reveal>
+        <div className="mb-6">
+          <h1 className="text-2xl font-heading font-bold text-text-primary">Academics</h1>
+          <p className="text-text-muted text-sm mt-0.5">Real-time attendance, grades & grace requests</p>
+        </div>
+      </Reveal>
 
-      <div className="flex gap-1 p-1 bg-surface rounded-button mb-6 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-1 p-1 bg-surface rounded-button mb-6 overflow-x-auto scrollbar-hide relative">
         {tabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-button text-sm font-medium whitespace-nowrap transition-all duration-200 ${
-              activeTab === key ? "bg-accent text-background shadow-sm" : "text-text-muted hover:text-text-primary"
+            className={`relative flex items-center gap-2 px-4 py-2 rounded-button text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
+              activeTab === key ? "text-ink" : "text-text-muted hover:text-text-primary"
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {label}
+            {activeTab === key && (
+              <motion.span
+                layoutId="academics-tab-pill"
+                className="absolute inset-0 rounded-button bg-accent shadow-sm"
+                transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              />
+            )}
+            <Icon className="w-3.5 h-3.5 relative z-10" />
+            <span className="relative z-10">{label}</span>
           </button>
         ))}
       </div>
 
+      <AnimatePresence mode="wait">
       {activeTab === "attendance" && (
-        <div className="space-y-4">
+        <motion.div key="attendance" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="card p-5 text-center">
-              <div className="text-text-muted text-sm mb-1">Overall Attendance</div>
-              <div className="text-4xl font-heading font-bold text-success">
-                {attendanceSummary.length > 0 
-                  ? Math.round(attendanceSummary.reduce((acc: number, s: any) => acc + s.percentage, 0) / attendanceSummary.length) 
-                  : 0}%
+            <Reveal delay={0.05}>
+              <div className="card p-5 text-center">
+                <div className="text-text-muted text-sm mb-1">Overall Attendance</div>
+                <div className="text-4xl font-heading font-bold text-success">
+                  <AnimatedCounter
+                    value={attendanceSummary.length > 0
+                      ? Math.round(attendanceSummary.reduce((acc: number, s: any) => acc + s.percentage, 0) / attendanceSummary.length)
+                      : 0}
+                    suffix="%"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="card p-5 text-center">
-              <div className="text-text-muted text-sm mb-1">Subjects Tracked</div>
-              <div className="text-4xl font-heading font-bold text-text-primary">{attendanceSummary.length}</div>
-            </div>
-            <div className="card p-5 text-center">
-              <div className="text-text-muted text-sm mb-1">Grace Requests</div>
-              <div className="text-4xl font-heading font-bold text-accent">{graceRequests.length}</div>
-            </div>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <div className="card p-5 text-center">
+                <div className="text-text-muted text-sm mb-1">Subjects Tracked</div>
+                <div className="text-4xl font-heading font-bold text-text-primary">
+                  <AnimatedCounter value={attendanceSummary.length} />
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="card p-5 text-center">
+                <div className="text-text-muted text-sm mb-1">Grace Requests</div>
+                <div className="text-4xl font-heading font-bold text-accent">
+                  <AnimatedCounter value={graceRequests.length} />
+                </div>
+              </div>
+            </Reveal>
           </div>
 
           <div className="card p-5">
@@ -185,8 +214,16 @@ export default function StudentAcademics() {
                   </tr>
                 </thead>
                 <tbody>
-                  {attendanceSummary.map((s: any) => (
-                    <tr key={s.subject}>
+                  {attendanceSummary.map((s: any, idx: number) => {
+                    const color = s.percentage >= 85 ? "#6FCF97" : s.percentage >= 75 ? "#E8A87C" : "#E07070";
+                    return (
+                    <motion.tr
+                      key={s.subject}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: Math.min(idx * 0.04, 0.4) }}
+                    >
                       <td className="font-medium">{s.subject}</td>
                       <td className="font-mono text-text-muted text-xs">{s.code}</td>
                       <td>{s.present}</td>
@@ -194,17 +231,16 @@ export default function StudentAcademics() {
                       <td>
                         <div className="flex items-center gap-2">
                           <div className="w-16 h-1.5 rounded-full bg-surface-border overflow-hidden">
-                            <div
+                            <motion.div
                               className="h-full rounded-full"
-                              style={{
-                                width: `${s.percentage}%`,
-                                background: s.percentage >= 85 ? "#6FCF97" : s.percentage >= 75 ? "#E8A87C" : "#E07070",
-                              }}
+                              initial={{ width: 0 }}
+                              whileInView={{ width: `${s.percentage}%` }}
+                              viewport={{ once: true }}
+                              transition={{ duration: 0.9, delay: 0.1 + idx * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                              style={{ background: color }}
                             />
                           </div>
-                          <span style={{ color: s.percentage >= 85 ? "#6FCF97" : s.percentage >= 75 ? "#E8A87C" : "#E07070" }}>
-                            {s.percentage.toFixed(1)}%
-                          </span>
+                          <span style={{ color }}>{s.percentage.toFixed(1)}%</span>
                         </div>
                       </td>
                       <td>
@@ -212,21 +248,23 @@ export default function StudentAcademics() {
                           {s.percentage >= 75 ? "Safe" : "Shortage"}
                         </span>
                       </td>
-                    </tr>
-                  ))}
+                    </motion.tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {activeTab === "grades" && (
-        <div className="space-y-6">
+        <motion.div key="grades" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="space-y-6">
           {Object.entries(gradeBySemester)
             .sort(([a], [b]) => Number(b) - Number(a))
-            .map(([sem, semesterGrades]: any) => (
-              <div key={sem} className="card p-5">
+            .map(([sem, semesterGrades]: any, semIdx: number) => (
+              <Reveal key={sem} delay={semIdx * 0.06}>
+              <div className="card p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-heading font-bold text-text-primary">Semester {sem}</h2>
                   <div className="flex gap-3">
@@ -245,8 +283,14 @@ export default function StudentAcademics() {
                     </tr>
                   </thead>
                   <tbody>
-                    {semesterGrades.map((g: any) => (
-                      <tr key={g.id}>
+                    {semesterGrades.map((g: any, idx: number) => (
+                      <motion.tr
+                        key={g.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: Math.min(idx * 0.04, 0.3) }}
+                      >
                         <td className="font-medium">{g.subject_name}</td>
                         <td className="font-mono text-xs text-text-muted">{g.subject_code}</td>
                         <td className="font-semibold">{g.total_marks}</td>
@@ -256,25 +300,34 @@ export default function StudentAcademics() {
                           </span>
                         </td>
                         <td>{g.credits}</td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              </Reveal>
             ))}
-        </div>
+        </motion.div>
       )}
 
       {activeTab === "grace" && (
-        <div className="space-y-4">
+        <motion.div key="grace" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }} className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={() => setShowGraceModal(true)} className="btn-primary btn-sm">
+            <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} onClick={() => setShowGraceModal(true)} className="btn-primary btn-sm">
               <Plus className="w-3.5 h-3.5" />
               New Grace Request
-            </button>
+            </motion.button>
           </div>
-          {graceRequests.map((req: any) => (
-            <div key={req.id} className="card p-5">
+          {graceRequests.map((req: any, idx: number) => (
+            <motion.div
+              key={req.id}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: Math.min(idx * 0.06, 0.4) }}
+              whileHover={{ y: -2 }}
+              className="card p-5"
+            >
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -287,17 +340,32 @@ export default function StudentAcademics() {
                 </div>
                 <div className="text-xs text-text-muted">{new Date(req.created_at).toLocaleDateString()}</div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {showGraceModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowGraceModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            onClick={(e) => e.stopPropagation()}
+            className="card w-full max-w-lg shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">New Grace Request</h2>
-              <button onClick={() => setShowGraceModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
+              <motion.button whileHover={{ rotate: 90 }} onClick={() => setShowGraceModal(false)} className="btn-icon"><X className="w-5 h-5" /></motion.button>
             </div>
             <form onSubmit={handleCreateGrace} className="p-5 space-y-4">
               {formError && (
@@ -321,7 +389,7 @@ export default function StudentAcademics() {
                 </div>
                 <div>
                   <label className="label">Date From</label>
-                  <input type="date" name="dateFrom" required className="input text-sm" style={{ colorScheme: 'dark' }} />
+                  <input type="date" name="dateFrom" required className="input text-sm" />
                 </div>
               </div>
               <div>
@@ -330,14 +398,15 @@ export default function StudentAcademics() {
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowGraceModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" disabled={submitting} className="btn-primary">
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} type="submit" disabled={submitting} className="btn-primary">
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Submit
-                </button>
+                </motion.button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </AppShell>
   );
 }

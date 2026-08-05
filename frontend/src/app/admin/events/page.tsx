@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/AppShell";
 import EventFormModal from "@/components/events/EventFormModal";
 import RegistrantsModal from "@/components/events/RegistrantsModal";
+import Reveal from "@/components/ui/Reveal";
+import TiltCard from "@/components/ui/TiltCard";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import { AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import {
   eventTypeClass,
@@ -115,6 +119,7 @@ export default function AdminEvents() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Event Management</h1>
@@ -126,6 +131,7 @@ export default function AdminEvents() {
           <Plus className="w-4 h-4" /> New Event
         </button>
       </div>
+      </Reveal>
 
       {msg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -137,16 +143,22 @@ export default function AdminEvents() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {stats.map((s) => (
-          <div key={s.label} className="card p-4 flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.color}`}>
-              <s.icon className="w-5 h-5" />
+        {stats.map((s, idx) => (
+          <Reveal key={s.label} delay={idx * 0.07} className="h-full">
+            <TiltCard intensity={6} className="h-full">
+            <div className="card p-4 flex items-center gap-3 h-full">
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.color}`}>
+                <s.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xl font-bold text-text-primary leading-tight">
+                  <AnimatedCounter value={s.value} />
+                </div>
+                <div className="text-xs text-text-muted">{s.label}</div>
+              </div>
             </div>
-            <div>
-              <div className="text-xl font-bold text-text-primary leading-tight">{s.value}</div>
-              <div className="text-xs text-text-muted">{s.label}</div>
-            </div>
-          </div>
+            </TiltCard>
+          </Reveal>
         ))}
       </div>
 
@@ -176,12 +188,13 @@ export default function AdminEvents() {
       {/* Events list */}
       {filtered.length > 0 ? (
         <div className="space-y-3">
-          {filtered.map((e) => {
+          {filtered.map((e, idx) => {
             const parts = eventDateParts(e.date);
             const regCount = countFor(e.id);
             const full = e.capacity && regCount >= e.capacity;
             return (
-              <div key={e.id} className="card p-4 flex items-center gap-4 flex-wrap sm:flex-nowrap">
+              <Reveal key={e.id} delay={Math.min(idx * 0.04, 0.3)}>
+              <div className="card p-4 flex items-center gap-4 flex-wrap sm:flex-nowrap hover:border-accent/30 hover:-translate-y-0.5 transition-all duration-300">
                 <div className="text-center bg-accent/10 rounded-xl px-3.5 py-2 min-w-[60px] flex-shrink-0">
                   <div className="text-accent text-xl font-bold leading-none">{parts.day}</div>
                   <div className="text-accent text-xs font-medium">{parts.month} {parts.year}</div>
@@ -237,6 +250,7 @@ export default function AdminEvents() {
                   </button>
                 </div>
               </div>
+              </Reveal>
             );
           })}
         </div>
@@ -247,6 +261,7 @@ export default function AdminEvents() {
         </div>
       )}
 
+      <AnimatePresence>
       {showCreate && (
         <EventFormModal
           open
@@ -277,6 +292,7 @@ export default function AdminEvents() {
           onClose={() => setRegEvent(null)}
         />
       )}
+      </AnimatePresence>
     </AppShell>
   );
 }

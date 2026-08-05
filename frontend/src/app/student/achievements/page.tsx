@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import { Plus, Trophy, Award, Search, Filter, Calendar, X, Loader2, AlertCircle } from "lucide-react";
 
 export default function StudentAchievements() {
@@ -73,6 +75,7 @@ export default function StudentAchievements() {
 
   return (
     <AppShell role="student">
+      <Reveal>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary tracking-tight">Achievements</h1>
@@ -82,11 +85,13 @@ export default function StudentAchievements() {
           <Plus className="w-4 h-4" /> Add Achievement
         </button>
       </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {achievements.length > 0 ? (
-          achievements.map((ach) => (
-            <div key={ach.id} className="card p-5 group hover:border-accent/40 transition-colors">
+          achievements.map((ach, idx) => (
+            <Reveal key={ach.id} delay={Math.min(idx * 0.06, 0.4)}>
+            <div className="card p-5 group hover:border-accent/40 hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-start justify-between mb-4">
                 <div className="p-2.5 rounded-xl bg-accent/10 text-accent group-hover:scale-110 transition-transform duration-300">
                   <Trophy className="w-5 h-5" />
@@ -102,6 +107,7 @@ export default function StudentAchievements() {
                 <div className="flex items-center gap-1.5"><Award className="w-3.5 h-3.5" />{ach.level}</div>
               </div>
             </div>
+            </Reveal>
           ))
         ) : (
           <div className="col-span-full py-12 text-center text-text-muted">
@@ -111,8 +117,18 @@ export default function StudentAchievements() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-lg shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Add Achievement</h2>
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
@@ -148,7 +164,7 @@ export default function StudentAchievements() {
               </div>
               <div>
                 <label className="label">Date</label>
-                <input type="date" name="date" required className="input" style={{ colorScheme: 'dark' }} />
+                <input type="date" name="date" required className="input" />
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancel</button>
@@ -157,8 +173,8 @@ export default function StudentAchievements() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

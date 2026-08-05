@@ -1,5 +1,8 @@
 -- ==========================================
 -- EduPulse Supabase Seed Data (Mock Data)
+-- NOTE: All names, employee IDs and USNs below are
+-- fictional demo values. Replace before using in
+-- production.
 -- ==========================================
 
 -- 1. Profiles

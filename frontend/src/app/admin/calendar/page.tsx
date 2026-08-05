@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   CalendarDays,
   Plus,
@@ -97,6 +99,7 @@ export default function AdminCalendar() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Academic Calendar</h1>
@@ -106,6 +109,7 @@ export default function AdminCalendar() {
           <Plus className="w-4 h-4" /> New Event
         </button>
       </div>
+      </Reveal>
 
       {msg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -116,11 +120,18 @@ export default function AdminCalendar() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Reveal>
         <div className="card p-5">
           <h2 className="text-sm font-semibold text-text-primary mb-4">Upcoming ({upcoming.length})</h2>
           <div className="space-y-2">
-            {upcoming.length > 0 ? upcoming.map((e) => (
-              <div key={e.id} className="flex items-center gap-3 p-3 rounded-button bg-surface border border-surface-border group">
+            {upcoming.length > 0 ? upcoming.map((e, eIdx) => (
+              <motion.div
+                key={e.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: Math.min(eIdx * 0.04, 0.3), duration: 0.3 }}
+                className="flex items-center gap-3 p-3 rounded-button bg-surface border border-surface-border group hover:border-accent/30 transition-colors"
+              >
                 <div className="text-center bg-accent/10 rounded-lg px-3 py-1.5 min-w-[52px]">
                   <div className="text-accent font-bold">{new Date(e.date).getDate()}</div>
                   <div className="text-accent text-[10px]">{new Date(e.date).toLocaleString("en-IN", { month: "short" })}</div>
@@ -135,18 +146,26 @@ export default function AdminCalendar() {
                 <button onClick={() => handleDelete(e.id)} disabled={deletingId === e.id} className="btn-icon text-text-muted hover:text-danger">
                   {deletingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
-              </div>
+              </motion.div>
             )) : (
               <p className="text-text-muted text-sm py-6 text-center">No upcoming events.</p>
             )}
           </div>
         </div>
+        </Reveal>
 
+        <Reveal delay={0.1}>
         <div className="card p-5">
           <h2 className="text-sm font-semibold text-text-primary mb-4">Past ({past.length})</h2>
           <div className="space-y-2">
-            {past.length > 0 ? past.slice(-15).reverse().map((e) => (
-              <div key={e.id} className="flex items-center gap-3 p-3 rounded-button bg-surface border border-surface-border opacity-70">
+            {past.length > 0 ? past.slice(-15).reverse().map((e, eIdx) => (
+              <motion.div
+                key={e.id}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: Math.min(eIdx * 0.03, 0.25), duration: 0.3 }}
+                className="flex items-center gap-3 p-3 rounded-button bg-surface border border-surface-border opacity-70"
+              >
                 <div className="text-center bg-surface-border/40 rounded-lg px-3 py-1.5 min-w-[52px]">
                   <div className="text-text-muted font-bold">{new Date(e.date).getDate()}</div>
                   <div className="text-text-muted text-[10px]">{new Date(e.date).toLocaleString("en-IN", { month: "short" })}</div>
@@ -158,17 +177,27 @@ export default function AdminCalendar() {
                 <button onClick={() => handleDelete(e.id)} disabled={deletingId === e.id} className="btn-icon text-text-muted hover:text-danger">
                   {deletingId === e.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
-              </div>
+              </motion.div>
             )) : (
               <p className="text-text-muted text-sm py-6 text-center">No past events.</p>
             )}
           </div>
         </div>
+        </Reveal>
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">New Calendar Event</h2>
               <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
@@ -192,7 +221,7 @@ export default function AdminCalendar() {
                 </div>
                 <div>
                   <label className="label">Date</label>
-                  <input type="date" name="date" required className="input text-sm" style={{ colorScheme: "dark" }} />
+                  <input type="date" name="date" required className="input text-sm" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -213,8 +242,8 @@ export default function AdminCalendar() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

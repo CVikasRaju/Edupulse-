@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import AppShell from "@/components/AppShell";
 import EventFormModal from "@/components/events/EventFormModal";
 import RegistrantsModal from "@/components/events/RegistrantsModal";
+import Reveal from "@/components/ui/Reveal";
+import { AnimatePresence } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -21,7 +23,6 @@ import {
   Clock,
   MapPin,
   Users,
-  CalendarDays,
   CalendarCheck,
 } from "lucide-react";
 
@@ -92,11 +93,12 @@ export default function MentorEvents() {
   const otherEvents = events.filter((e) => e.created_by !== profile?.id);
   const list = tab === "mine" ? myEvents : otherEvents;
 
-  const renderEventRow = (e: any, canManage: boolean) => {
+  const renderEventRow = (e: any, canManage: boolean, idx: number) => {
     const parts = eventDateParts(e.date);
     const regCount = countFor(e.id);
     return (
-      <div key={e.id} className="card p-4 flex items-center gap-4 flex-wrap sm:flex-nowrap">
+      <Reveal key={e.id} delay={Math.min(idx * 0.05, 0.35)}>
+      <div className="card p-4 flex items-center gap-4 flex-wrap sm:flex-nowrap hover:border-accent/30 hover:-translate-y-0.5 transition-all duration-300">
         <div className="text-center bg-accent/10 rounded-xl px-3.5 py-2 min-w-[60px] flex-shrink-0">
           <div className="text-accent text-xl font-bold leading-none">{parts.day}</div>
           <div className="text-accent text-xs font-medium">{parts.month} {parts.year}</div>
@@ -158,11 +160,13 @@ export default function MentorEvents() {
           )}
         </div>
       </div>
+      </Reveal>
     );
   };
 
   return (
     <AppShell role="mentor">
+      <Reveal>
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Events</h1>
@@ -174,6 +178,7 @@ export default function MentorEvents() {
           <Plus className="w-4 h-4" /> New Event
         </button>
       </div>
+      </Reveal>
 
       {msg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -201,7 +206,7 @@ export default function MentorEvents() {
 
       {list.length > 0 ? (
         <div className="space-y-3">
-          {list.map((e) => renderEventRow(e, tab === "mine"))}
+          {list.map((e, idx: number) => renderEventRow(e, tab === "mine", idx))}
         </div>
       ) : (
         <div className="card py-16 text-center text-text-muted">
@@ -214,6 +219,7 @@ export default function MentorEvents() {
         </div>
       )}
 
+      <AnimatePresence>
       {showCreate && (
         <EventFormModal
           open
@@ -244,6 +250,7 @@ export default function MentorEvents() {
           onClose={() => setRegEvent(null)}
         />
       )}
+      </AnimatePresence>
     </AppShell>
   );
 }

@@ -23,6 +23,7 @@ export interface Profile {
   year_of_joining?: number;
   is_profile_complete: boolean;
   is_active: boolean;
+  theme_preference?: "system" | "light" | "dark";
   created_at: string;
   updated_at: string;
 }

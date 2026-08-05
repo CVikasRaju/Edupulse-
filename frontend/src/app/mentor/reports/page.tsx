@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { Download, CheckCircle2, Loader2 } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 
 export default function MentorReports() {
   const [loading, setLoading] = useState(true);
@@ -62,33 +64,43 @@ export default function MentorReports() {
 
   return (
     <AppShell role="mentor">
-      <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-text-primary">Reports</h1>
-          <p className="text-text-muted text-sm mt-0.5">Academic summary for your mentees</p>
+      <Reveal>
+        <div className="flex items-start justify-between flex-wrap gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-text-primary">Reports</h1>
+            <p className="text-text-muted text-sm mt-0.5">Academic summary for your mentees</p>
+          </div>
+          <motion.button whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={handleDownload} disabled={downloading} className="btn-primary">
+            {downloading ? <CheckCircle2 className="w-4 h-4 animate-pulse" /> : <Download className="w-4 h-4" />}
+            {downloading ? "Generating..." : "Download CSV"}
+          </motion.button>
         </div>
-        <button onClick={handleDownload} disabled={downloading} className="btn-primary">
-          {downloading ? <CheckCircle2 className="w-4 h-4 animate-pulse" /> : <Download className="w-4 h-4" />}
-          {downloading ? "Generating..." : "Download CSV"}
-        </button>
-      </div>
-      <div className="card overflow-hidden">
-        <table className="data-table">
-          <thead><tr><th>Student</th><th>USN</th><th>CGPA</th><th>Achievements</th></tr></thead>
-          <tbody>
-            {menteesData.length > 0 ? menteesData.map((m) => (
-              <tr key={m.id}>
-                <td className="font-medium">{m.full_name}</td>
-                <td className="font-mono text-xs text-text-muted">{m.usn}</td>
-                <td><span className="badge badge-accent">{m.cgpa}</span></td>
-                <td>{m.verified_achievements} verified</td>
-              </tr>
-            )) : (
-              <tr><td colSpan={4} className="text-center py-8 text-text-muted">No mentees found.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      </Reveal>
+      <Reveal delay={0.1}>
+        <div className="card overflow-hidden">
+          <table className="data-table">
+            <thead><tr><th>Student</th><th>USN</th><th>CGPA</th><th>Achievements</th></tr></thead>
+            <tbody>
+              {menteesData.length > 0 ? menteesData.map((m, idx) => (
+                <motion.tr
+                  key={m.id}
+                  initial={{ opacity: 0, x: -12 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: Math.min(idx * 0.05, 0.4) }}
+                >
+                  <td className="font-medium">{m.full_name}</td>
+                  <td className="font-mono text-xs text-text-muted">{m.usn}</td>
+                  <td><span className="badge badge-accent">{m.cgpa}</span></td>
+                  <td>{m.verified_achievements} verified</td>
+                </motion.tr>
+              )) : (
+                <tr><td colSpan={4} className="text-center py-8 text-text-muted">No mentees found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Reveal>
     </AppShell>
   );
 }

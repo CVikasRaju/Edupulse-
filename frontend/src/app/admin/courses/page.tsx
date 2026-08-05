@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
-import { BookOpen, Plus, X, Loader2, Users, UserPlus, CheckCircle2 } from "lucide-react";
+import { BookOpen, Plus, X, Loader2, Users, UserPlus, CheckCircle2, Sparkles } from "lucide-react";
+import Reveal from "@/components/ui/Reveal";
 
 export default function AdminCourses() {
   const [loading, setLoading] = useState(true);
@@ -105,17 +107,19 @@ export default function AdminCourses() {
     setEnrolling(false);
   };
 
-  if (loading) return <AppShell role="admin"><div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-accent" /></div></AppShell>;
+  if (loading) return <AppShell role="admin"><div className="flex items-center justify-center h-64 gap-3"><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><Sparkles className="w-8 h-8 text-accent" /></motion.div></div></AppShell>;
 
   return (
     <AppShell role="admin">
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-text-primary">Course Management</h1>
+      <Reveal>
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl font-heading font-bold text-text-primary">Course Management</h1>
           <p className="text-text-muted text-sm mt-0.5">All courses across departments</p>
+          </div>
+          <motion.button whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => setShowModal(true)} className="btn-primary"><Plus className="w-4 h-4" />Add Course</motion.button>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary"><Plus className="w-4 h-4" />Add Course</button>
-      </div>
+      </Reveal>
 
       {enrollMsg && (
         <div className={`mb-4 text-sm rounded-input px-4 py-3 border ${
@@ -125,12 +129,19 @@ export default function AdminCourses() {
         </div>
       )}
 
+      <Reveal delay={0.1}>
       <div className="card overflow-hidden">
         <table className="data-table">
           <thead><tr><th>Course</th><th>Code</th><th>Faculty</th><th>Semester</th><th>Academic Year</th><th>Actions</th></tr></thead>
           <tbody>
-            {courses.length > 0 ? courses.map((c) => (
-              <tr key={c.id}>
+            {courses.length > 0 ? courses.map((c, idx) => (
+              <motion.tr
+                key={c.id}
+                initial={{ opacity: 0, x: -12 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: Math.min(idx * 0.05, 0.4) }}
+              >
                 <td className="font-medium">{c.name}</td>
                 <td className="font-mono text-xs text-text-muted">{c.code}</td>
                 <td>{c.Profile?.full_name}</td>
@@ -141,20 +152,35 @@ export default function AdminCourses() {
                     <UserPlus className="w-3.5 h-3.5" /> Enroll Students
                   </button>
                 </td>
-              </tr>
+              </motion.tr>
             )) : (
               <tr><td colSpan={6} className="text-center py-8 text-text-muted">No courses yet.</td></tr>
             )}
           </tbody>
         </table>
       </div>
+      </Reveal>
 
+      <AnimatePresence>
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            onClick={(e) => e.stopPropagation()}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Add Course</h2>
-              <button onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></button>
+              <motion.button whileHover={{ rotate: 90 }} onClick={() => setShowModal(false)} className="btn-icon"><X className="w-5 h-5" /></motion.button>
             </div>
             <form onSubmit={handleCreate} className="p-5 space-y-4">
               <div><label className="label">Faculty</label>
@@ -173,22 +199,37 @@ export default function AdminCourses() {
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Create</button>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} type="submit" className="btn-primary">Create</motion.button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {enrollCourse && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setEnrollCourse(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 26 }}
+            onClick={(e) => e.stopPropagation()}
+            className="card w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <div>
                 <h2 className="font-heading font-bold text-text-primary">Enroll Students</h2>
                 <p className="text-xs text-text-muted">{enrollCourse.name} · {enrollCourse.code}</p>
               </div>
-              <button onClick={() => setEnrollCourse(null)} className="btn-icon"><X className="w-5 h-5" /></button>
+              <motion.button whileHover={{ rotate: 90 }} onClick={() => setEnrollCourse(null)} className="btn-icon"><X className="w-5 h-5" /></motion.button>
             </div>
             <div className="p-5 overflow-y-auto flex-1">
               {students.length > 0 ? (
@@ -226,15 +267,16 @@ export default function AdminCourses() {
               <span className="text-xs text-text-muted">{selectedStudents.length} selected</span>
               <div className="flex gap-3">
                 <button onClick={() => setEnrollCourse(null)} className="btn-ghost">Cancel</button>
-                <button onClick={handleEnroll} disabled={enrolling || selectedStudents.length === 0} className="btn-primary">
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={handleEnroll} disabled={enrolling || selectedStudents.length === 0} className="btn-primary">
                   {enrolling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Enroll Selected
-                </button>
+                </motion.button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </AppShell>
   );
 }

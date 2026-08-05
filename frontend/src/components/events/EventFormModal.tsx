@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
 import { useUser } from "@/hooks/useUser";
@@ -91,8 +92,19 @@ export default function EventFormModal({ open, onClose, onSaved, initial }: Even
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="card w-full max-w-lg shadow-2xl max-h-[92vh] overflow-y-auto">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 16, scale: 0.97 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="card w-full max-w-lg shadow-2xl max-h-[92vh] overflow-y-auto"
+      >
         <div className="flex items-center justify-between p-5 border-b border-surface-border sticky top-0 bg-surface z-10">
           <h2 className="font-heading font-bold text-text-primary">
             {isEdit ? "Edit Event" : "Create New Event"}
@@ -154,7 +166,7 @@ export default function EventFormModal({ open, onClose, onSaved, initial }: Even
                 required
                 defaultValue={toLocalInput(initial?.date)}
                 className="input text-sm"
-                style={{ colorScheme: "dark" }}
+
               />
             </div>
             <div>
@@ -164,7 +176,7 @@ export default function EventFormModal({ open, onClose, onSaved, initial }: Even
                 name="end"
                 defaultValue={toLocalInput(initial?.end_date)}
                 className="input text-sm"
-                style={{ colorScheme: "dark" }}
+
               />
             </div>
           </div>
@@ -234,7 +246,7 @@ export default function EventFormModal({ open, onClose, onSaved, initial }: Even
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

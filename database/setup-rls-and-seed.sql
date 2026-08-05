@@ -239,7 +239,7 @@ BEGIN
     'GraceRequest', 'Achievement', 'FacultyAchievement', 'Course',
     'CourseEnrollment', 'CourseMaterial', 'Assignment', 'Submission',
     'FeedPost', 'Notification', 'AuditLogEntry', 'CalendarEvent',
-    'NbaScoringConfig', 'AlertRule', 'Alert', 'MentorAvailability',
+    'EventRegistration', 'NbaScoringConfig', 'AlertRule', 'Alert', 'MentorAvailability',
     'MentorSession'
   ]
   LOOP

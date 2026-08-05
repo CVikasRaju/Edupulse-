@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { newId } from "@/lib/id";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   Bell,
   Shield,
@@ -171,6 +173,7 @@ export default function AdminAlertsPage() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Alert Rules</h1>
@@ -189,6 +192,7 @@ export default function AdminAlertsPage() {
           </button>
         </div>
       </div>
+      </Reveal>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-6">
@@ -200,7 +204,7 @@ export default function AdminAlertsPage() {
             key={key}
             onClick={() => setTab(key as any)}
             className={`flex items-center gap-2 px-4 py-2 rounded-button text-sm font-medium transition-all ${
-              tab === key ? "bg-accent text-background" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
+              tab === key ? "bg-accent text-ink" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -219,9 +223,9 @@ export default function AdminAlertsPage() {
               <p className="text-xs mt-1">Add rules to automatically detect at-risk students.</p>
             </div>
           ) : (
-            rules.map((rule) => (
+            rules.map((rule, idx) => (
+              <Reveal key={rule.id} delay={Math.min(idx * 0.04, 0.3)}>
               <div
-                key={rule.id}
                 className={`card p-4 flex items-center gap-4 ${!rule.is_active ? "opacity-50" : ""}`}
               >
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -267,6 +271,7 @@ export default function AdminAlertsPage() {
                   </button>
                 </div>
               </div>
+              </Reveal>
             ))
           )}
         </div>
@@ -281,9 +286,9 @@ export default function AdminAlertsPage() {
               <p>No active alerts. All students are on track!</p>
             </div>
           ) : (
-            activeAlerts.map((alert) => (
+            activeAlerts.map((alert, idx) => (
+              <Reveal key={alert.id} delay={Math.min(idx * 0.04, 0.3)}>
               <div
-                key={alert.id}
                 className={`card p-4 ${
                   alert.severity === "critical" ? "border-danger/30 bg-danger/5" :
                   alert.severity === "warning" ? "border-accent/20" : ""
@@ -331,6 +336,7 @@ export default function AdminAlertsPage() {
                   </div>
                 </div>
               </div>
+              </Reveal>
             ))
           )}
         </div>
@@ -338,8 +344,17 @@ export default function AdminAlertsPage() {
 
       {/* Add Rule Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Add Alert Rule</h2>
               <button onClick={() => setShowAddForm(false)} className="btn-icon">✕</button>
@@ -429,8 +444,8 @@ export default function AdminAlertsPage() {
                 Save Rule
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

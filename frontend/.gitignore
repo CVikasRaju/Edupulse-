@@ -19,6 +19,18 @@ test-db.js
 create-auth-users.js
 **/create-auth-users.js
 
+# --- REAL PERSONAL DATA (student/staff PII) ---
+docs/*.xlsx
+docs/*.csv
+docs/*.xls
+**/*Actual Program*.*
+
+# --- LOCAL DATABASE & SEED DUMPS ---
+*.sql.bak
+*.sql.old
+seed-local.sql
+**/seed-local.sql
+
 # --- DEPENDENCIES ---
 /node_modules
 /.pnp

@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import { Download, BarChart3, Loader2 } from "lucide-react";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import TiltCard from "@/components/ui/TiltCard";
+import Reveal from "@/components/ui/Reveal";
 
 export default function AdminReports() {
   const [loading, setLoading] = useState(true);
@@ -53,17 +56,25 @@ export default function AdminReports() {
 
   return (
     <AppShell role="admin">
-      <div className="mb-8">
-        <h1 className="text-2xl font-heading font-bold text-text-primary">Platform Reports</h1>
-        <p className="text-text-muted text-sm mt-0.5">Live statistics from the database</p>
-      </div>
+      <Reveal>
+        <div className="mb-8">
+          <h1 className="text-2xl font-heading font-bold text-text-primary">Platform Reports</h1>
+          <p className="text-text-muted text-sm mt-0.5">Live statistics from the database</p>
+        </div>
+      </Reveal>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cards.map((card) => (
-          <div key={card.label} className="card p-6">
-            <div className="text-text-muted text-sm mb-2">{card.label}</div>
-            <div className={`text-4xl font-heading font-bold ${card.color}`}>{card.value}</div>
-          </div>
+        {cards.map((card, idx) => (
+          <Reveal key={card.label} delay={idx * 0.07}>
+            <TiltCard intensity={6} className="h-full">
+              <div className="card card-interactive p-6 h-full">
+                <div className="text-text-muted text-sm mb-2">{card.label}</div>
+                <div className={`text-4xl font-heading font-bold ${card.color}`}>
+                  <AnimatedCounter value={Number(card.value)} decimals={Number(card.value) % 1 !== 0 ? 2 : 0} />
+                </div>
+              </div>
+            </TiltCard>
+          </Reveal>
         ))}
       </div>
     </AppShell>

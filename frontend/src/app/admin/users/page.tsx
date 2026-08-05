@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import { Plus, Search, Filter, Mail, User, Shield, GraduationCap, X, Loader2 } from "lucide-react";
 
 export default function AdminUsers() {
@@ -45,13 +47,16 @@ export default function AdminUsers() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">User Management</h1>
           <p className="text-text-muted text-sm mt-0.5">Manage students, faculty, and administrators</p>
         </div>
       </div>
+      </Reveal>
 
+      <Reveal>
       <div className="card p-4 mb-6 flex flex-wrap gap-4 items-center">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
@@ -74,7 +79,9 @@ export default function AdminUsers() {
           <option value="mentee">Students</option>
         </select>
       </div>
+      </Reveal>
 
+      <Reveal>
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="data-table">
@@ -125,6 +132,7 @@ export default function AdminUsers() {
           </table>
         </div>
       </div>
+      </Reveal>
     </AppShell>
   );
 }

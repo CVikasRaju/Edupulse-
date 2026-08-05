@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   Calendar,
   Clock,
@@ -131,6 +133,7 @@ export default function MentorSchedulePage() {
 
   return (
     <AppShell role="mentor">
+      <Reveal>
       <div className="flex items-start justify-between mb-6 flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Schedule</h1>
@@ -143,6 +146,7 @@ export default function MentorSchedulePage() {
           </button>
         )}
       </div>
+      </Reveal>
 
       {/* Tabs */}
       <div className="flex items-center gap-2 mb-6">
@@ -154,7 +158,7 @@ export default function MentorSchedulePage() {
             key={key}
             onClick={() => setTab(key as any)}
             className={`flex items-center gap-2 px-4 py-2 rounded-button text-sm font-medium transition-all ${
-              tab === key ? "bg-accent text-background" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
+              tab === key ? "bg-accent text-ink" : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -166,8 +170,9 @@ export default function MentorSchedulePage() {
       {/* Availability Tab */}
       {tab === "availability" && (
         <div className="space-y-4">
-          {[1, 2, 3, 4, 5, 6, 0].map((day) => (
-            <div key={day} className="card p-4">
+          {[1, 2, 3, 4, 5, 6, 0].map((day, dIdx) => (
+            <Reveal key={day} delay={Math.min(dIdx * 0.04, 0.3)}>
+            <div className="card p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-heading font-semibold text-text-primary text-sm">{DAYS[day]}</h3>
                 {byDay[day]?.length > 0 && (
@@ -204,6 +209,7 @@ export default function MentorSchedulePage() {
                 <p className="text-text-muted text-xs">No availability set</p>
               )}
             </div>
+            </Reveal>
           ))}
         </div>
       )}
@@ -219,8 +225,9 @@ export default function MentorSchedulePage() {
             </h3>
             {upcomingSessions.length > 0 ? (
               <div className="space-y-2">
-                {upcomingSessions.map((session) => (
-                  <div key={session.id} className="card p-4 flex items-center gap-4">
+                {upcomingSessions.map((session, idx) => (
+                  <Reveal key={session.id} delay={Math.min(idx * 0.05, 0.3)}>
+                  <div className="card p-4 flex items-center gap-4">
                     <div className="text-center flex-shrink-0 w-14">
                       <div className="text-lg font-heading font-bold text-accent">
                         {new Date(session.date).getDate()}
@@ -256,6 +263,7 @@ export default function MentorSchedulePage() {
                       </button>
                     </div>
                   </div>
+                  </Reveal>
                 ))}
               </div>
             ) : (
@@ -302,8 +310,17 @@ export default function MentorSchedulePage() {
 
       {/* Add Availability Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Add Availability</h2>
               <button onClick={() => setShowAddForm(false)} className="btn-icon">✕</button>
@@ -360,8 +377,8 @@ export default function MentorSchedulePage() {
                 Add Slot
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

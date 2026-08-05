@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
 import { Trophy, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 export default function AdminAchievements() {
@@ -32,11 +33,14 @@ export default function AdminAchievements() {
 
   return (
     <AppShell role="admin">
+      <Reveal>
       <div className="mb-8">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Achievement Verification</h1>
         <p className="text-text-muted text-sm mt-0.5">Review and verify student achievements</p>
       </div>
+      </Reveal>
 
+      <Reveal>
       <div className="card overflow-hidden">
         <table className="data-table">
           <thead><tr><th>Student</th><th>Achievement</th><th>Category</th><th>Level</th><th>Status</th><th>Actions</th></tr></thead>
@@ -66,6 +70,7 @@ export default function AdminAchievements() {
           </tbody>
         </table>
       </div>
+      </Reveal>
     </AppShell>
   );
 }

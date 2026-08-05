@@ -12,7 +12,12 @@ import {
   Award,
   Calendar,
   TrendingUp,
+  Sparkles,
+  Zap,
 } from "lucide-react";
+import Marquee from "@/components/ui/Marquee";
+import AuroraBackground from "@/components/ui/AuroraBackground";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 export const metadata = {
   title: "EduPulse — AI-Powered Academic Excellence Platform",
@@ -112,38 +117,42 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-              <GraduationCap size={18} className="text-background" />
+              <GraduationCap size={18} className="text-ink" />
             </div>
             <span className="text-lg font-bold font-heading text-text-primary tracking-tight">
               EduPulse
             </span>
           </div>
-          <Link
-            href="/login"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-button bg-accent text-background text-sm font-semibold hover:bg-accent-hover transition-all duration-200 shadow-glow"
-          >
-            Sign In <ArrowRight size={14} />
-          </Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link
+              href="/login"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-button bg-accent text-ink text-sm font-semibold hover:bg-accent-hover transition-all duration-200 shadow-glow"
+            >
+              Sign In <ArrowRight size={14} />
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* ─── Hero ───────────────────────────────────────────────── */}
       <section className="relative pt-36 pb-28 px-6 text-center overflow-hidden">
+        <AuroraBackground subtle />
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-accent/5 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-highlight/5 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-accent/5 rounded-full blur-3xl animate-float-slow" />
+          <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-highlight/5 rounded-full blur-3xl animate-float" />
+          <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: "-3s" }} />
         </div>
 
         <div className="relative max-w-4xl mx-auto animate-fade-in-up">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent-light text-accent text-xs font-semibold mb-6 tracking-wide uppercase">
-            <Brain size={12} />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent-light text-accent text-xs font-semibold mb-6 tracking-wide uppercase glow-pulse">
+            <Sparkles size={12} />
             Powered by Google Gemini AI
           </div>
 
           <h1 className="font-heading text-5xl md:text-7xl font-bold leading-tight mb-6 tracking-tight">
             Academic Excellence,{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-accent-hover to-highlight">
+            <span className="text-gradient">
               Reimagined
             </span>
           </h1>
@@ -157,7 +166,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/login"
-              className="flex items-center justify-center gap-2 px-8 py-4 rounded-button bg-accent text-background font-bold text-base hover:bg-accent-hover transition-all duration-200 shadow-glow hover:scale-[1.02]"
+              className="flex items-center justify-center gap-2 px-8 py-4 rounded-button bg-accent text-ink font-bold text-base hover:bg-accent-hover transition-all duration-200 shadow-glow hover:scale-[1.02]"
             >
               Get Started <ArrowRight size={16} />
             </Link>
@@ -172,10 +181,11 @@ export default function LandingPage() {
 
         {/* Stats */}
         <div className="relative max-w-3xl mx-auto mt-20 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stats.map((stat) => (
+          {stats.map((stat, idx) => (
             <div
               key={stat.label}
-              className="p-4 rounded-card border border-surface-border bg-surface/60 backdrop-blur-sm text-center"
+              className="p-4 rounded-card border border-glass/10 bg-glass/[0.04] backdrop-blur-sm text-center hover:border-accent/30 hover:-translate-y-1 transition-all duration-300"
+              style={{ animation: `float 7s ease-in-out ${idx * 0.6}s infinite` }}
             >
               <stat.icon size={18} className="text-accent mx-auto mb-2" />
               <div className="text-2xl font-bold font-heading text-text-primary">{stat.value}</div>
@@ -183,16 +193,28 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+
+        {/* Marquee ticker */}
+        <div className="relative mt-16 max-w-4xl mx-auto">
+          <Marquee speed={26}>
+            {["AI Attendance", "CGPA Analytics", "Mentorship", "Achievements", "Resume AI", "Event Management", "Grace Requests", "Smart Alerts"].map((item) => (
+              <span key={item} className="flex items-center gap-2 px-6 py-2 rounded-full border border-glass/10 bg-glass/[0.03] text-text-muted text-sm mx-2">
+                <Zap size={13} className="text-accent" />
+                {item}
+              </span>
+            ))}
+          </Marquee>
+        </div>
       </section>
 
       {/* ─── Features ───────────────────────────────────────────── */}
       <section id="features" className="py-24 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-heading text-3xl md:text-5xl font-bold mb-4 tracking-tight">
-              Everything you need,{" "}
-              <span className="text-accent">nothing you don&apos;t</span>
-            </h2>
+          <h2 className="font-heading text-3xl md:text-5xl font-bold mb-4 tracking-tight">
+            Everything you need,{" "}
+            <span className="text-gradient">nothing you don&apos;t</span>
+          </h2>
             <p className="text-text-muted max-w-xl mx-auto">
               Built specifically for Indian engineering colleges, EduPulse handles
               the full academic lifecycle from day one.
@@ -200,11 +222,13 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {features.map((f) => (
+            {features.map((f, idx) => (
               <div
                 key={f.title}
-                className="group p-6 rounded-card border border-surface-border bg-surface hover:border-accent/30 hover:shadow-card-hover transition-all duration-300"
+                className="group p-6 rounded-card border border-glass/10 bg-surface/60 backdrop-blur-xl hover:border-accent/30 hover:-translate-y-1.5 hover:shadow-[0_12px_40px_rgba(0,0,0,0.45)] transition-all duration-300 relative overflow-hidden"
+                style={{ animation: `fade-in-up 0.6s ease-out ${0.05 + idx * 0.07}s both` }}
               >
+                <div className="absolute -top-10 -right-10 w-28 h-28 bg-accent/5 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 border ${featureColorMap[f.color]}`}>
                   <f.icon size={20} className={featureIconColorMap[f.color]} />
                 </div>
@@ -222,10 +246,10 @@ export default function LandingPage() {
       <section className="py-24 px-6 bg-surface/30 border-y border-surface-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="font-heading text-3xl md:text-5xl font-bold mb-4 tracking-tight">
-              One platform,{" "}
-              <span className="text-accent">three roles</span>
-            </h2>
+          <h2 className="font-heading text-3xl md:text-5xl font-bold mb-4 tracking-tight">
+            One platform,{" "}
+            <span className="text-gradient">three roles</span>
+          </h2>
             <p className="text-text-muted max-w-xl mx-auto">
               Whether you&apos;re a student, mentor, or admin — EduPulse has a
               tailored experience built just for you.
@@ -233,11 +257,12 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {roles.map((role) => (
+            {roles.map((role, idx) => (
               <Link
                 key={role.label}
                 href={role.href}
-                className={`group p-8 rounded-card border hover:scale-[1.02] transition-all duration-300 flex flex-col ${role.bgClass}`}
+                className={`group p-8 rounded-card border hover:scale-[1.03] hover:-translate-y-1 transition-all duration-300 flex flex-col ${role.bgClass}`}
+                style={{ animation: `fade-in-up 0.6s ease-out ${0.05 + idx * 0.08}s both` }}
               >
                 <div className="w-14 h-14 rounded-2xl bg-surface flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-200 border border-surface-border">
                   <role.icon size={26} className={role.colorClass} />
@@ -262,7 +287,7 @@ export default function LandingPage() {
         <div className="relative max-w-2xl mx-auto">
           <h2 className="font-heading text-3xl md:text-5xl font-bold mb-6 tracking-tight">
             Ready to transform your{" "}
-            <span className="text-accent">academic journey?</span>
+            <span className="text-gradient">academic journey?</span>
           </h2>
           <p className="text-text-muted mb-10">
             Join students and faculty already using EduPulse to streamline academics,
@@ -270,7 +295,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-button bg-accent text-background font-bold text-base hover:bg-accent-hover transition-all duration-200 shadow-glow hover:scale-[1.03]"
+            className="inline-flex items-center gap-2 px-10 py-4 rounded-button bg-accent text-ink font-bold text-base hover:bg-accent-hover transition-all duration-200 shadow-glow hover:scale-[1.03]"
           >
             Launch EduPulse <ArrowRight size={16} />
           </Link>
@@ -281,7 +306,7 @@ export default function LandingPage() {
       <footer className="border-t border-surface-border py-8 px-6 text-center text-text-muted text-sm">
         <div className="flex items-center justify-center gap-2 mb-2">
           <div className="w-5 h-5 rounded bg-accent flex items-center justify-center">
-            <GraduationCap size={12} className="text-background" />
+            <GraduationCap size={12} className="text-ink" />
           </div>
           <span className="font-heading font-semibold text-text-primary">EduPulse</span>
         </div>

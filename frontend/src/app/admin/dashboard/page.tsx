@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import { motion } from "framer-motion";
 import {
   Users,
   UserCheck,
@@ -10,11 +11,15 @@ import {
   AlertCircle,
   Activity,
   ChevronRight,
-  Loader2,
   Upload,
   Bell,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import TiltCard from "@/components/ui/TiltCard";
+import Reveal from "@/components/ui/Reveal";
+import ShimmerText from "@/components/ui/ShimmerText";
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -76,8 +81,10 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AppShell role="admin">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+        <div className="flex items-center justify-center h-64 gap-3">
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+            <Sparkles className="w-8 h-8 text-accent" />
+          </motion.div>
         </div>
       </AppShell>
     );
@@ -87,22 +94,30 @@ export default function AdminDashboard() {
 
   return (
     <AppShell role="admin">
-      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-text-primary tracking-tight">Admin Overview</h1>
-          <p className="text-text-muted text-sm mt-1">Platform health &amp; system-wide management — Sahyadri College of Engineering &amp; Management</p>
+      <Reveal>
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-heading font-bold text-text-primary tracking-tight">
+              Admin <ShimmerText className="text-3xl">Overview</ShimmerText>
+            </h1>
+            <p className="text-text-muted text-sm mt-1">Platform health &amp; system-wide management — Sahyadri College of Engineering &amp; Management</p>
+          </div>
+          <div className="flex gap-3">
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
+              <Link href="/admin/attendance/upload" className="btn-primary flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload Attendance
+              </Link>
+            </motion.div>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}>
+              <Link href="/admin/feed" className="btn-secondary flex items-center gap-2">
+                <Bell className="w-4 h-4" />
+                Post Announcement
+              </Link>
+            </motion.div>
+          </div>
         </div>
-        <div className="flex gap-3">
-          <Link href="/admin/attendance/upload" className="btn-primary flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Upload Attendance
-          </Link>
-          <Link href="/admin/feed" className="btn-secondary flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            Post Announcement
-          </Link>
-        </div>
-      </div>
+      </Reveal>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -111,18 +126,27 @@ export default function AdminDashboard() {
           { label: "Faculty / Mentors", value: totalFaculty, icon: UserCheck, color: "bg-secondary/10 text-secondary", href: "/admin/users?role=mentor" },
           { label: "Active Allocations", value: totalAllocations, icon: Activity, color: "bg-highlight/10 text-highlight", href: "/admin/allocations" },
           { label: "Total NBA Points", value: Math.round(totalNba), icon: Trophy, color: "bg-success/10 text-success", href: "/admin/achievements" },
-        ].map(({ label, value, icon: Icon, color, href }) => (
-          <Link key={label} href={href}>
-            <div className="card card-interactive p-5 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="text-text-muted text-sm">{label}</span>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}>
-                  <Icon className="w-4 h-4" />
+        ].map(({ label, value, icon: Icon, color, href }, idx) => (
+          <Reveal key={label} delay={idx * 0.06}>
+            <Link href={href} className="block h-full">
+              <TiltCard intensity={6} className="h-full">
+                <div className="card card-interactive p-5 flex flex-col gap-3 h-full">
+                  <div className="flex items-center justify-between">
+                    <span className="text-text-muted text-sm">{label}</span>
+                    <motion.div
+                      whileHover={{ rotate: 8, scale: 1.1 }}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${color}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </motion.div>
+                  </div>
+                  <div className="text-3xl font-heading font-bold text-text-primary">
+                    <AnimatedCounter value={value} />
+                  </div>
                 </div>
-              </div>
-              <div className="text-3xl font-heading font-bold text-text-primary">{value}</div>
-            </div>
-          </Link>
+              </TiltCard>
+            </Link>
+          </Reveal>
         ))}
       </div>
 
@@ -130,105 +154,135 @@ export default function AdminDashboard() {
       {(pendingAch > 0 || pendingGrace > 0 || incompleteCount > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {pendingAch > 0 && (
-            <Link href="/admin/achievements?filter=Pending">
-              <div className="card p-4 border-highlight/30 bg-highlight/5 flex items-center gap-3 hover:border-highlight/50 transition-colors cursor-pointer">
-                <Trophy className="w-5 h-5 text-highlight flex-shrink-0" />
-                <div>
-                  <div className="text-sm font-semibold text-text-primary">{pendingAch} Achievements Pending</div>
-                  <div className="text-xs text-text-muted">Awaiting faculty verification</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-text-muted ml-auto" />
-              </div>
-            </Link>
+            <Reveal delay={0.05}>
+              <Link href="/admin/achievements?filter=Pending">
+                <motion.div whileHover={{ y: -3 }} className="card p-4 border-highlight/30 bg-highlight/5 flex items-center gap-3 hover:border-highlight/50 transition-colors cursor-pointer glow-pulse">
+                  <motion.div whileHover={{ rotate: 15 }} className="flex-shrink-0">
+                    <Trophy className="w-5 h-5 text-highlight" />
+                  </motion.div>
+                  <div>
+                    <div className="text-sm font-semibold text-text-primary">{pendingAch} Achievements Pending</div>
+                    <div className="text-xs text-text-muted">Awaiting faculty verification</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-text-muted ml-auto" />
+                </motion.div>
+              </Link>
+            </Reveal>
           )}
           {pendingGrace > 0 && (
-            <Link href="/admin/audit">
-              <div className="card p-4 border-danger/30 bg-danger/5 flex items-center gap-3 hover:border-danger/50 transition-colors cursor-pointer">
-                <AlertCircle className="w-5 h-5 text-danger flex-shrink-0" />
-                <div>
-                  <div className="text-sm font-semibold text-text-primary">{pendingGrace} Grace Requests</div>
-                  <div className="text-xs text-text-muted">Pending mentor review</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-text-muted ml-auto" />
-              </div>
-            </Link>
+            <Reveal delay={0.1}>
+              <Link href="/admin/audit">
+                <motion.div whileHover={{ y: -3 }} className="card p-4 border-danger/30 bg-danger/5 flex items-center gap-3 hover:border-danger/50 transition-colors cursor-pointer">
+                  <motion.div whileHover={{ rotate: 15 }} className="flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 text-danger" />
+                  </motion.div>
+                  <div>
+                    <div className="text-sm font-semibold text-text-primary">{pendingGrace} Grace Requests</div>
+                    <div className="text-xs text-text-muted">Pending mentor review</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-text-muted ml-auto" />
+                </motion.div>
+              </Link>
+            </Reveal>
           )}
           {incompleteCount > 0 && (
-            <Link href="/admin/users">
-              <div className="card p-4 border-accent/30 bg-accent/5 flex items-center gap-3 hover:border-accent/50 transition-colors">
-                <Users className="w-5 h-5 text-accent flex-shrink-0" />
-                <div>
-                  <div className="text-sm font-semibold text-text-primary">{incompleteCount} Incomplete Profiles</div>
-                  <div className="text-xs text-text-muted">Students with missing data</div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-text-muted ml-auto" />
-              </div>
-            </Link>
+            <Reveal delay={0.15}>
+              <Link href="/admin/users">
+                <motion.div whileHover={{ y: -3 }} className="card p-4 border-accent/30 bg-accent/5 flex items-center gap-3 hover:border-accent/50 transition-colors">
+                  <motion.div whileHover={{ rotate: 15 }} className="flex-shrink-0">
+                    <Users className="w-5 h-5 text-accent" />
+                  </motion.div>
+                  <div>
+                    <div className="text-sm font-semibold text-text-primary">{incompleteCount} Incomplete Profiles</div>
+                    <div className="text-xs text-text-muted">Students with missing data</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-text-muted ml-auto" />
+                </motion.div>
+              </Link>
+            </Reveal>
           )}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Achievement activity */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading font-semibold text-text-primary">Recent Achievements</h2>
-            <Link href="/admin/achievements" className="text-xs text-accent hover:underline">View all</Link>
-          </div>
-          {recentAchievements.length > 0 ? (
-            <div className="space-y-3">
-              {recentAchievements.map((ach: any) => (
-                <div key={ach.id} className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    ach.status === "Verified" ? "bg-success" :
-                    ach.status === "Pending" ? "bg-accent animate-pulse" : "bg-danger"
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-text-primary truncate">{ach.title}</div>
-                    <div className="text-xs text-text-muted">{ach.student?.full_name} · {ach.nba_points} pts</div>
-                  </div>
-                  <span className={`badge text-[10px] ${
-                    ach.status === "Verified" ? "badge-success" :
-                    ach.status === "Pending" ? "badge-accent" : "badge-danger"
-                  }`}>{ach.status}</span>
-                </div>
-              ))}
+        <Reveal delay={0.1}>
+          <div className="card p-5 h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-heading font-semibold text-text-primary">Recent Achievements</h2>
+              <Link href="/admin/achievements" className="text-xs text-accent hover:underline">View all</Link>
             </div>
-          ) : (
-            <p className="text-text-muted text-sm">No achievement data yet.</p>
-          )}
-        </div>
+            {recentAchievements.length > 0 ? (
+              <div className="space-y-3">
+                {recentAchievements.map((ach: any, idx: number) => (
+                  <motion.div
+                    key={ach.id}
+                    initial={{ opacity: 0, x: -12 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: Math.min(idx * 0.06, 0.3) }}
+                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-3 p-2 rounded-button hover:bg-glass/[0.04] transition-colors"
+                  >
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      ach.status === "Verified" ? "bg-success" :
+                      ach.status === "Pending" ? "bg-accent animate-pulse" : "bg-danger"
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-text-primary truncate">{ach.title}</div>
+                      <div className="text-xs text-text-muted">{ach.student?.full_name} · {ach.nba_points} pts</div>
+                    </div>
+                    <span className={`badge text-[10px] ${
+                      ach.status === "Verified" ? "badge-success" :
+                      ach.status === "Pending" ? "badge-accent" : "badge-danger"
+                    }`}>{ach.status}</span>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-text-muted text-sm">No achievement data yet.</p>
+            )}
+          </div>
+        </Reveal>
 
         {/* Mentorship coverage */}
-        <div className="card p-5">
-          <h2 className="font-heading font-semibold text-text-primary mb-4">Mentorship Coverage</h2>
-          {mentors.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Mentor</th>
-                    <th>Dept.</th>
-                    <th>Mentees</th>
-                    <th>Sessions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mentors.map((mentor: any) => (
-                    <tr key={mentor.id}>
-                      <td className="font-medium">{mentor.full_name}</td>
-                      <td className="text-text-muted text-xs">{mentor.department}</td>
-                      <td><span className="badge badge-accent">{mentor.menteeCount}</span></td>
-                      <td><span className="badge badge-secondary">{mentor.sessionCount}</span></td>
+        <Reveal delay={0.16}>
+          <div className="card p-5 h-full">
+            <h2 className="font-heading font-semibold text-text-primary mb-4">Mentorship Coverage</h2>
+            {mentors.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mentor</th>
+                      <th>Dept.</th>
+                      <th>Mentees</th>
+                      <th>Sessions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-text-muted text-sm">No mentors found.</p>
-          )}
-        </div>
+                  </thead>
+                  <tbody>
+                    {mentors.map((mentor: any, idx: number) => (
+                      <motion.tr
+                        key={mentor.id}
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: Math.min(idx * 0.05, 0.4) }}
+                      >
+                        <td className="font-medium">{mentor.full_name}</td>
+                        <td className="text-text-muted text-xs">{mentor.department}</td>
+                        <td><span className="badge badge-accent">{mentor.menteeCount}</span></td>
+                        <td><span className="badge badge-secondary">{mentor.sessionCount}</span></td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-text-muted text-sm">No mentors found.</p>
+            )}
+          </div>
+        </Reveal>
       </div>
     </AppShell>
   );

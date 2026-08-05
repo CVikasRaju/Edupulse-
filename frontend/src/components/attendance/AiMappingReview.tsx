@@ -178,7 +178,7 @@ export default function AiMappingReview({ mapping, missingUsns, sheetName, onCon
                 onClick={() => toggleClassDay(day)}
                 className={`px-3 py-1.5 rounded-button text-xs font-medium transition-all border ${
                   classDays.includes(day)
-                    ? "bg-accent text-background border-accent"
+                    ? "bg-accent text-ink border-accent"
                     : "border-surface-border text-text-muted hover:border-accent/30"
                 }`}
               >

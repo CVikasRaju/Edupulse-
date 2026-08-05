@@ -15,6 +15,8 @@ import {
 import FileDropZone from "./FileDropZone";
 import AiMappingReview from "./AiMappingReview";
 import DuplicateReview from "./DuplicateReview";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -288,6 +290,7 @@ export default function AttendanceUploadWizard({ role }: AttendanceUploadWizardP
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
       {/* Header */}
+      <Reveal>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">
@@ -304,15 +307,20 @@ export default function AttendanceUploadWizard({ role }: AttendanceUploadWizardP
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
       </div>
+      </Reveal>
 
       {/* Step indicator */}
+      <Reveal delay={0.05}>
       <div className="flex items-center gap-2">
         {STEPS.map((s, i) => (
           <React.Fragment key={s.id}>
-            <div
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 + i * 0.06, duration: 0.3 }}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-button text-xs font-medium transition-all
                 ${i === currentStepIdx
-                  ? "bg-accent text-background"
+                  ? "bg-accent text-ink"
                   : i < currentStepIdx
                   ? "bg-success/10 text-success"
                   : "bg-surface text-text-muted border border-surface-border"
@@ -320,15 +328,17 @@ export default function AttendanceUploadWizard({ role }: AttendanceUploadWizardP
             >
               {i < currentStepIdx ? <CheckCircle className="w-3.5 h-3.5" /> : s.icon}
               <span className="hidden sm:inline">{s.label}</span>
-            </div>
+            </motion.div>
             {i < STEPS.length - 1 && (
               <div className={`flex-1 h-px ${i < currentStepIdx ? "bg-success/40" : "bg-surface-border"}`} />
             )}
           </React.Fragment>
         ))}
       </div>
+      </Reveal>
 
       {/* Main card */}
+      <Reveal delay={0.1}>
       <div className="card p-6">
         {/* Global error */}
         {error && (
@@ -432,6 +442,7 @@ export default function AttendanceUploadWizard({ role }: AttendanceUploadWizardP
           </div>
         )}
       </div>
+      </Reveal>
     </div>
   );
 }

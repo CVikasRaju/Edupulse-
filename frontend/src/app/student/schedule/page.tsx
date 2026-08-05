@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
+import Reveal from "@/components/ui/Reveal";
+import { motion } from "framer-motion";
 import {
   Calendar,
   Clock,
@@ -146,13 +148,16 @@ export default function StudentSchedulePage() {
 
   return (
     <AppShell role="student">
+      <Reveal>
       <div className="mb-6">
         <h1 className="text-2xl font-heading font-bold text-text-primary">Schedule Session</h1>
         <p className="text-text-muted text-sm mt-0.5">Book a mentorship session with your mentor</p>
       </div>
+      </Reveal>
 
       {/* Mentor Info */}
       {mentor ? (
+        <Reveal>
         <div className="card p-5 mb-6 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-bold">
             {mentor.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
@@ -162,6 +167,7 @@ export default function StudentSchedulePage() {
             <p className="text-xs text-text-muted">{mentor.designation ?? "Faculty"} · {mentor.department ?? ""}</p>
           </div>
         </div>
+        </Reveal>
       ) : (
         <div className="card p-8 text-center text-text-muted mb-6">
           <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -179,8 +185,9 @@ export default function StudentSchedulePage() {
             </h3>
           </div>
           <div className="space-y-3">
-            {[1, 2, 3, 4, 5, 6, 0].filter((d) => byDay[d]?.length > 0).map((day) => (
-              <div key={day} className="card p-4">
+            {[1, 2, 3, 4, 5, 6, 0].filter((d) => byDay[d]?.length > 0).map((day, dIdx) => (
+              <Reveal key={day} delay={Math.min(dIdx * 0.06, 0.3)}>
+              <div className="card p-4">
                 <h4 className="text-sm font-semibold text-text-primary mb-2">{DAYS[day]}</h4>
                 <div className="flex flex-wrap gap-2">
                   {byDay[day].map((slot) => (
@@ -191,7 +198,7 @@ export default function StudentSchedulePage() {
                         setSelectedDate(getNextOccurrence(slot.day_of_week));
                         setShowBookForm(true);
                       }}
-                      className="flex items-center gap-2 px-3 py-2 rounded-button bg-accent-light border border-accent/20 text-sm hover:bg-accent/20 hover:border-accent/40 transition-all"
+                      className="flex items-center gap-2 px-3 py-2 rounded-button bg-accent-light border border-accent/20 text-sm hover:bg-accent/20 hover:border-accent/40 hover:-translate-y-0.5 transition-all duration-200"
                     >
                       <Clock className="w-3.5 h-3.5 text-accent" />
                       <span className="text-text-primary font-medium">{slot.start_time} - {slot.end_time}</span>
@@ -204,6 +211,7 @@ export default function StudentSchedulePage() {
                   ))}
                 </div>
               </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -227,8 +235,9 @@ export default function StudentSchedulePage() {
           </h3>
           {upcomingSessions.length > 0 ? (
             <div className="space-y-2">
-              {upcomingSessions.map((session) => (
-                <div key={session.id} className="card p-4 flex items-center gap-4">
+              {upcomingSessions.map((session, idx) => (
+                <Reveal key={session.id} delay={Math.min(idx * 0.05, 0.3)}>
+                <div className="card p-4 flex items-center gap-4">
                   <div className="text-center flex-shrink-0 w-14">
                     <div className="text-lg font-heading font-bold text-accent">
                       {new Date(session.date).getDate()}
@@ -254,6 +263,7 @@ export default function StudentSchedulePage() {
                     <XCircle className="w-3.5 h-3.5" />
                   </button>
                 </div>
+                </Reveal>
               ))}
             </div>
           ) : (
@@ -298,8 +308,17 @@ export default function StudentSchedulePage() {
 
       {/* Book Session Modal */}
       {showBookForm && selectedSlot && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="card w-full max-w-md shadow-2xl">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="card w-full max-w-md shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-surface-border">
               <h2 className="font-heading font-bold text-text-primary">Book Session</h2>
               <button onClick={() => setShowBookForm(false)} className="btn-icon">✕</button>
@@ -356,8 +375,8 @@ export default function StudentSchedulePage() {
                 Book Session
               </button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AppShell>
   );

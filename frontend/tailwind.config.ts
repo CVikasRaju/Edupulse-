@@ -9,35 +9,39 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#0F0F0F",
-        surface: "#1A1A1A",
-        "surface-border": "#2A2A2A",
+        background: "rgb(var(--bg) / <alpha-value>)",
+        surface: "rgb(var(--surface) / <alpha-value>)",
+        "surface-border": "rgb(var(--surface-border) / <alpha-value>)",
+        // Constant dark text used on colored/accent buttons (both themes)
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        // Glass overlays: white in dark theme, black in light theme
+        glass: "rgb(var(--glass) / <alpha-value>)",
         accent: {
-          DEFAULT: "#E8A87C",
-          hover: "#D4956A",
-          light: "rgba(232, 168, 124, 0.12)",
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          hover: "rgb(var(--accent-hover) / <alpha-value>)",
+          light: "rgb(var(--accent) / 0.12)",
         },
         secondary: {
-          DEFAULT: "#7C9E87",
-          hover: "#6B8D76",
-          light: "rgba(124, 158, 135, 0.12)",
+          DEFAULT: "rgb(var(--secondary) / <alpha-value>)",
+          hover: "rgb(var(--secondary-hover) / <alpha-value>)",
+          light: "rgb(var(--secondary) / 0.12)",
         },
         highlight: {
-          DEFAULT: "#C084FC",
-          hover: "#A855F7",
-          light: "rgba(192, 132, 252, 0.12)",
+          DEFAULT: "rgb(var(--highlight) / <alpha-value>)",
+          hover: "rgb(var(--highlight-hover) / <alpha-value>)",
+          light: "rgb(var(--highlight) / 0.12)",
         },
-        "text-primary": "#F5F0EB",
-        "text-muted": "#8A8A8A",
+        "text-primary": "rgb(var(--text-primary) / <alpha-value>)",
+        "text-muted": "rgb(var(--text-muted) / <alpha-value>)",
         danger: {
-          DEFAULT: "#E07070",
-          hover: "#D45F5F",
-          light: "rgba(224, 112, 112, 0.12)",
+          DEFAULT: "rgb(var(--danger) / <alpha-value>)",
+          hover: "rgb(var(--danger-hover) / <alpha-value>)",
+          light: "rgb(var(--danger) / 0.12)",
         },
         success: {
-          DEFAULT: "#6FCF97",
-          hover: "#5FBF87",
-          light: "rgba(111, 207, 151, 0.12)",
+          DEFAULT: "rgb(var(--success) / <alpha-value>)",
+          hover: "rgb(var(--success-hover) / <alpha-value>)",
+          light: "rgb(var(--success) / 0.12)",
         },
       },
       fontFamily: {
@@ -53,9 +57,9 @@ const config: Config = {
       boxShadow: {
         card: "0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2)",
         "card-hover":
-          "0 8px 25px rgba(0,0,0,0.4), 0 0 0 1px rgba(232,168,124,0.08), inset 0 1px 0 rgba(255,255,255,0.02)",
+          "0 8px 25px rgba(0,0,0,0.4), 0 0 0 1px rgb(var(--accent) / 0.08), inset 0 1px 0 rgba(255,255,255,0.02)",
         drawer: "-8px 0 30px rgba(0,0,0,0.5)",
-        glow: "0 0 20px rgba(232,168,124,0.15)",
+        glow: "0 0 20px rgb(var(--accent) / 0.15)",
       },
       keyframes: {
         "slide-in-right": {

@@ -24,6 +24,7 @@ CREATE TABLE "Profile" (
     "year_of_joining" INTEGER,
     "is_profile_complete" BOOLEAN NOT NULL DEFAULT false,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "theme_preference" TEXT NOT NULL DEFAULT 'system',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

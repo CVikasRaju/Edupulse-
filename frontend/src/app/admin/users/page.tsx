@@ -44,6 +44,11 @@ const EMPTY_FORM = {
   usn: "",
   employee_id: "",
   designation: "",
+  phone: "",
+  address: "",
+  linkedin_url: "",
+  github_url: "",
+  year_of_joining: "",
 };
 
 export default function AdminUsers() {
@@ -101,12 +106,17 @@ export default function AdminUsers() {
       usn: u.usn ?? "",
       employee_id: u.employee_id ?? "",
       designation: u.designation ?? "",
+      phone: u.phone ?? "",
+      address: u.address ?? "",
+      linkedin_url: u.linkedin_url ?? "",
+      github_url: u.github_url ?? "",
+      year_of_joining: u.year_of_joining ? String(u.year_of_joining) : "",
     });
     setModalMsg(null);
     setModalOpen(true);
   };
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm((f: any) => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -126,6 +136,11 @@ export default function AdminUsers() {
           usn: form.role === "mentee" ? (form.usn.trim() || null) : null,
           employee_id: form.role === "mentee" ? null : (form.employee_id.trim() || null),
           designation: form.designation.trim() || null,
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
+          linkedin_url: form.linkedin_url.trim() || null,
+          github_url: form.github_url.trim() || null,
+          year_of_joining: form.year_of_joining ? Number(form.year_of_joining) : null,
         };
         if (form.password) payload.password = form.password;
         const res = await fetch("/api/admin/users", {
@@ -160,6 +175,11 @@ export default function AdminUsers() {
             usn: form.role === "mentee" ? (form.usn.trim() || null) : null,
             employee_id: form.role === "mentee" ? null : (form.employee_id.trim() || null),
             designation: form.designation.trim() || null,
+            phone: form.phone.trim() || null,
+            address: form.address.trim() || null,
+            linkedin_url: form.linkedin_url.trim() || null,
+            github_url: form.github_url.trim() || null,
+            year_of_joining: form.year_of_joining ? Number(form.year_of_joining) : null,
           }),
         });
         const data = await res.json();
@@ -520,6 +540,33 @@ export default function AdminUsers() {
                   <div>
                     <label className="label">Designation</label>
                     <input value={form.designation} onChange={set("designation")} className="input" placeholder="e.g. HOD, Associate Professor" />
+                  </div>
+                </div>
+
+                {/* Contact & Profile details */}
+                <div className="pt-2 border-t border-surface-border">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-text-muted mb-3">Contact & Profile</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="label">Phone</label>
+                      <input type="tel" value={form.phone} onChange={set("phone")} className="input" placeholder="+91 00000 00000" />
+                    </div>
+                    <div>
+                      <label className="label">Year of Joining</label>
+                      <input type="number" min={2000} max={2100} value={form.year_of_joining} onChange={set("year_of_joining")} className="input" placeholder="2024" />
+                    </div>
+                    <div>
+                      <label className="label">LinkedIn URL</label>
+                      <input type="url" value={form.linkedin_url} onChange={set("linkedin_url")} className="input" placeholder="https://linkedin.com/in/..." />
+                    </div>
+                    <div>
+                      <label className="label">GitHub URL</label>
+                      <input type="url" value={form.github_url} onChange={set("github_url")} className="input" placeholder="https://github.com/..." />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="label">Address</label>
+                    <textarea value={form.address} onChange={set("address")} rows={2} className="input resize-y" placeholder="Full address" />
                   </div>
                 </div>
 

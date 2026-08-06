@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { full_name, email, password, role, department, year, section, usn, employee_id, designation } = body;
+    const { full_name, email, password, role, department, year, section, usn, employee_id, designation, phone, address, linkedin_url, github_url, year_of_joining } = body;
 
     if (!full_name || !email || !password) {
       return NextResponse.json(
@@ -110,7 +110,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "role must be admin, mentor or mentee" }, { status: 400 });
     }
 
-    const admin = serviceClient();
+    let admin;
+    try {
+      admin = serviceClient();
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
 
     // 1) Create the auth user
     const { data: authUser, error: authErr } = await admin.auth.admin.createUser({
@@ -137,6 +142,11 @@ export async function POST(request: NextRequest) {
       usn: usn || null,
       employee_id: employee_id || null,
       designation: designation || null,
+      phone: phone || null,
+      address: address || null,
+      linkedin_url: linkedin_url || null,
+      github_url: github_url || null,
+      year_of_joining: year_of_joining ? Number(year_of_joining) : null,
       is_profile_complete: true,
       is_active: true,
     });
@@ -170,7 +180,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    const admin = serviceClient();
+    let admin;
+    try {
+      admin = serviceClient();
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
 
     if ("role" in fields && !ROLES.includes(fields.role)) {
       return NextResponse.json(
@@ -179,9 +194,17 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Keep the auth record in sync FIRST (email change / password reset) so a
-    // failure surfaces before the profile is modified (no half-applied state).
-    if (fields.email) {
+    // Only touch the auth record when something that lives in auth actually
+    // changed (email / password). Fetching the current profile first lets us
+    // skip a pointless (and potentially failing) email write on every save.
+    const { data: currentProfile } = await admin
+      .from("Profile")
+      .select("email")
+      .eq("id", id)
+      .maybeSingle();
+
+    const emailChanged = fields.email && fields.email !== currentProfile?.email;
+    if (emailChanged) {
       const { error: mailErr } = await admin.auth.admin.updateUserById(id, {
         email: fields.email,
       });
@@ -205,10 +228,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     const profilePatch: Record<string, any> = {};
-    for (const k of ["full_name", "role", "department", "section", "usn", "employee_id", "designation", "email", "is_active"]) {
+    for (const k of [
+      "full_name", "role", "department", "section", "usn", "employee_id",
+      "designation", "email", "is_active", "phone", "address",
+      "linkedin_url", "github_url",
+    ]) {
       if (k in fields) profilePatch[k] = fields[k];
     }
     if ("year" in fields) profilePatch.year = fields.year ? Number(fields.year) : null;
+    if ("year_of_joining" in fields) {
+      profilePatch.year_of_joining = fields.year_of_joining ? Number(fields.year_of_joining) : null;
+    }
 
     if (Object.keys(profilePatch).length > 0) {
       profilePatch.updated_at = new Date().toISOString();
@@ -221,7 +251,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, emailChanged: !!emailChanged });
   } catch (e: any) {
     console.error("[admin users] PATCH error:", e);
     return NextResponse.json({ error: e.message || "Failed to update user" }, { status: 500 });

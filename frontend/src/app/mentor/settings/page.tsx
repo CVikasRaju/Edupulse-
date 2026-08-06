@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
 import Reveal from "@/components/ui/Reveal";
 import TiltCard from "@/components/ui/TiltCard";
+import PasswordChangeCard from "@/components/settings/PasswordChangeCard";
 import { Save, Loader2 } from "lucide-react";
 
 export default function MentorSettings() {
@@ -110,6 +111,12 @@ export default function MentorSettings() {
               </button>
             </div>
           </form>
+
+          <div className="mt-6">
+            <Reveal delay={0.15}>
+              <PasswordChangeCard />
+            </Reveal>
+          </div>
         </div>
         </Reveal>
       </div>

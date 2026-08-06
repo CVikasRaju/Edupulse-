@@ -79,6 +79,7 @@ export default function MentorPerformancePage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [scope, setScope] = useState<string>("all");
   const [selectedMentee, setSelectedMentee] = useState<any>(null);
   const [evaluating, setEvaluating] = useState(false);
 
@@ -93,7 +94,8 @@ export default function MentorPerformancePage() {
     }
 
     // Fetch all performance data via Supabase client-side
-    const [allocationsRes, interactionsRes, allGradesRes, allAttendRes, allAchRes, allAlertsRes, sessionsRes] =
+    // Pool = students the teacher teaches (via their courses) + allocated mentees
+    const [allocationsRes, interactionsRes, allGradesRes, allAttendRes, allAchRes, allAlertsRes, sessionsRes, coursesRes, enrollmentsRes, studentsRes] =
       await Promise.all([
         supabase.from("Allocation").select("*, mentee:mentee_id(*)").eq("mentor_id", user.id).eq("is_active", true),
         supabase.from("Interaction").select("*").eq("mentor_id", user.id).order("date", { ascending: false }),
@@ -102,14 +104,53 @@ export default function MentorPerformancePage() {
         supabase.from("Achievement").select("student_id, nba_points, status").eq("status", "Verified"),
         supabase.from("Alert").select("*, rule:rule_id(name, type, severity)").eq("status", "active").order("created_at", { ascending: false }),
         supabase.from("MentorSession").select("*, mentee:mentee_id(full_name, usn)").eq("mentor_id", user.id).eq("status", "scheduled").gte("date", new Date().toISOString()).order("date").limit(10),
+        supabase.from("Course").select("id, department, semester").eq("faculty_id", user.id),
+        supabase.from("CourseEnrollment").select("student_id"),
+        supabase.from("Profile").select("*").eq("role", "mentee").eq("is_active", true),
       ]);
 
     const allocations = (allocationsRes.data ?? []).map((a: any) => a.mentee).filter(Boolean);
-    const menteeIds = allocations.map((m: any) => m.id);
-    const allGrades = (allGradesRes.data ?? []).filter((g: any) => menteeIds.includes(g.student_id));
-    const allAttendance = (allAttendRes.data ?? []).filter((a: any) => menteeIds.includes(a.student_id));
+    const menteeIds = new Set(allocations.map((m: any) => m.id));
+    const courses = coursesRes.data ?? [];
+    const courseIds = courses.map((c: any) => c.id);
+    const allStudents = studentsRes.data ?? [];
+
+    // Students who are enrolled in this teacher's courses
+    const enrolledIds = new Set(
+      (enrollmentsRes.data ?? [])
+        .filter((e: any) => courseIds.includes(e.course_id))
+        .map((e: any) => e.student_id)
+    );
+
+    // Class-matched students: any student in the same department + year as a taught course
+    const classMatchedIds = new Set<string>();
+    for (const c of courses) {
+      if (!c.department || !c.semester) continue;
+      const targetYear = Math.ceil(c.semester / 2);
+      for (const s of allStudents) {
+        if (s.department === c.department && s.year === targetYear) classMatchedIds.add(s.id);
+      }
+    }
+
+    const taughtIds = new Set<string>([
+      ...Array.from(enrolledIds),
+      ...Array.from(classMatchedIds),
+    ]);
+    const poolIds = new Set<string>([
+      ...Array.from(taughtIds),
+      ...Array.from(menteeIds),
+    ]);
+
+    // Resolve full student objects (allocated mentees may be inactive — use their allocation object)
+    const studentMap: Record<string, any> = {};
+    for (const s of allStudents) studentMap[s.id] = s;
+    for (const a of allocationsRes.data ?? []) if (a.mentee) studentMap[a.mentee.id] = a.mentee;
+    const studentPool = Array.from(poolIds).map((id) => studentMap[id]).filter(Boolean);
+
+    const allGrades = (allGradesRes.data ?? []).filter((g: any) => poolIds.has(g.student_id));
+    const allAttendance = (allAttendRes.data ?? []).filter((a: any) => poolIds.has(a.student_id));
     const interactions = (interactionsRes.data ?? []);
-    const allAchievements = (allAchRes.data ?? []).filter((a: any) => menteeIds.includes(a.student_id));
+    const allAchievements = (allAchRes.data ?? []).filter((a: any) => poolIds.has(a.student_id));
     const allAlerts = (allAlertsRes.data ?? []);
 
     // Group data by student
@@ -138,8 +179,8 @@ export default function MentorPerformancePage() {
       alertMap[alert.student_id] = (alertMap[alert.student_id] ?? 0) + 1;
     }
 
-    // Compute per-mentee performance
-    const mentees = allocations.map((student: any) => {
+    // Compute per-student performance
+    const mentees = studentPool.map((student: any) => {
       const grades = gradeMap[student.id] ?? [];
       const attendance = attendMap[student.id] ?? [];
       const menteeInteractions = interactMap[student.id] ?? [];
@@ -192,8 +233,12 @@ export default function MentorPerformancePage() {
       const daysSinceInteraction = lastInteraction
         ? Math.floor((Date.now() - new Date(lastInteraction.date).getTime()) / (1000 * 60 * 60 * 24))
         : 999;
-      if (daysSinceInteraction > 60) riskFactors.push("No recent contact");
-      else if (daysSinceInteraction > 30) riskFactors.push("Infrequent contact");
+      // Contact-based risk only applies to mentees — taught-only students have
+      // no logged interactions, so they must never be flagged "no contact".
+      if (menteeIds.has(student.id)) {
+        if (daysSinceInteraction > 60) riskFactors.push("No recent contact");
+        else if (daysSinceInteraction > 30) riskFactors.push("Infrequent contact");
+      }
       if ((alertMap[student.id] ?? 0) > 0) riskFactors.push("Active alerts");
 
       const riskLevel = riskFactors.some((f) => f.startsWith("Critical"))
@@ -217,6 +262,11 @@ export default function MentorPerformancePage() {
         nbaScore: nbaMap[student.id] ?? 0,
         activeAlerts: alertMap[student.id] ?? 0,
         totalSessions: menteeInteractions.length,
+        source: menteeIds.has(student.id) && taughtIds.has(student.id)
+          ? "both"
+          : menteeIds.has(student.id)
+          ? "mentee"
+          : "taught",
       };
     });
 
@@ -268,7 +318,12 @@ export default function MentorPerformancePage() {
   }
 
   const { mentees, riskCounts, totalAlerts, upcomingSessions, recentAlerts } = data;
-  const filtered = filter === "all" ? mentees : mentees.filter((m: any) => m.riskLevel === filter);
+  const filtered = mentees.filter((m: any) => {
+    const matchesRisk = filter === "all" || m.riskLevel === filter;
+    const matchesScope =
+      scope === "all" || (scope === "taught" ? m.source !== "mentee" : scope === "mentee" ? m.source !== "taught" : true);
+    return matchesRisk && matchesScope;
+  });
 
   return (
     <AppShell role="mentor">
@@ -278,7 +333,7 @@ export default function MentorPerformancePage() {
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Performance Overview</h1>
           <p className="text-text-muted text-sm mt-0.5">
-            Monitor your mentees&apos; academic trajectories at a glance
+            Monitor your students&apos; academic trajectories at a glance
           </p>
         </div>
         <button onClick={handleEvaluateAlerts} disabled={evaluating} className="btn-primary flex items-center gap-2">
@@ -291,7 +346,7 @@ export default function MentorPerformancePage() {
       {/* Risk Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         {[
-          { label: "Total Mentees", value: mentees.length, icon: Users, color: "bg-accent/10 text-accent" },
+          { label: "Students Tracked", value: mentees.length, icon: Users, color: "bg-accent/10 text-accent" },
           { label: "On Track", value: riskCounts.low, icon: CheckCircle2, color: "bg-success/10 text-success" },
           { label: "Watch", value: riskCounts.medium, icon: Eye, color: "bg-accent/10 text-accent" },
           { label: "At Risk", value: riskCounts.high, icon: AlertTriangle, color: "bg-danger/10 text-danger" },
@@ -315,7 +370,35 @@ export default function MentorPerformancePage() {
         ))}
       </div>
 
-      {/* Filter Tabs */}
+      {/* Scope Filter */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        {[
+          { key: "all", label: "All Students" },
+          { key: "taught", label: "Taught by Me" },
+          { key: "mentee", label: "My Mentees" },
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setScope(key)}
+            className={`px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+              scope === key
+                ? "bg-accent text-ink"
+                : "bg-surface border border-surface-border text-text-muted hover:border-accent/30"
+            }`}
+          >
+            {label}
+            <span className="ml-1.5 opacity-70">
+              {key === "all"
+                ? mentees.length
+                : mentees.filter((m: any) =>
+                    key === "taught" ? m.source !== "mentee" : m.source !== "taught"
+                  ).length}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Risk Filter Tabs */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
         {[
           { key: "all", label: "All" },
@@ -347,7 +430,7 @@ export default function MentorPerformancePage() {
         {/* Mentee Performance Cards */}
         <div className="lg:col-span-2 space-y-3">
           {filtered.length === 0 ? (
-            <div className="card p-12 text-center text-text-muted">No mentees match this filter.</div>
+            <div className="card p-12 text-center text-text-muted">No students match this filter.</div>
           ) : (
             filtered.map((mentee: any, idx: number) => (
               <Reveal key={mentee.student.id} delay={Math.min(idx * 0.04, 0.3)}>
@@ -373,9 +456,18 @@ export default function MentorPerformancePage() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1">
                       <span className="font-semibold text-text-primary text-sm">{mentee.student.full_name}</span>
                       <RiskBadge level={mentee.riskLevel} />
+                      {mentee.source === "both" && (
+                        <span className="badge badge-secondary text-[10px]">Taught · Mentee</span>
+                      )}
+                      {mentee.source === "mentee" && (
+                        <span className="badge badge-accent text-[10px]">Mentee</span>
+                      )}
+                      {mentee.source === "taught" && (
+                        <span className="badge badge-highlight text-[10px]">Taught</span>
+                      )}
                       {mentee.activeAlerts > 0 && (
                         <span className="badge badge-danger text-[10px]">
                           <Bell className="w-2.5 h-2.5" /> {mentee.activeAlerts}

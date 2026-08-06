@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import AppShell from "@/components/AppShell";
 import { createClient } from "@/utils/supabase/client";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   TrendingUp,
   Clock,
@@ -14,8 +14,6 @@ import {
   Zap,
   BookOpen,
   Bell,
-  Award,
-  X,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
@@ -93,7 +91,6 @@ function AttendanceBar({ subject, percentage, delay = 0 }: { subject: string; pe
 export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
-  const [showNbaModal, setShowNbaModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -149,9 +146,6 @@ export default function StudentDashboard() {
         subject, percentage: Math.round((present / total) * 100),
       }));
 
-      // NBA score
-      const nbaScore = achievements.filter((a: any) => a.status === "Verified").reduce((s: number, a: any) => s + (a.nba_points ?? 0), 0);
-
       setData({
         user,
         grades,
@@ -163,7 +157,6 @@ export default function StudentDashboard() {
         feed,
         allocation: allocationRes.data,
         academicHealth: { cgpa, attendance: attendancePct, semesterGpas, healthStatus },
-        nbaScore,
         unreadCount: notifications.filter((n: any) => !n.is_read).length,
       });
       setLoading(false);
@@ -195,8 +188,7 @@ export default function StudentDashboard() {
     );
   }
 
-  const { achievements, attendanceSummary, feed, notifications, academicHealth: health, nbaScore, unreadCount } = data;
-  const verifiedAchievements = achievements.filter((a: any) => a.status === "Verified");
+  const { achievements, attendanceSummary, feed, notifications, academicHealth: health, unreadCount } = data;
 
   return (
     <AppShell role="student">
@@ -302,18 +294,6 @@ export default function StudentDashboard() {
           </TiltCard>
         </Reveal>
 
-        {/* NBA Score */}
-        <div className="cursor-pointer" onClick={() => setShowNbaModal(true)}>
-          <StatCard
-            label="NBA Score"
-            value={nbaScore}
-            sub="Verified achievement points"
-            color="bg-accent/10 text-accent"
-            icon={Award}
-            delay={0.1}
-          />
-        </div>
-
         {/* Notifications count */}
         <Link href="/student/feed" className="block">
           <StatCard
@@ -418,7 +398,7 @@ export default function StudentDashboard() {
                     }`} />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-text-primary truncate">{ach.title}</div>
-                      <div className="text-xs text-text-muted">{ach.category} · {ach.nba_points} pts</div>
+                      <div className="text-xs text-text-muted">{ach.category}</div>
                     </div>
                     <span className={`badge text-[10px] ${
                       ach.status === "Verified" ? "badge-success" :
@@ -433,77 +413,6 @@ export default function StudentDashboard() {
           </div>
         </Reveal>
       </div>
-
-      {/* NBA Breakdown Modal */}
-      <AnimatePresence>
-        {showNbaModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
-            onClick={() => setShowNbaModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 26 }}
-              onClick={(e) => e.stopPropagation()}
-              className="card w-full max-w-lg shadow-2xl"
-            >
-              <div className="flex items-center justify-between p-5 border-b border-glass/10">
-                <h2 className="font-heading font-bold text-text-primary flex items-center gap-2">
-                  <Award className="w-5 h-5 text-accent" />
-                  NBA Points Breakdown
-                </h2>
-                <motion.button whileHover={{ rotate: 90 }} onClick={() => setShowNbaModal(false)} className="btn-icon">
-                  <X className="w-5 h-5" />
-                </motion.button>
-              </div>
-              <div className="p-5 max-h-[60vh] overflow-y-auto space-y-3 scrollbar-hide">
-                {verifiedAchievements.length === 0 ? (
-                  <p className="text-text-muted text-sm text-center py-4">No verified points yet.</p>
-                ) : (
-                  verifiedAchievements.map((ach: any, idx: number) => (
-                    <motion.div
-                      key={ach.id}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className="flex items-center justify-between p-3 rounded-button bg-glass/[0.03] border border-glass/10 hover:border-accent/30 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-accent/10 text-accent flex items-center justify-center flex-shrink-0">
-                          <Trophy className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-text-primary">{ach.title}</div>
-                          <div className="text-xs text-text-muted">{ach.category} · {ach.level || "Regional"}</div>
-                        </div>
-                      </div>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 + idx * 0.05 }}
-                        className="text-sm font-bold text-accent"
-                      >
-                        +{ach.nba_points}
-                      </motion.div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-              <div className="p-4 bg-glass/[0.03] border-t border-glass/10 rounded-b-card flex justify-between items-center">
-                <span className="text-sm font-medium text-text-muted">Total Score</span>
-                <span className="text-2xl font-heading font-bold text-text-primary">
-                  <AnimatedCounter value={nbaScore} />
-                </span>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </AppShell>
   );
 }

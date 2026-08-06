@@ -55,19 +55,35 @@ export async function GET() {
         materials = data ?? [];
       }
     } else if (profile.role === "mentee") {
-      // Notes for courses the student is enrolled in
+      // Notes for courses the student is enrolled in OR taught to their class
       const enrollRes = await supabase
         .from("CourseEnrollment")
         .select("course_id")
         .eq("student_id", user.id)
         .eq("status", "Active");
-      const courseIds = (enrollRes.data ?? []).map((e: any) => e.course_id);
+      const courseIds = new Set<string>((enrollRes.data ?? []).map((e: any) => e.course_id));
 
-      if (courseIds.length > 0) {
+      // Add courses taught to the student's class (department + year)
+      const { data: profData } = await supabase
+        .from("Profile")
+        .select("department, year")
+        .eq("id", user.id)
+        .single();
+      if (profData?.department && profData?.year) {
+        const semesters = [profData.year * 2 - 1, profData.year * 2];
+        const classRes = await supabase
+          .from("Course")
+          .select("id")
+          .eq("department", profData.department)
+          .in("semester", semesters);
+        for (const c of classRes.data ?? []) courseIds.add(c.id);
+      }
+
+      if (courseIds.size > 0) {
         const { data, error } = await supabase
           .from("CourseMaterial")
           .select("*, course:course_id(id, name, code)")
-          .in("course_id", courseIds)
+          .in("course_id", Array.from(courseIds))
           .order("created_at", { ascending: false });
         if (error) throw error;
         materials = data ?? [];

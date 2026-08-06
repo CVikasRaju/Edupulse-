@@ -109,6 +109,18 @@
     background: rgb(var(--accent) / 0.35);
     color: rgb(var(--text-primary));
   }
+
+  /* Native select dropdown (listbox) options — must stay readable in BOTH themes.
+     Browsers render <option> with UA colors unless we pin them explicitly. */
+  select option {
+    background-color: rgb(var(--surface));
+    color: rgb(var(--text-primary));
+  }
+
+  select option:checked {
+    background-color: rgb(var(--accent) / 0.22);
+    color: rgb(var(--text-primary));
+  }
 }
 
 @layer components {

@@ -41,6 +41,7 @@ export default function MentorCourses() {
   const [modalError, setModalError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
+  const [enrollingClassId, setEnrollingClassId] = useState<string | null>(null);
   const [enrollMsg, setEnrollMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
@@ -156,6 +157,66 @@ export default function MentorCourses() {
       setEnrollMsg({ ok: true, text: `Enrolled ${toEnroll.length} mentee${toEnroll.length > 1 ? "s" : ""} in ${course.name}.` });
     }
     setEnrollingId(null);
+  };
+
+  // Enroll the ENTIRE class this course is taught to (all students in the same
+  // department + year). This is what keeps course & notes visible to every
+  // student in the class automatically.
+  const handleEnrollClass = async (course: any) => {
+    setEnrollingClassId(course.id);
+    setEnrollMsg(null);
+    const supabase = createClient();
+    const targetYear = course.semester ? Math.ceil(course.semester / 2) : null;
+
+    let query = supabase
+      .from("Profile")
+      .select("id")
+      .eq("role", "mentee")
+      .eq("is_active", true);
+    if (course.department) query = query.eq("department", course.department);
+    if (targetYear) query = query.eq("year", targetYear);
+
+    const { data: students } = await query;
+    const classIds = (students ?? []).map((s: any) => s.id);
+
+    if (classIds.length === 0) {
+      setEnrollMsg({ ok: false, text: "No students match this course's class (department/year)." });
+      setEnrollingClassId(null);
+      return;
+    }
+
+    const { data: existing } = await supabase
+      .from("CourseEnrollment")
+      .select("student_id")
+      .eq("course_id", course.id);
+    const alreadyEnrolled = new Set((existing ?? []).map((e: any) => e.student_id));
+    const toEnroll = classIds.filter((id: string) => !alreadyEnrolled.has(id));
+
+    if (toEnroll.length === 0) {
+      setEnrollMsg({ ok: true, text: `All students in this class are already enrolled in ${course.name}.` });
+      setEnrollingClassId(null);
+      return;
+    }
+
+    const { error } = await supabase.from("CourseEnrollment").insert(
+      toEnroll.map((student_id: string) => ({
+        id: newId(),
+        student_id,
+        course_id: course.id,
+        status: "Active",
+      }))
+    );
+
+    if (error) {
+      if (String(error.message).toLowerCase().includes("duplicate")) {
+        setEnrollMsg({ ok: true, text: `Class students are already enrolled in ${course.name}.` });
+      } else {
+        setEnrollMsg({ ok: false, text: `Enrollment failed: ${error.message}` });
+      }
+    } else {
+      setEnrollMsg({ ok: true, text: `Enrolled ${toEnroll.length} student${toEnroll.length > 1 ? "s" : ""} in ${course.name}.` });
+    }
+    setEnrollingClassId(null);
   };
 
   const openNotes = (course: any) => {
@@ -302,7 +363,7 @@ export default function MentorCourses() {
                   <div className="p-2.5 rounded-xl bg-accent/10 text-accent w-fit mb-4"><BookOpen className="w-5 h-5" /></div>
                   <span className="badge badge-secondary">{mats.length} note{mats.length === 1 ? "" : "s"}</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => handleEnrollMentees(c)}
                     disabled={enrollingId === c.id}
@@ -311,6 +372,15 @@ export default function MentorCourses() {
                   >
                     {enrollingId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
                     Enroll Mentees
+                  </button>
+                  <button
+                    onClick={() => handleEnrollClass(c)}
+                    disabled={enrollingClassId === c.id}
+                    className="btn-ghost btn-sm text-xs"
+                    title="Enroll every student in this course's class (department + year)"
+                  >
+                    {enrollingClassId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
+                    Enroll Class
                   </button>
                 </div>
                 <h3 className="font-heading font-bold text-text-primary">{c.name}</h3>

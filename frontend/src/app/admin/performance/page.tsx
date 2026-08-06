@@ -10,6 +10,7 @@ import {
   TrendingDown,
   BarChart3,
   Building2,
+  GraduationCap,
   Loader2,
   Shield,
   Bell,
@@ -96,17 +97,17 @@ function RiskRing({ counts }: { counts: { low: number; medium: number; high: num
   );
 }
 
-// ─── Department Bar ─────────────────────────────────
+// ─── Group Bar (department OR class & section) ──────
 
-function DeptBar({ dept, avgCgpa, avgAttendance, atRiskCount, total }: {
-  dept: string; avgCgpa: number; avgAttendance: number; atRiskCount: number; total: number;
+function GroupBar({ title, icon: Icon, avgCgpa, avgAttendance, atRiskCount, total }: {
+  title: string; icon: React.ElementType; avgCgpa: number; avgAttendance: number; atRiskCount: number; total: number;
 }) {
   return (
     <div className="p-3 rounded-button hover:bg-accent-light transition-colors">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-text-primary flex items-center gap-2">
-          <Building2 className="w-3.5 h-3.5 text-text-muted" />
-          {dept}
+          <Icon className="w-3.5 h-3.5 text-text-muted" />
+          {title}
         </span>
         {atRiskCount > 0 && (
           <span className="badge badge-danger text-[10px]">
@@ -143,7 +144,11 @@ export default function AdminPerformancePage() {
   const [data, setData] = useState<any>(null);
   const [deptFilter, setDeptFilter] = useState<string>("all");
   const [riskFilter, setRiskFilter] = useState<string>("all");
+  const [groupBy, setGroupBy] = useState<"dept" | "class">("dept");
+  const [classFilter, setClassFilter] = useState<string>("all");
   const [evaluating, setEvaluating] = useState(false);
+
+  const classKey = (s: any) => `${s.department ?? "Unknown"} · Y${s.year ?? "?"} · Sec ${s.section ?? "?"}`;
 
   const fetchData = async () => {
     const supabase = createClient();
@@ -194,6 +199,7 @@ export default function AdminPerformancePage() {
     // Compute per-student metrics
     let riskLow = 0, riskMedium = 0, riskHigh = 0, riskCritical = 0;
     const deptStats: Record<string, { cgpaSum: number; attendSum: number; count: number; atRisk: number }> = {};
+    const classStats: Record<string, { cgpaSum: number; attendSum: number; count: number; atRisk: number }> = {};
     const studentMetrics: any[] = [];
 
     for (const student of students) {
@@ -243,6 +249,14 @@ export default function AdminPerformancePage() {
       deptStats[dept].count++;
       if (riskLevel === "high" || riskLevel === "critical") deptStats[dept].atRisk++;
 
+      // Class & section stats
+      const ck = `${dept} · Y${student.year ?? "?"} · Sec ${student.section ?? "?"}`;
+      if (!classStats[ck]) classStats[ck] = { cgpaSum: 0, attendSum: 0, count: 0, atRisk: 0 };
+      classStats[ck].cgpaSum += cgpa;
+      classStats[ck].attendSum += attendancePct;
+      classStats[ck].count++;
+      if (riskLevel === "high" || riskLevel === "critical") classStats[ck].atRisk++;
+
       studentMetrics.push({
         ...student,
         cgpa,
@@ -255,6 +269,14 @@ export default function AdminPerformancePage() {
 
     const departmentStats = Object.entries(deptStats).map(([department, stats]) => ({
       department,
+      avgCgpa: stats.count > 0 ? Number((stats.cgpaSum / stats.count).toFixed(2)) : 0,
+      avgAttendance: stats.count > 0 ? Math.round(stats.attendSum / stats.count) : 0,
+      atRiskCount: stats.atRisk,
+      total: stats.count,
+    }));
+
+    const classGroups = Object.entries(classStats).map(([key, stats]) => ({
+      key,
       avgCgpa: stats.count > 0 ? Number((stats.cgpaSum / stats.count).toFixed(2)) : 0,
       avgAttendance: stats.count > 0 ? Math.round(stats.attendSum / stats.count) : 0,
       atRiskCount: stats.atRisk,
@@ -284,6 +306,7 @@ export default function AdminPerformancePage() {
       totalFaculty: mentors.length,
       riskDistribution: { low: riskLow, medium: riskMedium, high: riskHigh, critical: riskCritical },
       departmentStats,
+      classGroups,
       studentMetrics,
       topAlerts: allAlerts,
       mentorActivity,
@@ -323,13 +346,15 @@ export default function AdminPerformancePage() {
     );
   }
 
-  const { totalStudents, totalFaculty, riskDistribution, departmentStats, studentMetrics, topAlerts, mentorActivity } = data;
+  const { totalStudents, totalFaculty, riskDistribution, departmentStats, classGroups, studentMetrics, topAlerts, mentorActivity } = data;
   const departments = ["all", ...Array.from(new Set(departmentStats.map((d: any) => d.department)))];
+  const classes = ["all", ...Array.from(new Set(studentMetrics.map(classKey)))];
 
   // Filter students
   const filteredStudents = studentMetrics.filter((s: any) => {
     if (deptFilter !== "all" && s.department !== deptFilter) return false;
     if (riskFilter !== "all" && s.riskLevel !== riskFilter) return false;
+    if (classFilter !== "all" && classKey(s) !== classFilter) return false;
     return true;
   });
 
@@ -340,7 +365,7 @@ export default function AdminPerformancePage() {
         <div>
           <h1 className="text-2xl font-heading font-bold text-text-primary">Performance Analytics</h1>
           <p className="text-text-muted text-sm mt-0.5">
-            全校 student performance overview across all departments
+            Institution-wide student performance across departments, classes & sections
           </p>
         </div>
         <button onClick={handleEvaluateAlerts} disabled={evaluating} className="btn-primary flex items-center gap-2">
@@ -379,17 +404,43 @@ export default function AdminPerformancePage() {
           <RiskRing counts={riskDistribution} />
         </div>
 
-        {/* Department Overview */}
+        {/* Group Breakdown (Department OR Class & Section) */}
         <div className="lg:col-span-2 card p-5">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <h3 className="font-heading font-semibold text-text-primary flex items-center gap-2">
               <Building2 className="w-4 h-4 text-accent" />
-              Department Breakdown
+              {groupBy === "dept" ? "Department Breakdown" : "Class & Section Breakdown"}
             </h3>
+            <div className="flex gap-1 p-1 rounded-input bg-surface border border-surface-border">
+              <button
+                onClick={() => setGroupBy("dept")}
+                className={`px-3 py-1 text-xs font-medium rounded-input transition-colors ${
+                  groupBy === "dept" ? "bg-accent/15 text-accent" : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                Department
+              </button>
+              <button
+                onClick={() => setGroupBy("class")}
+                className={`px-3 py-1 text-xs font-medium rounded-input transition-colors ${
+                  groupBy === "class" ? "bg-accent/15 text-accent" : "text-text-muted hover:text-text-primary"
+                }`}
+              >
+                Class & Section
+              </button>
+            </div>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-hide">
-            {departmentStats.map((dept: any) => (
-              <DeptBar key={dept.department} {...dept} />
+            {(groupBy === "dept" ? departmentStats : classGroups).map((g: any) => (
+              <GroupBar
+                key={groupBy === "dept" ? g.department : g.key}
+                title={groupBy === "dept" ? g.department : g.key}
+                icon={groupBy === "dept" ? Building2 : GraduationCap}
+                avgCgpa={g.avgCgpa}
+                avgAttendance={g.avgAttendance}
+                atRiskCount={g.atRiskCount}
+                total={g.total}
+              />
             ))}
           </div>
         </div>
@@ -418,6 +469,15 @@ export default function AdminPerformancePage() {
           <option value="medium">Watch</option>
           <option value="low">On Track</option>
         </select>
+        <select
+          value={classFilter}
+          onChange={(e) => setClassFilter(e.target.value)}
+          className="input w-auto text-xs py-1.5"
+        >
+          {classes.map((c: any) => (
+            <option key={c} value={c}>{c === "all" ? "All Classes" : c}</option>
+          ))}
+        </select>
         <span className="text-xs text-text-muted ml-auto">{filteredStudents.length} students</span>
       </div>
 
@@ -430,6 +490,7 @@ export default function AdminPerformancePage() {
                 <tr>
                   <th>Student</th>
                   <th>Dept</th>
+                  <th>Class</th>
                   <th>CGPA</th>
                   <th>Attendance</th>
                   <th>Risk</th>
@@ -453,6 +514,9 @@ export default function AdminPerformancePage() {
                         </div>
                       </td>
                       <td className="text-xs text-text-muted">{s.department ?? "—"}</td>
+                      <td className="text-xs text-text-muted">
+                        {s.year ? `Y${s.year}` : "—"}{s.section ? ` · Sec ${s.section}` : ""}
+                      </td>
                       <td>
                         <span className={`text-sm font-semibold ${s.cgpa >= 7 ? "text-success" : s.cgpa >= 5.5 ? "text-accent" : "text-danger"}`}>
                           {s.cgpa.toFixed(2)}

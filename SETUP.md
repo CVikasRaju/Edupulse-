@@ -93,28 +93,28 @@ Every account needs **two things**: a Supabase **Auth user** (the login) and a m
 ```sql
 -- Admin
 INSERT INTO public."Profile" (id, role, full_name, email, department, designation, employee_id, is_profile_complete, is_active, created_at, updated_at)
-VALUES ('AUTH_USER_ID_HERE', 'admin', 'Demo Admin', 'admin@sahyadri.edu.in', 'Administration', 'Principal', 'SAH-ADM-001', true, true, NOW(), NOW());
+VALUES ('AUTH_USER_ID_HERE', 'admin', 'Demo Admin', 'admin@demo', 'Administration', 'Principal', 'SAH-ADM-001', true, true, NOW(), NOW());
 
 -- Faculty / Mentor
 INSERT INTO public."Profile" (id, role, full_name, email, department, designation, employee_id, is_profile_complete, is_active, created_at, updated_at)
-VALUES ('AUTH_USER_ID_HERE', 'mentor', 'Demo Mentor', 'teacher@sahyadri.edu.in', 'Computer Science', 'Associate Professor', 'SAH-CS-042', true, true, NOW(), NOW());
+VALUES ('AUTH_USER_ID_HERE', 'mentor', 'Demo Mentor', 'teacher@demo', 'Computer Science', 'Associate Professor', 'SAH-CS-042', true, true, NOW(), NOW());
 
 -- Student
 INSERT INTO public."Profile" (id, role, full_name, email, department, year, section, usn, is_profile_complete, is_active, created_at, updated_at)
-VALUES ('AUTH_USER_ID_HERE', 'mentee', 'Demo Student', 'student@sahyadri.edu.in', 'Computer Science', 3, 'A', '4SH21CS001', true, true, NOW(), NOW());
+VALUES ('AUTH_USER_ID_HERE', 'mentee', 'Demo Student', 'student@demo', 'Computer Science', 3, 'A', '4SH21CS001', true, true, NOW(), NOW());
 ```
 
 ---
 
 ## 5. Demo Credentials
 
-After seeding, the demo accounts are (passwords are set when you create the auth users):
+Placeholder credentials are for documentation only — create your own accounts through **Admin → Users → Add User** (this creates the auth login and Profile row automatically):
 
 | Role | Email | Password |
 |------|-------|----------|
-| 🛡️ **Administrator** | `admin@sahyadri.edu.in` | `sahyadri@123` |
-| 👨‍🏫 **Faculty / Mentor** | `teacher@sahyadri.edu.in` | `sahyadri@123` |
-| 🎓 **Student** | `student@sahyadri.edu.in` | `sahyadri@123` |
+| 🛡️ **Administrator** | `admin@demo` | `admin001` |
+| 👨‍🏫 **Faculty / Mentor** | `teacher@demo` | `teacher001` |
+| 🎓 **Student** | `student@demo` | `student001` |
 
 > The login screen enforces **role-matched sign-in** — selecting the *Student* tab only accepts a student account, and vice versa.
 

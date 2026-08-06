@@ -316,13 +316,13 @@ GEMINI_API_KEY="your-gemini-api-key"
 
 ## 👤 Demo Credentials
 
-> Demo accounts for local testing (pre-filled on the login screen).
+> Placeholder credentials shown below are for documentation only — create your own accounts with **Admin → Users → Add User** (this creates the real Supabase auth login and profile in one step).
 
 | Role | Email | Password |
 |------|-------|----------|
-| 🛡️ **Administrator** | `admin@sahyadri.edu.in` | `sahyadri@123` |
-| 👨‍🏫 **Faculty / Mentor** | `teacher@sahyadri.edu.in` | `sahyadri@123` |
-| 🎓 **Student** | `student@sahyadri.edu.in` | `sahyadri@123` |
+| 🛡️ **Administrator** | `admin@demo` | `admin001` |
+| 👨‍🏫 **Faculty / Mentor** | `teacher@demo` | `teacher001` |
+| 🎓 **Student** | `student@demo` | `student001` |
 
 The login screen enforces **role-matched sign-in** — selecting the *Student* tab only accepts a student account, and vice versa — so a wrong-tab attempt is rejected as invalid credentials.
 

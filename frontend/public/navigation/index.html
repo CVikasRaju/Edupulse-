@@ -42,6 +42,7 @@ svg{width:100%;height:auto;max-height:70vh;overflow:auto;background:var(--bg);bo
 .node.onpath circle{stroke:var(--accent);stroke-width:3;filter:drop-shadow(0 0 3px var(--accent));}
 .edge{stroke:var(--line);stroke-width:1.4;}
 .edge.path{stroke:var(--accent);stroke-width:3;}
+.arrow{fill:var(--accent);}
 .legend{display:flex;flex-wrap:wrap;gap:8px;font-size:.72rem;color:var(--muted);}
 .legend span{margin-right:2px;}
 .dirPanel ol{padding-left:18px;font-size:.85rem;}
@@ -352,13 +353,14 @@ function renderList(){
       if(activeCat!=='all'&&r[1]!==activeCat) return;
       if(q&&!r[0].toLowerCase().includes(q)) return;
       html+=`<div class="roomItem"><span>${ICONS[r[1]]}</span><b>${r[0]}</b><span class="fl">${fname}</span>
-        <button data-role="from" data-id="${fk}_${i}">From</button><button data-role="to" data-id="${fk}_${i}">To</button></div>`;
+        <button data-role="route" data-id="${fk}_${i}">🧭 Path</button><button data-role="from" data-id="${fk}_${i}">From</button><button data-role="to" data-id="${fk}_${i}">To</button></div>`;
     });
   });
   const lp=document.getElementById('listPanel');
   lp.innerHTML=html||'<p class="muted">No rooms match.</p>';
   lp.querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    if(b.dataset.role==='from') document.getElementById('fromSel').value=b.dataset.id;
+    if(b.dataset.role==='route') routeToRoom(b.dataset.id);
+    else if(b.dataset.role==='from') document.getElementById('fromSel').value=b.dataset.id;
     else document.getElementById('toSel').value=b.dataset.id;
   });
 }
@@ -370,6 +372,11 @@ function drawFloor(){
     const a=nodes[e[0]],b=nodes[e[1]];
     const onPath=pathPairs&&(pathPairs.has(e[0]+'|'+e[1]));
     html+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="edge ${onPath?'path':''}"/>`;
+    if(onPath){   // arrowhead pointing the way you walk
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      const deg=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+      html+=`<polygon points="-4,-3.5 4,0 -4,3.5" class="arrow" transform="translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${deg.toFixed(1)})"/>`;
+    }
   });
   Object.keys(nodes).filter(k=>nodes[k].floor===currentFloor).forEach(k=>{
     const n=nodes[k]; const onp=pathSet&&pathSet.has(k);
@@ -382,7 +389,7 @@ function drawFloor(){
   });
   svg.innerHTML=html;
   svg.querySelectorAll('.node').forEach(g=>g.addEventListener('click',()=>{
-    document.getElementById('toSel').value=g.dataset.id;
+    routeToRoom(g.dataset.id);      // click a place on the map → show the path to it
   }));
 }
 
@@ -400,20 +407,42 @@ function findRoute(){
   renderFloorTabs(); drawFloor();
 }
 
+/* Signed turn angle (degrees) at b walking a → b → c. SVG y grows downward,
+   so a positive result is a right turn on screen. */
+function turnAngle(a,b,c){
+  const ax=b.x-a.x, ay=b.y-a.y, bx=c.x-b.x, by=c.y-b.y;
+  return Math.atan2(ax*by-ay*bx, ax*bx+ay*by)*180/Math.PI;
+}
+
 function renderDirections(path,dist){
-  let steps=[`Start at <b>${nodes[path[0]].name}</b> (${nodes[path[0]].floorName})`];
-  let curFloor=nodes[path[0]].floor;
-  for(let i=1;i<path.length;i++){
-    const n=nodes[path[i]];
-    if(n.floor!==curFloor){
-      steps.push(`🪜 Take the stairs / lift to <b>${n.floorName}</b>`);
-      curFloor=n.floor;
-    } else if(i===path.length-1){
-      steps.push(`Arrive at <b>${n.name}</b> ✅`);
-    } else if(n.cat!=='stairs'){
-      steps.push(`Walk to <b>${n.name}</b>`);
+  const P=path.map(k=>nodes[k]);
+  const steps=[`Start at <b>${P[0].name}</b> (${P[0].floorName})`];
+  let straight=0, landmark=null, curFloor=P[0].floor;
+  const flush=()=>{
+    if(straight>0){
+      steps.push(`🚶 Walk straight past ${straight} room${straight>1?'s':''}, to <b>${landmark.name}</b>`);
+      straight=0;
     }
+  };
+  for(let i=1;i<P.length-1;i++){
+    const prev=P[i-1], cur=P[i], next=P[i+1];
+    if(cur.floor!==curFloor){          // floor change gets its own step
+      flush();
+      steps.push(`🪜 Take the stairs / lift to <b>${cur.floorName}</b>`);
+      curFloor=cur.floor;
+      straight=0; landmark=cur;
+      continue;
+    }
+    if(next.floor!==curFloor) continue; // the stairs step below handles that move
+    const ang=turnAngle(prev,cur,next), mag=Math.abs(ang);
+    if(mag<40){ straight++; landmark=cur; continue; }   // not a real turn — keep going
+    flush();
+    if(mag>150) steps.push(`↩️ Turn around at <b>${cur.name}</b>`);
+    else steps.push(`${ang>0?'➡️ Turn right':'⬅️ Turn left'} at <b>${cur.name}</b>`);
   }
+  flush();
+  const last=P[P.length-1];
+  steps.push(`Arrive at <b>${last.name}</b> ✅ (${last.floorName})`);
   /* Route lengths come from the floor diagrams, where the 600-unit plan spans
      roughly 60 m — so 1 unit ≈ 0.1 m. Budget ~75 m/min of walking, plus a
      little for each floor change. */
@@ -706,6 +735,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
   let scene,camera,renderer,raycaster,floorMeshes=[],selected=null;
   let dragging=false,lastX=0,lastY=0,downX=0,downY=0,theta=0.9,phi=1.05,radius=26,target=null;
   let started=false;
+  let dirty=true, frames=0;   // render only when the view actually changes
 
   const wrapEl=()=>document.getElementById('b3wrap');
   const size=()=>{const w=wrapEl(); return {w:Math.max(320,w.clientWidth), h:Math.max(300,w.clientHeight)};};
@@ -828,6 +858,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
   function selectFloor(i){
     selected=i;
     floorMeshes.forEach(m=>{m.material.opacity=(m.userData.idx===i)?1:0.22;});
+    dirty=true;
     document.getElementById('b3floorPanel').style.display='block';
     document.getElementById('b3fpTitle').textContent=FLOOR_NAMES[i];
     document.getElementById('b3fpBody').textContent=FLOOR_SUMMARY[i];
@@ -837,6 +868,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     selected=null;
     floorMeshes.forEach(m=>m.material.opacity=1);
     document.getElementById('b3floorPanel').style.display='none';
+    dirty=true;
   }
 
   function onClick(e){
@@ -854,6 +886,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     camera.position.z=target.z+radius*Math.sin(phi)*Math.cos(theta);
     camera.position.y=target.y+radius*Math.cos(phi);
     camera.lookAt(target);
+    dirty=true;
   }
 
   function onResize(){
@@ -861,12 +894,16 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     const {w:W,h:H}=size();
     camera.aspect=W/H; camera.updateProjectionMatrix();
     renderer.setSize(W,H);
+    dirty=true;
   }
 
   function animate(){
     requestAnimationFrame(animate);
     const w=wrapEl();
-    if(renderer&&scene&&camera&&w&&w.offsetParent!==null) renderer.render(scene,camera);
+    if(renderer&&scene&&camera&&w&&w.offsetParent!==null&&(dirty||dragging)){
+      renderer.render(scene,camera);
+      dirty=false; frames++;
+    }
   }
 
   // Lazily boot the 3D view the first time the tab is opened.
@@ -880,6 +917,8 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     started=true;
     init();
   };
+  window.__b3dbg=()=>({dirty,frames,started,hasRenderer:!!renderer,
+    offsetNull:wrapEl().offsetParent===null,wrapDisplay:wrapEl().style.display});
 })();
 </script>
 
@@ -926,6 +965,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
   let scene,camera,renderer,raycaster,plan,groups=[],roomMeshes=[],labelGroup=null;
   let started=false,focused=null,selected=null;
   let dragging=false,lastX=0,lastY=0,downX=0,downY=0,theta=0.85,phi=1.02,radius=21,target=null;
+  let dirty=true, frames=0;   // render only when the view actually changes
 
   const $=id=>document.getElementById(id);
   const wrapEl=()=>$('f3wrap');
@@ -1053,7 +1093,9 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     raycaster=new THREE.Raycaster();
 
     renderLegend(); clearPanel(); animate();
-    window.__f3={ready:true,rooms:plan.totalRooms,floors:plan.floors.length,meshes:roomMeshes.length};
+    window.__f3={ready:true,rooms:plan.totalRooms,floors:plan.floors.length,meshes:roomMeshes.length,frames:0};
+    window.__f3dbg=()=>({dirty,frames,started,hasRenderer:!!renderer,hasScene:!!scene,
+      offsetNull:wrapEl().offsetParent===null,wrapDisplay:wrapEl().style.display});
   }
 
   function updateCam(){
@@ -1062,6 +1104,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     camera.position.z=target.z+radius*Math.sin(phi)*Math.cos(theta);
     camera.position.y=target.y+radius*Math.cos(phi);
     camera.lookAt(target);
+    dirty=true;
   }
 
   function renderLegend(){
@@ -1085,6 +1128,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     buildRoomLabels(fi);
     showFloorPanel(fi);
     renderLegend();
+    dirty=true;
   }
 
   function buildRoomLabels(fi){
@@ -1105,6 +1149,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     });
     if(labelGroup){scene.remove(labelGroup);labelGroup=null;}
     clearPanel(); renderLegend();
+    dirty=true;
   }
 
   function clearHighlight(){roomMeshes.forEach(m=>{if(m.material.emissive) m.material.emissive.setHex(0x000000);});}
@@ -1114,6 +1159,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     clearHighlight(); selected=room;
     roomMeshes.forEach(m=>{if(m.userData.room===room){m.material.emissive=colorOf(room.cat);m.material.emissiveIntensity=0.5;}});
     showRoomPanel(room);
+    dirty=true;
   }
 
   function showFloorPanel(fi){
@@ -1146,7 +1192,7 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
       else $('f3note').textContent='That room is not on the route map.';
     };
     $('f3map').onclick=()=>{if(window.showRoomOnMap&&typeof nodes!=='undefined'&&nodes[room.id]) window.showRoomOnMap(room.id);};
-    $('f3back').onclick=()=>{clearHighlight();selected=null;showFloorPanel(room.fi);};
+    $('f3back').onclick=()=>{clearHighlight();selected=null;showFloorPanel(room.fi);dirty=true;};
   }
 
   function clearPanel(){const p=$('f3panel');p.style.display='none';p.innerHTML='';}
@@ -1167,12 +1213,17 @@ document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(
     if(!started||!renderer||!camera) return;
     const {w:W,h:H}=size();
     camera.aspect=W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H);
+    dirty=true;
   }
 
   function animate(){
     requestAnimationFrame(animate);
     const w=wrapEl();
-    if(renderer&&scene&&camera&&w&&w.offsetParent!==null) renderer.render(scene,camera);
+    if(renderer&&scene&&camera&&w&&w.offsetParent!==null&&(dirty||dragging)){
+      renderer.render(scene,camera);
+      dirty=false; frames++;
+      if(window.__f3) window.__f3.frames=frames;
+    }
   }
 
   // Built lazily the first time the 3D tab is opened in floor-plan mode.

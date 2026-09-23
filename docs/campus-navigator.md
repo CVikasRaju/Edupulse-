@@ -15,8 +15,15 @@ Because both files live in Next.js's `public/` directory they are served as stat
 assets by the existing EduPulse deployment — no route handlers or build step needed.
 
 > The pages use relative links, so opening the files directly in a browser also works
-> as long as the sibling `college/` / `navigation/` folders stay next to each other.
-> The **Login** buttons point to `../login`, which only resolves on the running app.
+> as long as the sibling `college/` / `navigation/` / `edupulse/` folders and
+> `sahyadri-logo.png` stay next to each other.
+>
+> **Login** buttons go through `edupulse/index.html`, which is deliberate: when the package
+> sits inside the EduPulse app it detects the portal and jumps straight to `/login`. When the
+> package is unzipped and opened on its own (or from `file://`), there is no portal beside it,
+> so it shows one field where you enter the EduPulse address once — `http://localhost:3000/login`
+> while running `npm run dev` in `frontend/`, or your deployed URL. That choice is remembered
+> in `localStorage` under `sahyadri.edupulseUrl`, so Login works from then on without a 404.
 
 ## Features
 

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Open EduPulse · Sahyadri College</title>
+<link rel="icon" href="../sahyadri-logo.png">
+<style>
+:root{--g:#1b5e3a;--g2:#26814f;--accent:#e8862b;--bg:#f4f6f5;--card:#ffffff;--txt:#1c2a22;--muted:#6b7a70;--line:#dde5e0;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10140f;--card:#1a221b;--txt:#e9efe8;--muted:#9fb0a6;--line:#2b362e;}}
+*{box-sizing:border-box;}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(140deg,#134a2e,var(--g) 55%,var(--g2));font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;color:var(--txt);}
+.card{background:var(--card);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:32px 28px;max-width:460px;width:100%;text-align:center;}
+.pulse{width:64px;height:64px;margin:0 auto 14px;border-radius:18px;background:linear-gradient(135deg,var(--accent),#c96f1c);
+  display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 8px 22px rgba(232,134,43,.4);}
+h1{margin:0 0 8px;font-size:1.3rem;letter-spacing:-.02em;}
+p{margin:0 0 14px;font-size:.9rem;color:var(--muted);line-height:1.55;}
+.spinner{width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--g);border-radius:50%;margin:6px auto 16px;
+  animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+form{text-align:left;border-top:1px solid var(--line);padding-top:16px;}
+label{font-size:.75rem;color:var(--muted);}
+input{width:100%;margin:6px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg);color:var(--txt);font-size:.92rem;}
+button{width:100%;padding:11px;border:none;border-radius:10px;background:var(--g);color:#fff;font-weight:600;font-size:.92rem;cursor:pointer;}
+button:hover{background:var(--g2);}
+.hint{font-size:.74rem;margin:12px 0 0;}
+code{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:.78rem;}
+.back{display:inline-block;margin-top:18px;font-size:.82rem;color:var(--g2);text-decoration:none;}
+.back:hover{text-decoration:underline;}
+[hidden]{display:none !important;}
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="pulse">⚡</div>
+  <h1>EduPulse</h1>
+  <div class="spinner" id="spin"></div>
+  <p id="status">Checking where the EduPulse portal lives…</p>
+
+  <form id="form" hidden>
+    <label for="url">EduPulse address (Academic, Attendance &amp; Mentorship portal)</label>
+    <input id="url" type="text" inputmode="url" spellcheck="false" autocomplete="off"
+           placeholder="http://localhost:3000/login">
+    <button type="submit">Save &amp; open EduPulse →</button>
+    <p class="hint">
+      Running the app locally? Use <code>http://localhost:3000/login</code>
+      (start it with <code>npm run dev</code> inside <code>frontend/</code>).
+      Deployed? Paste that URL instead — it is remembered on this device only.
+    </p>
+  </form>
+
+  <a class="back" href="../college/index.html">← Back to college home</a>
+</main>
+
+<script>
+(function(){
+  var KEY='sahyadri.edupulseUrl';
+  var status=document.getElementById('status');
+  var form=document.getElementById('form');
+  var input=document.getElementById('url');
+  var spin=document.getElementById('spin');
+  function saved(){ try{ return localStorage.getItem(KEY)||''; }catch(e){ return ''; } }
+  function store(v){ try{ localStorage.setItem(KEY,v); }catch(e){} }
+  function fail(msg){
+    if(spin) spin.hidden=true;
+    status.textContent=msg;
+    form.hidden=false;
+  }
+  function go(url){ try{ location.replace(url); }catch(e){ fail('Could not open that address: '+e.message); } }
+
+  var remembered=saved();
+  input.value=remembered||'http://localhost:3000/login';
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var v=input.value.trim();
+    if(!v) return;
+    store(v);
+    go(v);
+  });
+
+  if(remembered){ go(remembered); return; }           // user already picked one — trust it
+
+  var rel='../login';                                 // default: EduPulse app sitting beside us
+  if(location.protocol==='file:'){                    // opened the unzipped package straight from disk
+    fail('The unzipped package needs your running EduPulse app to log in. Its address is below.');
+    return;
+  }
+  fetch(rel,{redirect:'follow'}).then(function(r){
+    var type=(r.headers.get('content-type')||'');
+    if(r.ok && type.indexOf('html')>=0 && r.url.indexOf('/edupulse/')<0){ go(rel); return; }
+    fail('EduPulse was not found next to these pages. Enter its address below.');
+  }).catch(function(){
+    fail('EduPulse was not found next to these pages. Enter its address below.');
+  });
+})();
+</script>
+</body>
+</html>

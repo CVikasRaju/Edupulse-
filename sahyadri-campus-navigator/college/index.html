@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sahyadri College of Engineering &amp; Management, Mangaluru</title>
+<link rel="icon" href="../sahyadri-logo.png">
+<meta name="description" content="Sahyadri College of Engineering & Management, Mangaluru — NAAC 'A' accredited, NBA accredited engineering & management institution. Access EduPulse and the Sahyadri Campus Navigator.">
+<style>
+:root{--g:#1b5e3a;--g2:#26814f;--accent:#e8862b;--accent2:#c96f1c;--bg:#f7f8f6;--card:#ffffff;--txt:#14251c;--muted:#617166;--line:#e2e8e3;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c110d;--card:#161e18;--txt:#e9efe8;--muted:#9fb0a6;--line:#28332c;}}
+:root[data-theme="dark"]{--bg:#0c110d;--card:#161e18;--txt:#e9efe8;--muted:#9fb0a6;--line:#28332c;}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.6;}
+a{color:var(--g2);}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px;}
+/* nav */
+nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
+nav .wrap{display:flex;align-items:center;gap:14px;padding-top:10px;padding-bottom:10px;}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--txt);}
+.logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;letter-spacing:.5px;}
+.brand b{font-size:1rem;display:block;line-height:1.1;}
+.brand small{font-size:.7rem;color:var(--muted);}
+.navLinks{margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.navLinks a{font-size:.84rem;text-decoration:none;color:var(--muted);padding:7px 11px;border-radius:999px;}
+.navLinks a:hover{background:var(--bg);color:var(--txt);}
+.navLinks a.ghost{border:1px solid var(--line);color:var(--txt);}
+.btnLogin{background:var(--g);color:#fff !important;font-weight:600;}
+.btnLogin:hover{background:var(--g2) !important;color:#fff !important;}
+/* hero */
+header.hero{background:linear-gradient(140deg,#134a2e 0%,var(--g) 45%,var(--g2) 100%);color:#fff;padding:56px 0 68px;position:relative;overflow:hidden;}
+header.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;background:rgba(255,255,255,.07);}
+header.hero::before{content:"";position:absolute;left:-90px;bottom:-160px;width:340px;height:340px;border-radius:50%;background:rgba(232,134,43,.18);}
+.heroInner{position:relative;z-index:2;max-width:820px;}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:6px 14px;border-radius:999px;}
+header.hero h1{font-size:clamp(1.7rem,4vw,2.7rem);line-height:1.15;margin:18px 0 12px;letter-spacing:-.02em;}
+header.hero p.lede{font-size:clamp(.95rem,1.6vw,1.12rem);color:rgba(255,255,255,.9);margin:0 0 26px;max-width:640px;}
+.heroBtns{display:flex;gap:12px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:600;font-size:.92rem;padding:12px 22px;border-radius:10px;border:1px solid transparent;transition:transform .15s ease,background .15s ease;}
+.btn:hover{transform:translateY(-1px);}
+.btnPrimary{background:var(--accent);color:#fff;}
+.btnPrimary:hover{background:var(--accent2);color:#fff;}
+.btnOutline{border-color:rgba(255,255,255,.5);color:#fff;}
+.btnOutline:hover{background:rgba(255,255,255,.14);}
+/* feature cards */
+section{padding:52px 0;}
+.sectionHead{text-align:center;max-width:640px;margin:0 auto 32px;}
+.sectionHead h2{font-size:clamp(1.4rem,2.6vw,2rem);margin:0 0 8px;letter-spacing:-.02em;}
+.sectionHead p{margin:0;color:var(--muted);font-size:.95rem;}
+.featureGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;}
+.feature{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.05);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.feature:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(0,0,0,.12);border-color:var(--g2);}
+.feature .tag{position:absolute;top:0;right:0;font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 14px;border-bottom-left-radius:14px;}
+.feature.edupulse .tag{background:rgba(232,134,43,.16);color:var(--accent2);}
+.feature.navigator .tag{background:rgba(38,129,79,.14);color:var(--g2);}
+.fIcon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.7rem;}
+.feature.edupulse .fIcon{background:rgba(232,134,43,.14);}
+.feature.navigator .fIcon{background:rgba(38,129,79,.13);}
+.feature h3{margin:0;font-size:1.25rem;letter-spacing:-.01em;}
+.feature p{margin:0;color:var(--muted);font-size:.9rem;}
+.feature ul{margin:0;padding-left:18px;color:var(--muted);font-size:.85rem;}
+.feature ul li{margin-bottom:3px;}
+.feature .cta{margin-top:auto;padding-top:8px;}
+.feature .cta .btn{width:100%;justify-content:center;}
+.feature.edupulse .cta .btn{background:var(--accent);color:#fff;}
+.feature.edupulse .cta .btn:hover{background:var(--accent2);}
+.feature.navigator .cta .btn{background:var(--g);color:#fff;}
+.feature.navigator .cta .btn:hover{background:var(--g2);}
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;text-align:center;}
+.stat b{display:block;font-size:1.5rem;color:var(--g);letter-spacing:-.02em;}
+.stat span{font-size:.76rem;color:var(--muted);}
+/* about / vision */
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;}
+.panel h3{margin:0 0 10px;font-size:1.05rem;color:var(--g);display:flex;align-items:center;gap:8px;}
+.panel p{margin:0 0 10px;font-size:.92rem;color:var(--txt);}
+.panel ul{margin:0;padding-left:18px;font-size:.9rem;}
+.panel li{margin-bottom:6px;}
+.tint{background:linear-gradient(135deg,rgba(38,129,79,.08),rgba(232,134,43,.07));}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.badge{font-size:.74rem;font-weight:600;border:1px solid var(--line);background:var(--card);padding:5px 12px;border-radius:999px;color:var(--muted);}
+.badge.g{border-color:rgba(38,129,79,.35);color:var(--g2);}
+.badge.o{border-color:rgba(232,134,43,.4);color:var(--accent2);}
+.recruiters{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.recruiters span{font-size:.8rem;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 12px;}
+footer{background:#0f2b1d;color:rgba(255,255,255,.75);padding:34px 0;font-size:.84rem;}
+footer .wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
+footer a{color:#fff;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.4);}
+footer b{color:#fff;}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="./index.html">
+      <span class="logo">SCEM</span>
+      <span>
+        <b>Sahyadri College</b>
+        <small>Engineering &amp; Management, Mangaluru</small>
+      </span>
+    </a>
+    <div class="navLinks">
+      <a href="#features">Digital Features</a>
+      <a href="#about">About</a>
+      <a href="#programs">Programs</a>
+      <a href="#placement">Placements</a>
+      <a class="ghost" href="https://www.sahyadri.edu.in/" target="_blank" rel="noopener">Official Site ↗</a>
+      <a class="btnLogin" href="../edupulse/index.html">Login</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap heroInner">
+    <span class="pill">NAAC &lsquo;A&rsquo; · NBA Accredited · Autonomous</span>
+    <h1>Sahyadri College of Engineering &amp; Management</h1>
+    <p class="lede">
+      A premier institution in Technology and Management on a 35-acre riverside campus in
+      Mangaluru — home to 9 undergraduate programmes, MBA, research centres and a vibrant
+      innovation &amp; incubation ecosystem.
+    </p>
+    <div class="heroBtns">
+      <a class="btn btnPrimary" href="../edupulse/index.html">Login to EduPulse</a>
+      <a class="btn btnOutline" href="#features">Explore Digital Features</a>
+    </div>
+  </div>
+</header>
+
+<!-- ══ Two extra features at the top ═══════════════════════════ -->
+<section id="features">
+  <div class="wrap">
+    <div class="sectionHead">
+      <h2>Campus Digital Features</h2>
+      <p>Two tools built for the Sahyadri community — academic intelligence and wayfinding, both one click away.</p>
+    </div>
+
+    <div class="featureGrid">
+      <article class="feature edupulse">
+        <span class="tag">Feature 01</span>
+        <div class="fIcon">🎓</div>
+        <h3>EduPulse</h3>
+        <p>The AI-powered academic excellence platform for students, faculty and administrators.</p>
+        <ul>
+          <li>AI attendance upload &amp; academic analytics</li>
+          <li>Mentorship scheduling &amp; alert engine</li>
+          <li>Courses, notes, events, achievements &amp; reports</li>
+        </ul>
+        <div class="cta">
+          <a class="btn" href="../edupulse/index.html">Login / Open EduPulse →</a>
+        </div>
+      </article>
+
+      <article class="feature navigator">
+        <span class="tag">Feature 02</span>
+        <div class="fIcon">🧭</div>
+        <h3>Campus Navigation System</h3>
+        <p>Locate any classroom, laboratory, department, office, library or canteen — and get the shortest route.</p>
+        <ul>
+          <li>Search &amp; filter rooms across all 6 floors</li>
+          <li>Shortest walking route with step-by-step directions</li>
+          <li>Interactive floor maps + a 3D building model</li>
+        </ul>
+        <div class="cta">
+          <a class="btn" href="../navigation/index.html">Launch Campus Navigator →</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Stats ═══════════════════════════════════════════════════ -->
+<section style="padding-top:0">
+  <div class="wrap stats">
+    <div class="stat"><b>2007</b><span>Established by Bhandary Foundation</span></div>
+    <div class="stat"><b>35 acres</b><span>Riverside campus on the Netravati</span></div>
+    <div class="stat"><b>~4,000</b><span>Students &amp; staff</span></div>
+    <div class="stat"><b>9 UG</b><span>Programmes + MBA / M.Tech</span></div>
+    <div class="stat"><b>470+</b><span>Recruiting companies each year</span></div>
+    <div class="stat"><b>&#8377;47.24 LPA</b><span>Highest package offered</span></div>
+  </div>
+</section>
+
+<!-- ══ About + Vision ══════════════════════════════════════════ -->
+<section id="about">
+  <div class="wrap split">
+    <div class="panel">
+      <h3>🏛️ About the College</h3>
+      <p>
+        Bhandary Foundation (R) was established in 2001 with a vision to impart societal
+        development in the fields of education, health, sports and culture. It established
+        Sahyadri College of Engineering &amp; Management in 2007.
+      </p>
+      <p>
+        The campus spreads over 35 acres on the bank of the Netravati River with a combined
+        workforce and student strength of nearly 4,000 and approximately 6.00 lakh sq-ft of
+        built-up area, including hostels. The college offers B.E, M.Tech &amp; MBA along with
+        VTU-recognised research centres for M.Sc (Eng) and Ph.D, and is recognised by AICTE,
+        UGC and MoE.
+      </p>
+      <div class="badges">
+        <span class="badge g">NAAC &lsquo;A&rsquo; Grade</span>
+        <span class="badge g">NBA Accredited (CS, IS, EC, MECH)</span>
+        <span class="badge g">IE(I)</span>
+        <span class="badge o">DSIR-SIRO recognised</span>
+        <span class="badge o">Top 25 Most Innovative Private Institution (NIRF)</span>
+        <span class="badge o">4-star MHRD-IIC ranking</span>
+      </div>
+    </div>
+
+    <div class="panel tint">
+      <h3>🎯 Vision</h3>
+      <p>
+        To be a premier institution in Technology and Management by fostering excellence in
+        education, innovation, incubation and values to inspire and empower the young minds.
+      </p>
+      <h3 style="margin-top:18px">🚀 Mission</h3>
+      <ul>
+        <li>Create an academic ambience to impart holistic education focusing on individual growth, integrity, ethical values and social responsibility.</li>
+        <li>Develop skill-based learning through industry-institution interaction to enhance competency and promote entrepreneurship.</li>
+        <li>Foster innovation and creativity through a competitive environment with state-of-the-art infrastructure.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Programs / initiatives ══════════════════════════════════ -->
+<section id="programs" style="padding-top:0">
+  <div class="wrap split">
+    <div class="panel">
+      <h3>📚 Programs &amp; Learning</h3>
+      <ul>
+        <li><b>9 Undergraduate (UG) degree programmes</b> and a Post Graduate (PG) degree programme, with around 3,000 students from culturally diversified backgrounds.</li>
+        <li>B.E, M.Tech &amp; MBA, plus VTU research centres for M.Sc (Eng) and Ph.D.</li>
+        <li>Project-Based Learning (PBL) for community-centric engineering solutions.</li>
+        <li>Work spaces for AIML, Embedded System Design, Industry 4.0, IoT, 3D Printing and Robotics.</li>
+        <li>A 250-seater skill lab, a 100-seater GIG workspace and blue-chip company partnerships.</li>
+      </ul>
+    </div>
+
+    <div class="panel">
+      <h3>💡 Innovation &amp; Incubation</h3>
+      <ul>
+        <li>Dedicated innovation and acceleration facility supported by K-Tech Innovation, Govt. of Karnataka.</li>
+        <li>Host Institute (HI) for funding under Technical Business Incubation (TBI) by MSME, Govt. of India.</li>
+        <li>Part of the Karnataka Acceleration Network — scaling 30 startups every year.</li>
+        <li>A 100-seater incubation facility supported by ACIC, NITI Aayog.</li>
+        <li>Centre of Excellence in Future Technology supported by VGST, Govt. of Karnataka.</li>
+        <li>22 start-up companies established by students on campus; 1.50 lakh sq-ft dedicated to industries and start-ups.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Placement ═══════════════════════════════════════════════ -->
+<section id="placement" style="padding-top:0">
+  <div class="wrap split">
+    <div class="panel">
+      <h3>💼 Training &amp; Placement</h3>
+      <p>
+        The placement cell provides pre-placement training, peer mentoring and opportunities
+        in top companies. Every year <b>470+ companies</b> visit Sahyadri.
+      </p>
+      <ul>
+        <li>Highest package offered: <b>&#8377;47.24 LPA</b> (Belc Co. Ltd.)</li>
+        <li><b>&#8377;40.00 LPA</b> (Microsoft) &middot; <b>&#8377;35.00 LPA</b> (JEMS)</li>
+      </ul>
+      <div class="recruiters">
+        <span>Deloitte</span><span>TCS</span><span>Microsoft</span><span>Infosys</span>
+        <span>Accenture</span><span>Cognizant</span><span>Wipro</span><span>+ 460 more</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>🌱 Student-Centric Initiatives</h3>
+      <ul>
+        <li><b>Walk-in with an Idea, Walk-out with a Product</b> — PBL supported by the New Age Innovation Network (NAIN) Centre.</li>
+        <li><b>Sahyadri Science Talent Hunt</b> — innovation for school students aligned with UN SDGs.</li>
+        <li><b>Sahyadri Center for Social Innovation</b> — societal solutions through alumni collaboration.</li>
+        <li><b>Sahyadri Project Support Scheme</b> — turning ideas into prototypes.</li>
+        <li><b>Launchpads</b> — Dreamers, Challengers, SOSC and Maker Space skill-training ecosystem.</li>
+        <li>Smart India Hackathons with MoE-AICTE support; internships and international exposure.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <b>Sahyadri College of Engineering &amp; Management</b><br>
+      Adyar, Mangaluru, Karnataka, India
+    </div>
+    <div>
+      <a href="https://www.sahyadri.edu.in/" target="_blank" rel="noopener">sahyadri.edu.in</a> &nbsp;·&nbsp;
+      <a href="../navigation/index.html">Campus Navigator</a> &nbsp;·&nbsp;
+      <a href="../edupulse/index.html">EduPulse Login</a>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:14px;font-size:.76rem;color:rgba(255,255,255,.55)">
+    Content summarised from the official college website for this digital-features landing page. All trademarks belong to their respective owners.
+  </div>
+</footer>
+
+</body>
+</html>

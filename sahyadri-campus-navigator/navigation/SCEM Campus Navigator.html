@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SCEM Campus Navigator</title>
+<style>
+:root{
+  --bg:#eef2f5;--pn:#fff;--tx:#14202b;--mu:#5b6b78;--ac:#0b6e4f;--bd:#d3dce3;
+  --or:#ff6b1a;--or2:#ffb347;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1720;--pn:#18232e;--tx:#e8eef3;--mu:#9bacba;--ac:#3ecf9b;--bd:#2c3b48;
+  --or:#ff8c44;--or2:#ffc87a;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1720;--pn:#18232e;--tx:#e8eef3;--mu:#9bacba;--ac:#3ecf9b;--bd:#2c3b48;
+  --or:#ff8c44;--or2:#ffc87a;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#cv{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+
+/* ── Left sidebar ── */
+#ui{
+  position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));
+  width:min(320px,calc(100% - 20px));max-height:calc(100vh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  overflow-y:auto;overflow-x:hidden;
+  background:var(--pn);border:1px solid var(--bd);border-radius:12px;
+  padding:10px;box-shadow:0 4px 18px #0003;
+  display:flex;flex-direction:column;gap:6px;
+}
+#ui h2{margin:0;font-size:14px;font-weight:700;white-space:nowrap}
+input{width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;background:var(--bg);color:var(--tx);font:inherit;outline:none}
+input:focus{border-color:var(--ac)}
+button{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:7px;padding:5px 9px;font:inherit;cursor:pointer;transition:background .15s}
+button:hover{background:var(--bd)}
+button.on,button.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.on:hover,button.p:hover{background:var(--ac);filter:brightness(1.1)}
+.row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+small,#inf{color:var(--mu);font-size:11px}
+#inf{min-height:1.3em}
+
+/* floor buttons */
+#fl button{padding:4px 8px;font-size:12px;min-width:30px}
+#fl button.on{background:var(--ac);color:#fff}
+#fl button.dim{opacity:.45}
+
+/* directions panel */
+#dirs-wrap{overflow-y:auto;max-height:220px;border-top:1px solid var(--bd);padding-top:6px;display:none}
+#dirs-wrap.show{display:block}
+#dirs{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:3px}
+#dirs li{
+  display:flex;align-items:flex-start;gap:6px;
+  padding:5px 7px;border-radius:7px;cursor:pointer;
+  font-size:12px;line-height:1.4;
+  border:1px solid transparent;
+  transition:background .12s;
+}
+#dirs li:hover{background:var(--bg)}
+#dirs li.active{background:#ff6b1a22;border-color:var(--or);color:var(--or)}
+#dirs li .step-icon{font-size:15px;flex-shrink:0;margin-top:1px}
+#dirs li .step-num{font-weight:700;flex-shrink:0;min-width:18px;color:var(--mu);font-size:11px}
+#dirs li .step-dist{color:var(--mu);font-size:10px;margin-left:auto;white-space:nowrap;padding-left:4px}
+
+/* legend */
+#leg{border-top:1px solid var(--bd);padding-top:6px}
+#leg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;border:1px solid #0001}
+
+/* ── Compass ── */
+#compass{
+  position:fixed;right:14px;top:calc(14px + env(safe-area-inset-top,0px));
+  width:58px;height:58px;pointer-events:none;
+}
+#compass svg{width:100%;height:100%;filter:drop-shadow(0 2px 5px #0006)}
+
+#inf{color:var(--mu);font-size:12px;line-height:1.5;min-height:1.4em;margin:2px 0}
+#inf b{color:var(--tx);font-weight:700}
+#inf button{padding:3px 7px;font-size:11px;margin-left:4px;vertical-align:middle}
+
+/* ── Hint bar ── */
+#hint{position:fixed;left:10px;bottom:calc(6px + env(safe-area-inset-bottom,0px));color:var(--mu);font-size:10px;pointer-events:none}
+
+/* collapse button */
+#col-btn{padding:3px 8px;font-size:12px}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+
+<!-- LEFT SIDEBAR -->
+<div id="ui">
+  <div class="row" style="justify-content:space-between;margin:0">
+    <h2>🏫 SCEM Campus Navigator</h2>
+    <button id="col-btn" title="Collapse panel">–</button>
+  </div>
+  <div id="ui-body">
+    <input id="fr" list="rl" placeholder="From (blank = Main Entry)" autocomplete="off">
+    <input id="to" list="rl" placeholder="To: room, lab, office, library…" autocomplete="off">
+    <div class="row">
+      <button class="p" id="go">🗺 Route</button>
+      <button id="cl">✕ Clear</button>
+      <button id="tp">⬆ Top view</button>
+      <button id="fw">▶ Walk</button>
+    </div>
+    <!-- floor selector -->
+    <div class="row" id="fl"></div>
+    <!-- nearest quick-buttons -->
+    <div class="row">
+      <small>Nearest:</small>
+      <span id="ch" class="row" style="margin:0"></span>
+    </div>
+    <!-- info line -->
+    <div id="inf"></div>
+    <!-- step-by-step directions -->
+    <div id="dirs-wrap">
+      <small style="font-weight:600">Step-by-step directions</small>
+      <ol id="dirs"></ol>
+    </div>
+    <!-- legend -->
+    <div id="leg">
+      <small style="font-weight:600">Legend</small>
+      <div id="leg-grid"></div>
+    </div>
+    <small style="color:var(--mu);font-size:10px">Schematic – not to scale. Stair positions approximate. Distances are estimates.</small>
+  </div>
+</div>
+<datalist id="rl"></datalist>
+
+<!-- COMPASS ROSE -->
+<div id="compass">
+  <svg id="compass-svg" viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="29" cy="29" r="27" fill="#ffffffcc" stroke="#aaa" stroke-width="1"/>
+    <!-- N needle red -->
+    <polygon points="29,5 33,29 25,29" fill="#d63031"/>
+    <!-- S needle grey -->
+    <polygon points="29,53 33,29 25,29" fill="#636e72"/>
+    <!-- W/E ticks -->
+    <line x1="5" y1="29" x2="11" y2="29" stroke="#636e72" stroke-width="1.5"/>
+    <line x1="47" y1="29" x2="53" y2="29" stroke="#636e72" stroke-width="1.5"/>
+    <text x="29" y="17" text-anchor="middle" dominant-baseline="middle" font-size="8" font-weight="700" fill="#d63031">N</text>
+    <text x="29" y="47" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="#636e72">S</text>
+    <text x="9" y="31" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="#636e72">W</text>
+    <text x="49" y="31" text-anchor="middle" dominant-baseline="middle" font-size="7" fill="#636e72">E</text>
+  </svg>
+</div>
+
+<div id="hint">Drag: rotate · Wheel/pinch: zoom · Shift-drag: pan · Tap room · 🟡 = avatar on route · 🟠 = path</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+//  DATA — verbatim from source
+// ══════════════════════════════════════════════════
+const D={"R":[[[125,197,80,105,"","Toilets","t"],[215,200,100,78,"13","Interview Cabin","o"],[318,200,47,28,"","Toilet","t"],[365,200,45,82,"14","Dept. of Placement","o"],[413,200,92,78,"13","Group Discussion","o"],[507,200,33,78,"12","Career Counsel.","o"],[545,200,45,78,"11","Store Room","r"],[592,200,33,78,"10","","x"],[628,200,65,78,"9","Director's Chamber","o"],[697,200,45,78,"","","x"],[745,200,120,90,"1","Foundation Office","o"],[740,305,125,105,"2","Principal's Chamber","o"],[740,415,125,105,"3","Academic Section","o"],[658,553,100,82,"6","CR","c"],[762,553,38,82,"5","Toilet","t"],[803,553,45,82,"4","Toilet","t"],[440,312,75,83,"8","Examination Section","o"],[440,418,75,92,"7","Section","o"],[137,322,75,318,"18","Dept. Wise Placement Office","o"],[237,540,203,100,"19","Seminar Hall (GF)","m"],[467,553,73,162,"20","Maintenance Office","o"],[137,645,76,100,"44","Board Room","o"],[130,750,90,80,"43","Study Space","s"],[440,748,105,50,"21","Study Space","s"],[545,748,50,47,"22","Comp. Maint.","u"],[597,748,153,87,"23","Dept. of CS Staff Room","o"],[752,748,28,87,"","HOD","o"],[782,750,68,85,"","Dept Library","b"],[770,845,95,205,"24","Computer Lab-5","l"],[770,1050,90,30,"","Toilets","t"],[137,832,33,50,"42","Student Society","o"],[172,832,40,50,"41","Stationary","o"],[335,820,65,60,"35","Store Room","r"],[405,820,35,60,"34","Record Room","r"],[443,822,82,113,"32","Innovation Lab","l"],[443,940,82,30,"","Discussion Area","x"],[443,975,82,100,"31","Lab (unclear)","l"],[295,940,95,80,"36","Guest's Lounge","g"],[295,1022,95,50,"","Rest Area","g"],[135,945,100,55,"40","Office (unclear)","o"],[135,1002,45,40,"","Discussion Rm","o"],[135,1080,45,20,"39","Counter","o"],[135,1102,75,90,"38","Visitor's Lounge","g"],[262,1105,83,85,"37","Admission Section","o"],[395,1105,100,85,"30","Computer Lab","l"],[498,1105,97,85,"29","Computer Lab","l"],[598,1105,117,85,"28","Computer Lab","l"],[718,1105,32,85,"","Server Room","u"],[752,1105,110,85,"27","Computer Lab","l"],[548,835,197,25,"33","Study Space","s"]],[[45,200,90,120,"114/115","Toilets","t"],[140,200,110,85,"113","Ladies Room","t"],[255,200,200,85,"112","CAED Lab","l"],[458,200,37,85,"","Server","u"],[497,200,48,85,"111","Guest Faculty","o"],[548,200,112,85,"110","MBA Class","c"],[663,200,47,85,"109","MBA Office","o"],[713,200,112,85,"101","MBA Director's Chamber","o"],[710,320,115,110,"102","MBA CR","c"],[710,432,115,113,"103","MBA CR","c"],[733,572,42,78,"105","Boys Toilet","t"],[777,572,45,78,"104","Girls Toilet","t"],[620,572,110,83,"106","MBA Staff Room","o"],[500,575,75,80,"107","Study Space","s"],[385,320,85,215,"108","MBA Library","b"],[62,325,78,170,"","Lab / Room","l"],[62,495,78,70,"116","Aptitude Lab","l"],[62,565,78,95,"","Lab / Room","l"],[62,662,78,158,"","Lab / Room","l"],[65,822,75,113,"137","Digital Library","b"],[170,560,220,100,"117","Seminar Hall (FF)","m"],[415,575,82,170,"118","Electrical Panel Room","u"],[400,745,155,50,"119","Study Space","s"],[500,800,50,30,"120","E&C Library","b"],[553,772,52,78,"126A","Office E&C","o"],[608,775,104,60,"121","E&C Staff Room","o"],[715,775,35,60,"","HOD","o"],[752,775,73,75,"","Dept Library","b"],[740,865,85,210,"122","E&C Lab-1","l"],[740,1075,85,25,"124","Toilets","t"],[500,860,240,28,"133","Study Space","s"],[150,825,90,30,"136","Study Space","s"],[275,848,110,82,"134","E&C Lab-8","l"],[390,848,85,77,"132","E&C Lab-7","l"],[390,925,85,50,"131","","x"],[390,975,85,125,"130","E&C Lab-6","l"],[65,965,225,235,"135","LIBRARY (First Floor)","b"],[155,900,80,65,"","Entry Library","b"],[340,1130,105,85,"129","E&C Lab-5","l"],[448,1130,107,85,"128","E&C Lab-4","l"],[558,1130,47,85,"127","Cabin","o"],[608,1130,110,85,"126","E&C Lab-3","l"],[722,1130,103,85,"125","E&C Lab-2","l"]],[[50,200,80,60,"216","Ladies Toilet","t"],[50,262,80,60,"217","Gents Toilet","t"],[145,205,110,85,"215","Student Lounge","g"],[258,205,130,85,"214","Faculty Dept","o"],[390,205,120,85,"213","Mathematics Dept","o"],[512,205,60,85,"212","CR","c"],[575,205,90,85,"211","E&C CR","c"],[668,205,50,85,"210","Room","x"],[722,205,110,85,"201","MBA Placement","o"],[720,320,110,105,"202","MBA CR","c"],[720,428,110,105,"203","MBA CR","c"],[735,568,45,80,"205","Girls Toilet","t"],[785,568,45,80,"204","Boys Toilet","t"],[632,568,100,80,"206","IS CR","c"],[510,575,75,80,"207","Study Space","s"],[395,330,80,105,"209","Computer Lab","l"],[395,435,80,100,"208","Civil Computer Lab","l"],[65,340,85,270,"218","Physics Lab","l"],[65,610,85,290,"240","Chemistry Lab","l"],[180,562,220,100,"219","Drawing Room","c"],[420,575,85,100,"220","Intel Lab","l"],[512,772,50,35,"222","Art & Culture","e"],[565,770,50,65,"223","Room","x"],[618,770,120,65,"224","Staff Room","o"],[742,770,30,65,"","HOD","o"],[775,770,60,70,"","Dept Library","b"],[750,860,85,95,"225","Lab (unclear)","l"],[750,955,85,105,"226","CS CR","c"],[750,1065,85,30,"227/228","Toilets","t"],[400,848,85,100,"236","CS CR","c"],[400,948,85,40,"235","E-Waste Storage","r"],[400,990,85,105,"234","CS CR","c"],[285,848,110,85,"238","CS CR","c"],[500,865,240,28,"237","Study Space","s"],[240,828,150,28,"221","Study Space","s"],[65,965,225,235,"239","LIBRARY (Second Floor)","b"],[345,1130,105,85,"233","IS Lab-5","l"],[452,1130,110,85,"232","IS Lab-4","l"],[565,1130,50,85,"231","Server","u"],[618,1130,110,85,"230","IS Lab-3","l"],[732,1130,100,85,"229","IS Lab-2","l"]],[[45,200,80,110,"","Toilets","t"],[130,205,100,85,"315","1st Yr-K CR","c"],[235,205,100,85,"314","1st Yr-L CR","c"],[340,205,105,85,"313","Civil CR","c"],[500,205,105,85,"","Civil CR","c"],[608,205,100,85,"311","Civil Staff Room","o"],[710,205,50,85,"","Civil Library","b"],[760,205,70,85,"301","Civil Staff Room","o"],[715,320,115,210,"302","Civil CR","c"],[715,535,115,30,"303","Civil CR","c"],[630,568,105,85,"306","Civil CR","c"],[740,568,90,85,"","Toilets","t"],[390,330,85,100,"309","Civil CR","c"],[390,435,85,100,"308","Civil CR","c"],[55,340,85,95,"318","1st Yr CR","c"],[55,440,85,110,"319","1st Yr-I CR","c"],[55,555,85,100,"320","1st Yr-H CR","c"],[55,660,85,100,"346/347","Civil M-Tech CR","c"],[55,765,85,90,"345","CR","c"],[145,860,60,60,"344","CS-M Lab","l"],[170,560,220,100,"321","ENV Lab","l"],[400,575,80,100,"","Training","l"],[485,575,70,80,"307","Store Room","r"],[400,690,90,90,"322","Room","x"],[495,715,55,50,"323","Office","o"],[500,775,50,80,"","CR","c"],[555,775,95,80,"325","1st Yr-e CR","c"],[655,775,90,80,"326","1st Yr-d CR","c"],[750,775,80,110,"327","1st Yr-c CR","c"],[750,890,80,120,"","CR","c"],[750,1015,80,55,"328","1st Yr-b CR","c"],[750,1075,80,25,"","Toilets","t"],[290,848,100,85,"343","1st Yr-F CR","c"],[400,855,85,90,"341","ARM Lab","l"],[400,950,85,70,"340","EC CR","c"],[400,1025,85,75,"339","CS CR","c"],[500,865,240,28,"342","Study Space","s"],[340,1130,95,85,"337","CR","c"],[438,1130,80,85,"336","IS CR","c"],[522,1130,80,85,"335","IS CR","c"],[606,1130,90,85,"334","IS CR","c"],[700,1130,50,85,"333","IS CR","c"],[752,1130,80,85,"","1st Yr-a CR","c"],[290,1178,48,37,"338","Security","u"]],[[65,205,70,50,"415","Ladies Toilet","t"],[65,255,70,45,"416","Gents Toilet","t"],[135,205,120,85,"414","Girls Common Room","g"],[258,205,95,85,"413","E&C Class Room","c"],[355,205,100,85,"412","E&C Class Room","c"],[490,205,50,85,"411","Sahyadri Green Cell","o"],[545,205,110,85,"410","CV Lab","l"],[658,205,50,85,"409","SPSS","l"],[710,205,115,85,"401","Research Office","o"],[705,320,120,215,"402","E&C Engineering","c"],[65,340,80,105,"417","Class Room","c"],[65,450,80,100,"418","Class Room","c"],[65,555,80,90,"419","E&C Class Room","c"],[385,320,80,215,"","CS Class Room","c"],[170,565,115,90,"420","CS Class Room","c"],[290,565,115,90,"421","CS Class Room","c"],[410,570,95,90,"422","Furniture Store","r"],[510,570,60,80,"406","Study Space","s"],[615,570,90,80,"405","Rest Room","t"],[710,570,50,80,"404","","t"],[762,570,68,80,"403","Rest Room","t"]],[[390,205,270,85,"510","Incubation Centre","o"],[665,205,55,85,"511","Entrepreneur Cell","o"],[722,205,110,85,"501","Chairman's Cabin","o"],[715,320,115,215,"502","Dreamers R&D","l"],[390,320,75,110,"509","APTRA","o"],[390,435,75,110,"508","IT Start-up","o"],[390,585,110,90,"507","Room","c"],[505,580,115,90,"506","Study Space","s"],[625,585,110,90,"505","Lab / Staff Room","l"],[738,585,45,90,"504","Pantry","u"],[785,585,45,90,"503","Toilets","t"]]],"F":[[[125,195],[865,195],[865,1200],[125,1200]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[60,195],[835,195],[835,660],[60,660]],[[385,205],[835,205],[835,680],[385,680]]],"C":[[[[237,308],[437,308],[437,498],[237,498]],[[543,310],[715,310],[715,520],[543,520]],[[240,655],[440,655],[440,785],[240,785]],[[548,862],[745,862],[745,1075],[548,1075]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[175,325],[385,325],[385,495],[175,495]],[[497,325],[680,325],[680,545],[497,545]]],[[[505,325],[680,325],[680,550],[505,550]]]],"X":[[[50,940],[350,940],[350,1200],[50,1200]],[[545,635],[865,635],[865,745],[545,745]]]};
+
+// ══════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════
+const FL=["Ground","First","Second","Third","Fourth","Fifth"];
+const CAT={
+  o:["Office","#f1e3c8"],
+  c:["Classroom","#fffdf2"],
+  l:["Lab","#b9d3ea"],
+  t:["Toilet","#5fa8e0"],
+  s:["Study Space","#cfe6c4"],
+  b:["Library","#e0c48f"],
+  r:["Store","#cfcfcf"],
+  g:["Lounge","#eeb0aa"],
+  u:["Utility","#dcdcdc"],
+  m:["Seminar Hall","#f09a9a"],
+  e:["Recreation","#e0d0f0"],
+  x:["Space","#f0f0f0"]
+};
+const S=8,GW=113,GH=165,N=GW*GH,NF=D.R.length,GAP=150,RH=16,WH=16,MPP=.12;
+const CORES=[{n:'A',x:600,y:600,f:[0,4]},{n:'B',x:265,y:865,f:[0,4]},{n:'C',x:303,y:1108,f:[1,2]},{n:'D',x:786,y:306,f:[0,5]}];
+
+// ══════════════════════════════════════════════════
+//  GRID HELPERS
+// ══════════════════════════════════════════════════
+const pip=(x,y,p)=>{let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>y)!=(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+const base=[],own=[],door=[];
+for(let f=0;f<NF;f++){
+  const B=new Uint8Array(N),O=new Int16Array(N).fill(-1);
+  for(let c=0;c<N;c++){
+    const x=(c%GW)*S+S/2,y=(c/GW|0)*S+S/2;
+    let a=pip(x,y,D.F[f])||(f==0&&D.X.some(p=>pip(x,y,p)));
+    if(a&&D.C[f].some(p=>pip(x,y,p)))a=false;
+    let o=-1;D.R[f].forEach((r,i)=>{if(x>=r[0]&&x<r[0]+r[2]&&y>=r[1]&&y<r[1]+r[3])o=i});
+    O[c]=o;B[c]=a&&(o<0||D.R[f][o][6]==='s')?1:0;
+  }
+  base.push(B);own.push(O);
+}
+const cellAt=(x,y)=>Math.min(GH-1,y/S|0)*GW+Math.min(GW-1,x/S|0);
+const pos=c=>[(c%GW)*S+S/2,(c/GW|0)*S+S/2];
+
+// ── Nearest walkable cell within expanding ring around (px,py) ────────
+function nearestWalkable(f,px,py,maxR){
+  const cx=Math.round((px-S/2)/S),cy=Math.round((py-S/2)/S);
+  for(let r=0;r<=maxR;r++){
+    let best=-1,bd=1e9;
+    for(let dy2=-r;dy2<=r;dy2++)for(let dx2=-r;dx2<=r;dx2++){
+      if(r>0&&Math.abs(dx2)!==r&&Math.abs(dy2)!==r)continue;
+      const nx=cx+dx2,ny=cy+dy2;
+      if(nx<0||ny<0||nx>=GW||ny>=GH)continue;
+      const cc=ny*GW+nx;
+      if(!base[f][cc])continue;
+      const d2=dx2*dx2+dy2*dy2;
+      if(d2<bd){bd=d2;best=cc}
+    }
+    if(best>=0)return best;
+  }
+  return -1;
+}
+
+// doors — Strategy 1: find corridor cell adjacent to room boundary
+//         Strategy 2: nearestWalkable from room center (fallback for isolated rooms)
+for(let f=0;f<NF;f++)door[f]=D.R[f].map((r,i)=>{
+  let best=null,bd=1e9;const cx=r[0]+r[2]/2,cy=r[1]+r[3]/2;
+  // Strategy 1
+  for(let c=0;c<N;c++){
+    if(own[f][c]!=i)continue;
+    const x=c%GW,y=c/GW|0;
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=x+dx,ny=y+dy;
+      if(nx<0||ny<0||nx>=GW||ny>=GH)continue;
+      const m=ny*GW+nx;if(!base[f][m]||own[f][m]==i)continue;
+      const px=(x+.5+dx/2)*S,py=(y+.5+dy/2)*S,d=Math.hypot(px-cx,py-cy);
+      if(d<bd){bd=d;best={c:m,dx,dy,x:dx?(dx>0?r[0]+r[2]-1:r[0]+1):px,y:dy?(dy>0?r[1]+r[3]-1:r[1]+1):py}};
+    }
+  }
+  if(best)return best;
+  // Strategy 2 — expand outward up to 25 cells from room center
+  const fc=nearestWalkable(f,cx,cy,25);
+  if(fc>=0){const[px2,py2]=pos(fc);return{c:fc,dx:0,dy:0,x:cx,y:cy};}
+  return null;
+});
+
+// snap cores to nearest walkable cell using nearestWalkable()
+CORES.forEach(K=>{
+  K.c=[];
+  for(let f=0;f<NF;f++){
+    K.c[f]=(f>=K.f[0]&&f<=K.f[1])?nearestWalkable(f,K.x,K.y,20):-1;
+  }
+});
+
+// ══════════════════════════════════════════════════
+//  PATHFINDING
+// ══════════════════════════════════════════════════
+function los(f,a,b){
+  const n=Math.ceil(Math.hypot(b[1]-a[1],b[2]-a[2])/(S/2));
+  for(let i=1;i<n;i++){const t=i/n;if(!base[f][cellAt(a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t)])return false}
+  return true;
+}
+function smooth(seg){
+  const f=seg[0][0],o=[seg[0]];let i=0;
+  while(i<seg.length-1){let j=seg.length-1;while(j>i+1&&!los(f,seg[i],seg[j]))j--;o.push(seg[j]);i=j}
+  return o;
+}
+function dj(sf,sc,tg){
+  if(sc<0)return null;
+  const dist=new Float64Array(NF*N).fill(1e9),prev=new Int32Array(NF*N).fill(-1);
+  const visited=new Uint8Array(NF*N);
+  const hk=[],hn=[];
+  const push=(k,n)=>{let i=hk.length;hk.push(k);hn.push(n);while(i>0){const p=(i-1)>>1;if(hk[p]<=hk[i])break;[hk[p],hk[i]]=[hk[i],hk[p]];[hn[p],hn[i]]=[hn[i],hn[p]];i=p}};
+  const pop=()=>{const k=hk[0],n=hn[0],lk=hk.pop(),ln=hn.pop();if(hk.length){hk[0]=lk;hn[0]=ln;let i=0;for(;;){const a=2*i+1,b=a+1;let m=i;if(a<hk.length&&hk[a]<hk[m])m=a;if(b<hk.length&&hk[b]<hk[m])m=b;if(m==i)break;[hk[m],hk[i]]=[hk[i],hk[m]];[hn[m],hn[i]]=[hn[i],hn[m]];i=m}}return[k,n]};
+  const s=sf*N+sc;dist[s]=0;push(0,s);
+  while(hk.length){
+    const[k,n]=pop();
+    if(visited[n])continue;
+    visited[n]=1;
+    const f=n/N|0,c=n%N;
+    if(tg.has(n)){
+      const a=[];for(let m=n;m>=0;m=prev[m])a.push(m);
+      return{key:tg.get(n),pts:a.reverse().map(m=>{const q=m%N;return[m/N|0,(q%GW)*S+S/2,(q/GW|0)*S+S/2]})};
+    }
+    const x=c%GW,y=c/GW|0;
+    const rel=(m,w)=>{
+      if(!visited[m]&&k+w<dist[m]){dist[m]=k+w;prev[m]=n;push(k+w,m)}
+    };
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      if(!dx&&!dy)continue;
+      const nx=x+dx,ny=y+dy;
+      if(nx<0||ny<0||nx>=GW||ny>=GH)continue;
+      const m=ny*GW+nx;if(!base[f][m])continue;
+      if(dx&&dy&&(!base[f][y*GW+nx]||!base[f][ny*GW+x]))continue;
+      rel(f*N+m,(dx&&dy?1.414:1)*S);
+    }
+    CORES.forEach(K=>{
+      if(K.c[f]==c)[-1,1].forEach(d=>{
+        const g=f+d;
+        if(g>=0&&g<NF&&K.c[g]>=0)rel(g*N+K.c[g],40);
+      });
+    });
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════
+//  UTILS & INDEX
+// ══════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+const V3=(a,b,c)=>new THREE.Vector3(a,b,c);
+const IDX=[{t:"Main Entry (Ground floor)",e:1}];
+D.R.forEach((rs,f)=>rs.forEach((r,i)=>{if(r[5])IDX.push({t:`${r[5]}${r[4]?' '+r[4]:''} · ${FL[f]}`,f,i})}));
+$('rl').innerHTML=IDX.map(o=>`<option value="${o.t}">`).join('');
+const find=t=>{t=t.trim().toLowerCase();if(!t)return IDX[0];return IDX.find(o=>o.t.toLowerCase()==t)||IDX.find(o=>o.t.toLowerCase().includes(t))};
+const nm=o=>o.e?"Main Entry":D.R[o.f][o.i][5];
+
+// ══════════════════════════════════════════════════
+//  LEGEND
+// ══════════════════════════════════════════════════
+const legGrid=$('leg-grid');
+Object.entries(CAT).forEach(([k,[name,col]])=>{
+  const div=document.createElement('div');div.className='leg-item';
+  div.innerHTML=`<div class="leg-dot" style="background:${col}"></div><span>${name}</span>`;
+  legGrid.appendChild(div);
+});
+
+// ══════════════════════════════════════════════════
+//  THREE.JS SCENE
+// ══════════════════════════════════════════════════
+const dark=matchMedia('(prefers-color-scheme:dark)').matches;
+const rd0=new THREE.WebGLRenderer({canvas:$('cv'),antialias:true});
+rd0.setPixelRatio(Math.min(devicePixelRatio,2));
+rd0.setClearColor(dark?0x0f1720:0xeef2f5);
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(45,1,5,8000);
+scene.add(new THREE.AmbientLight(0xffffff,.75));
+const dl=new THREE.DirectionalLight(0xffffff,.6);dl.position.set(-300,900,500);scene.add(dl);
+// subtle secondary light
+const dl2=new THREE.DirectionalLight(0xffffff,.2);dl2.position.set(400,200,-300);scene.add(dl2);
+
+const gr=[],lab=[],M=[],meshes=[],RT=[];
+const V2=p=>new THREE.Vector2(p[0]-450,660-p[1]);
+
+function slab(g,pts,col,dep,holes){
+  const sh=new THREE.Shape(pts.map(V2));
+  (holes||[]).forEach(h=>sh.holes.push(new THREE.Path(h.map(V2))));
+  const m=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:dep,bevelEnabled:false}),new THREE.MeshLambertMaterial({color:col}));
+  m.rotation.x=-Math.PI/2;m.position.y=-dep;g.add(m);
+}
+function merged(L,color){
+  const P=[],Nn=[],I=[];let o=0;
+  L.forEach(([x,y,z,w,h,d])=>{const b=new THREE.BoxGeometry(w,h,d);b.translate(x,y,z);P.push(...b.attributes.position.array);Nn.push(...b.attributes.normal.array);I.push(...Array.from(b.index.array,v=>v+o));o+=b.attributes.position.count});
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(Nn,3));g.setIndex(I);
+  return new THREE.Mesh(g,new THREE.MeshLambertMaterial({color}));
+}
+function edge(L,a,b,gap,t,h){
+  const H=a[1]==b[1];let s=H?a[0]:a[1],e=H?b[0]:b[1];if(s>e)[s,e]=[e,s];let cur=s;
+  const add=(u,v)=>{if(v-u<1)return;const c=(u+v)/2,l=v-u+t;L.push(H?[c-450,h/2,a[1]-660,l,h,t]:[a[0]-450,h/2,c-660,t,h,l])};
+  if(gap){add(cur,Math.max(cur,gap-8));cur=Math.min(e,gap+8)}add(cur,e);
+}
+const holes=[];
+for(let f=0;f<NF;f++){
+  holes[f]=[];
+  CORES.forEach(K=>{
+    if(f>0&&K.c[f]>=0&&K.c[f-1]>=0){
+      const[x,y]=pos(K.c[f]);
+      holes[f].push([[x-24,y-12],[x+24,y-12],[x+24,y+12],[x-24,y+12]]);
+    }
+  });
+}
+
+D.R.forEach((rs,f)=>{
+  const g=new THREE.Group();g.position.y=f*GAP;scene.add(g);gr.push(g);M[f]=[];
+  if(f==0){slab(g,D.X[0],0xe6d5b0,3);slab(g,D.X[1],0xbfe0c6,5)}
+  slab(g,D.F[f],dark?0x4a5966:0xc3ccd3,4,D.C[f].concat(holes[f]));
+  const W=[],O=[];
+  rs.forEach((r,i)=>{
+    const[x,y,w,h,no,n,c]=r;
+    const mat=new THREE.MeshLambertMaterial({color:CAT[c][1]});
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w-2,2,h-2),mat);
+    m.position.set(x+w/2-450,1,y+h/2-660);m.userData={f,i};g.add(m);meshes.push(m);M[f][i]=m;
+    if(c=='s'||c=='x')return;
+    const d=door[f][i],X0=x+1,X1=x+w-1,Y0=y+1,Y1=y+h-1,G=(dx,dy)=>d&&d.dx==dx&&d.dy==dy?(dx?d.y:d.x):0;
+    edge(W,[X0,Y0],[X1,Y0],G(0,-1),2,WH);edge(W,[X0,Y1],[X1,Y1],G(0,1),2,WH);edge(W,[X0,Y0],[X0,Y1],G(-1,0),2,WH);edge(W,[X1,Y0],[X1,Y1],G(1,0),2,WH);
+  });
+  const ring=p=>p.forEach((q,j)=>edge(O,q,p[(j+1)%p.length],0,3,20));
+  ring(D.F[f]);D.C[f].forEach(ring);
+  g.add(merged(W,0x9aa8b3),merged(O,0x5d6b78));
+  // stair ramps (yellow stepped)
+  const SL=[];
+  CORES.forEach(K=>{
+    if(K.c[f]>=0&&f+1<NF&&K.c[f+1]>=0){
+      const[cx,cy]=pos(K.c[f]);
+      for(let j=0;j<20;j++){const hh=(j+1)*7.5;SL.push([cx-19+2*j-450,hh/2,cy-660,2,hh,16])}
+    }
+  });
+  if(SL.length)g.add(merged(SL,0xd9a441));
+});
+
+// labels
+function spr(g,t,x,y,w0,yy){
+  const c=document.createElement('canvas');c.width=320;c.height=64;
+  const x2=c.getContext('2d');x2.font='bold 28px system-ui,sans-serif';x2.textAlign='center';x2.textBaseline='middle';
+  let s=t;while(x2.measureText(s).width>306&&s.length>3)s=s.slice(0,-2);if(s!=t)s+='…';
+  x2.lineWidth=6;x2.strokeStyle='#fff';x2.strokeText(s,160,32);x2.fillStyle='#111';x2.fillText(s,160,32);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));
+  const w=Math.max(60,Math.min(130,w0));sp.scale.set(w,w/5,1);sp.position.set(x-450,yy,y-660);sp.renderOrder=5;g.add(sp);
+}
+function mkLab(f){
+  const g=new THREE.Group();gr[f].add(g);lab[f]=g;
+  D.R[f].forEach(r=>{if(r[5]||r[4])spr(g,(r[4]?r[4]+' ':'')+r[5],r[0]+r[2]/2,r[1]+r[3]/2,r[2]*1.4,RH+8)});
+  CORES.forEach(K=>{if(K.c[f]>=0){const[x,y]=pos(K.c[f]);spr(g,'⇅ Stairs '+K.n,x,y,90,26)}});
+}
+
+// ══════════════════════════════════════════════════
+//  CAMERA CONTROLS
+// ══════════════════════════════════════════════════
+let view=-1,th=.5,ph=1,rd=1750,fol=false;
+const tg=new THREE.Vector3(0,330,0);
+function cam(){
+  camera.position.set(tg.x+rd*Math.sin(ph)*Math.sin(th),tg.y+rd*Math.cos(ph),tg.z+rd*Math.sin(ph)*Math.cos(th));
+  camera.lookAt(tg);
+  // rotate compass
+  document.getElementById('compass-svg').style.transform=`rotate(${th}rad)`;
+}
+const updRT=()=>RT.forEach(m=>m.visible=view<0||m.userData.f==view||m.userData.f2==view);
+
+function setView(v){
+  view=v;
+  gr.forEach((g,f)=>{
+    g.visible=true;
+    if(v>=0&&f!==v){
+      // dim non-selected floors to 22% opacity
+      g.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=0.22;}});
+    } else {
+      g.traverse(o=>{if(o.material){o.material.transparent=false;o.material.opacity=1.0;}});
+    }
+  });
+  if(v>=0&&!lab[v])mkLab(v);
+  lab.forEach((l,f)=>l&&(l.visible=v<0||v===f));
+  tg.set(0,(v<0?2.2:v)*GAP,0);
+  rd=v<0?1750:1000;ph=v<0?1:.85;
+  [...$('fl').children].forEach((b,i)=>b.classList.toggle('on',i===v+1));
+  updRT();
+}
+
+// Floor buttons: G / 1 / 2 / 3 / 4 / 5 / ALL
+const flLabels=['ALL','G','1','2','3','4','5'];
+flLabels.forEach((t,i)=>{
+  const b=document.createElement('button');b.textContent=t;
+  b.title=i==0?'All floors':FL[i-1]+' floor';
+  b.onclick=()=>setView(i-1);
+  $('fl').appendChild(b);
+});
+
+// quick nearest
+[['t','🚻 Toilet'],['b','📚 Library'],['s','🪑 Study'],['l','🔬 Lab'],['m','🎤 Seminar'],['o','🏢 Office']].forEach(([c,t])=>{
+  const b=document.createElement('button');b.textContent=t;b.onclick=()=>nearest(c);$('ch').appendChild(b);
+});
+
+// ══════════════════════════════════════════════════
+//  ROUTE VISUALIZATION MATERIALS
+// ══════════════════════════════════════════════════
+// Thick orange tube material
+const tubeMat=new THREE.MeshBasicMaterial({color:0xff6b1a});
+// Arrow head material (white)
+const arrowMat=new THREE.MeshBasicMaterial({color:0xffffff});
+// Vertical stair connector material (bright orange)
+const stairMat=new THREE.MeshBasicMaterial({color:0xff3300});
+
+// Animated avatar sphere (yellow, glowing)
+const avGeom=new THREE.SphereGeometry(8,16,16);
+const avMat=new THREE.MeshBasicMaterial({color:0xffd400});
+const mv=new THREE.Mesh(avGeom,avMat);mv.visible=false;scene.add(mv);
+// glow ring around avatar
+const ringGeom=new THREE.TorusGeometry(10,2,8,24);
+const ringMat=new THREE.MeshBasicMaterial({color:0xff9900,transparent:true,opacity:.6});
+const avRing=new THREE.Mesh(ringGeom,ringMat);avRing.rotation.x=Math.PI/2;mv.add(avRing);
+
+// ══════════════════════════════════════════════════
+//  ROUTING STATE
+// ══════════════════════════════════════════════════
+let hl=[],wp=[],fi=[],pi=[],mt=0;
+const paint=(f,i,c)=>{M[f][i].material.color.set(c);hl.push([f,i])};
+
+function clr(){
+  RT.forEach(m=>scene.remove(m));RT.length=0;
+  hl.forEach(([f,i])=>M[f][i].material.color.set(CAT[D.R[f][i][6]][1]));
+  hl=[];$('dirs').innerHTML='';$('dirs-wrap').classList.remove('show');
+  wp=[];mv.visible=false;$('inf').textContent='';setFol(false);
+}
+function setFol(v){fol=v;$('fw').classList.toggle('on',v)}
+
+// ══════════════════════════════════════════════════
+//  DRAW ROUTE  — thick tubes + arrows + vertical connectors
+// ══════════════════════════════════════════════════
+function draw(pts){
+  wp=[];fi=[];pi=[];
+  const H=p=>V3(p[1]-450,p[0]*GAP+5,p[2]-660);
+  wp.push(H(pts[0]));fi.push(pts[0][0]);pi.push(0);
+
+  for(let i=1;i<pts.length;i++){
+    const a=H(pts[i-1]),b=H(pts[i]);
+    const L=a.distanceTo(b);
+    const n=Math.max(1,Math.ceil(L/5));
+    const f0=pts[i-1][0],f1=pts[i][0];
+    for(let k=1;k<=n;k++){wp.push(a.clone().lerp(b,k/n));fi.push(k*2>n?f1:f0)}
+    pi.push(wp.length-1);
+
+    const isFloorChange=f0!=f1;
+    const dir=b.clone().sub(a).normalize();
+
+    if(isFloorChange){
+      // Vertical connector — bright orange thick cylinder
+      const vc=new THREE.Mesh(new THREE.CylinderGeometry(5,5,L,10),stairMat);
+      vc.position.copy(a).add(b).multiplyScalar(.5);
+      vc.quaternion.setFromUnitVectors(V3(0,1,0),dir);
+      vc.userData={f:f0,f2:f1};scene.add(vc);RT.push(vc);
+    } else {
+      // Thick orange tube (radius 3.5)
+      const tube=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,L,10),tubeMat);
+      tube.position.copy(a).add(b).multiplyScalar(.5);
+      tube.quaternion.setFromUnitVectors(V3(0,1,0),dir);
+      tube.userData={f:f0,f2:f0};scene.add(tube);RT.push(tube);
+      // White directional arrow cones every ~50 units
+      for(let t=30;t<L;t+=50){
+        const cone=new THREE.Mesh(new THREE.ConeGeometry(5,14,8),arrowMat);
+        cone.position.copy(a).lerp(b,t/L);
+        cone.position.y+=4;
+        cone.quaternion.setFromUnitVectors(V3(0,1,0),dir);
+        cone.userData={f:f0,f2:f0};
+        scene.add(cone);RT.push(cone);
+      }
+    }
+  }
+  mt=0;mv.visible=true;updRT();
+}
+
+// ══════════════════════════════════════════════════
+//  STEP-BY-STEP DIRECTIONS
+// ══════════════════════════════════════════════════
+const CD=['north','north-east','east','south-east','south','south-west','west','north-west'];
+const TN=['Continue straight','Bear right','Turn right','Turn sharp right','Turn around','Turn sharp left','Turn left','Bear left'];
+const hd=(a,b)=>((Math.round(Math.atan2(b[1]-a[1],-(b[2]-a[2]))/(Math.PI/4))%8)+8)%8;
+
+function land(f,x,y,ex){
+  let bn=null,bd=40;
+  D.R[f].forEach((r,j)=>{
+    if(!r[5]||ex.includes(f*1000+j))return;
+    const dx=Math.max(r[0]-x,0,x-r[0]-r[2]),dy=Math.max(r[1]-y,0,y-r[1]-r[3]),d=Math.hypot(dx,dy);
+    if(d<bd){bd=d;bn=r[5]+(r[4]?' '+r[4]:'')}
+  });
+  return bn;
+}
+
+function steps(pts,startName,endName,ex){
+  const legs=[];
+  for(let i=1;i<pts.length;i++){
+    const p=pts[i-1],q=pts[i];
+    if(p[0]!=q[0]){legs.push({st:1,f:q[0],up:q[0]>p[0],i,x:q[1],y:q[2]});continue}
+    const len=Math.hypot(q[1]-p[1],q[2]-p[2]);if(!len)continue;
+    const h=hd(p,q),L=legs[legs.length-1];
+    if(L&&!L.st&&L.f==p[0]&&(len<20||h==L.h)){L.len+=len;L.x=q[1];L.y=q[2];L.i=i}
+    else legs.push({f:p[0],h,len,x:q[1],y:q[2],i});
+  }
+
+  // Build steps array: [icon, text, ptIndex, distText]
+  const out=[];
+  out.push({icon:'🚶',text:`Start at: ${startName}`,ptIdx:0,dist:''});
+  let ph0=-1,tot=0,flChanges=0;
+
+  legs.forEach((L,k)=>{
+    if(L.st){
+      flChanges++;
+      const K=CORES.reduce((u,v)=>{
+        const d=c=>{if(c.c[L.f]<0)return 1e9;const[x,y]=pos(c.c[L.f]);return Math.hypot(x-L.x,y-L.y)};
+        return d(v)<d(u)?v:u;
+      });
+      out.push({icon:'🪜',text:`Take Stairs ${K.n} ${L.up?'up':'down'} to the ${FL[L.f]} floor`,ptIdx:L.i,dist:''});
+      ph0=-1;return;
+    }
+    const m=Math.max(1,Math.round(L.len*MPP));tot+=L.len;
+    const last=k==legs.length-1;
+    const ln=last?null:land(L.f,L.x,L.y,ex);
+    const dir=ph0<0?(k==0?'Exit and head '+CD[L.h]:'Head '+CD[L.h]):TN[(L.h-ph0+8)%8];
+    const near=ln?`, near ${ln}`:'';
+    out.push({icon:'🚶',text:`${dir}${near}`,ptIdx:L.i,dist:`≈${m} m`});
+    ph0=L.h;
+  });
+
+  const p=pts[pts.length-3]||pts[0],d2=pts[pts.length-2],c2=pts[pts.length-1];
+  const side=(d2[1]-p[1])*(c2[2]-d2[2])-(d2[2]-p[2])*(c2[1]-d2[1])>0?'right':'left';
+  out.push({icon:'🏁',text:`Arrive: ${endName} — door on your ${side}`,ptIdx:pts.length-1,dist:''});
+
+  const totalM=Math.round(tot*MPP);
+  $('inf').textContent=`≈${totalM} m · ~${Math.max(1,Math.round(totalM/72+flChanges/3))} min walk${flChanges?` · ${flChanges} floor change${flChanges>1?'s':''}`:''}.`;
+
+  const dirsEl=$('dirs');
+  dirsEl.innerHTML='';
+  out.forEach((step,idx)=>{
+    const li=document.createElement('li');
+    const numSpan=`<span class="step-num">${idx+1}</span>`;
+    const iconSpan=`<span class="step-icon">${step.icon}</span>`;
+    const textSpan=`<span style="flex:1">${step.text}</span>`;
+    const distSpan=step.dist?`<span class="step-dist">${step.dist}</span>`:'';
+    li.innerHTML=numSpan+iconSpan+textSpan+distSpan;
+    li.dataset.idx=idx;
+    li.onclick=()=>{
+      // Jump camera to waypoint
+      const rawPtIdx=step.ptIdx;
+      const clampedIdx=Math.min(rawPtIdx,pi.length-1);
+      const wpIdx=pi[clampedIdx]||0;
+      mt=wpIdx;
+      const f=fi[Math.min(wpIdx,fi.length-1)];
+      setView(f>=0?f:0);
+      if(wp[wpIdx]){tg.x=wp[wpIdx].x;tg.z=wp[wpIdx].z;tg.y=wp[wpIdx].y;}
+      // highlight active step
+      [...dirsEl.children].forEach(c=>c.classList.remove('active'));
+      li.classList.add('active');
+    };
+    dirsEl.appendChild(li);
+  });
+  $('dirs-wrap').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════
+//  ROUTE MAIN FUNCTION
+// ══════════════════════════════════════════════════
+function route(fo,tk){
+  clr();
+  let sf,sc,s0,pre=[];
+  if(fo.e){
+    // Main Entry — find nearest walkable cell to entrance area on Ground floor
+    sf=0;
+    sc=nearestWalkable(0,450,1190,40); // centre-bottom of Ground floor
+    if(sc<0)sc=nearestWalkable(0,450,700,40); // fallback mid-floor
+    const[ex,ey]=sc>=0?pos(sc):[450,1190];
+    s0=[0,ex,ey];
+  } else {
+    const r=D.R[fo.f][fo.i],d=door[fo.f][fo.i];
+    if(!d){
+      // last-resort: find any walkable cell near room center
+      const cx=r[0]+r[2]/2,cy=r[1]+r[3]/2;
+      const fc=nearestWalkable(fo.f,cx,cy,30);
+      if(fc<0){$('inf').textContent='Start room is isolated — cannot find exit.';return}
+      sf=fo.f;sc=fc;s0=[fo.f,cx,cy];pre=[];
+    } else {
+      sf=fo.f;sc=d.c;s0=[fo.f,r[0]+r[2]/2,r[1]+r[3]/2];pre=[[fo.f,d.x,d.y]];
+    }
+  }
+  if(sc<0){$('inf').textContent='Could not find a walkable start cell.';return}
+  const tm=new Map();
+  tk.forEach(k=>{
+    const tf=k/1000|0,ti=k%1000;
+    const d=door[tf][ti];
+    if(d&&d.c>=0)tm.set(tf*N+d.c,k);
+    else{
+      // fallback: use nearestWalkable from destination room center
+      const r=D.R[tf][ti],cx=r[0]+r[2]/2,cy=r[1]+r[3]/2;
+      const fc=nearestWalkable(tf,cx,cy,30);
+      if(fc>=0)tm.set(tf*N+fc,k);
+    }
+  });
+  if(tm.size===0){$('inf').textContent='Destination has no reachable cell.';return}
+  const r=dj(sf,sc,tm);
+  if(!r){$('inf').textContent='No route found — rooms may be on disconnected sections.';return}
+  const f=r.key/1000|0,i=r.key%1000,R=D.R[f][i],d=door[f][i],runs=[];
+  let cur=[];
+  r.pts.forEach((p,j)=>{if(j&&p[0]!=r.pts[j-1][0]){runs.push(cur);cur=[]}cur.push(p)});
+  runs.push(cur);
+  const pts=[s0,...pre];
+  runs.forEach((ru,j)=>{
+    if(j){
+      const a=runs[j-1].at(-1),b=ru[0];
+      pts.push([a[0],a[1]+(a[0]<b[0]?18:-18),a[2]],[b[0],b[1]+(b[0]>a[0]?18:-18),b[2]]);
+    }
+    pts.push(...smooth(ru));
+  });
+  const destDoor=door[f][i];
+  if(destDoor){pts.push([f,destDoor.x,destDoor.y]);}
+  pts.push([f,R[0]+R[2]/2,R[1]+R[3]/2]);
+  const ex=[f*1000+i];if(!fo.e)ex.push(fo.f*1000+fo.i);
+  if(!fo.e)paint(fo.f,fo.i,'#4caf50');
+  paint(f,i,'#ff8a00');
+  draw(pts);
+  steps(pts,nm(fo),R[5]||'Space',ex);
+  const fs=[...new Set(pts.map(p=>p[0]))];
+  if(fs.length>1)setView(-1);
+  else setView(fs[0]);
+  $('to').value=`${R[5]}${R[4]?' '+R[4]:''} · ${FL[f]}`;
+}
+
+// ══════════════════════════════════════════════════
+//  NEAREST
+// ══════════════════════════════════════════════════
+function nearest(c){
+  const a=find($('fr').value)||IDX[0];
+  const k=new Set();
+  D.R.forEach((rs,f)=>rs.forEach((r,i)=>{if(r[6]==c&&r[5]&&!(a.f==f&&a.i==i))k.add(f*1000+i)}));
+  route(a,k);
+}
+
+// ══════════════════════════════════════════════════
+//  BUTTON EVENTS
+// ══════════════════════════════════════════════════
+$('go').onclick=()=>{
+  const toVal=$('to').value.trim();
+  if(!toVal){$('inf').textContent='Please type a destination room.';return}
+  const a=find($('fr').value)||IDX[0]; // default to Main Entry if From is blank
+  const b=find(toVal);
+  if(!b){$('inf').textContent=`Cannot find "${toVal}" — try a room name or number.`;return}
+  if(b.e){$('inf').textContent='Main Entry cannot be a destination. Pick a room.';return}
+  if(!a.e&&a.f===b.f&&a.i===b.i){$('inf').textContent='You are already there!';return}
+  route(a,new Set([b.f*1000+b.i]));
+};
+$('cl').onclick=()=>{clr();$('to').value=$('fr').value=''};
+$('fw').onclick=()=>{if(wp.length<2){$('inf').textContent='Create a route first.';return}setFol(!fol)};
+$('tp').onclick=()=>{setFol(false);ph=.15;th=0};
+$('col-btn').onclick=()=>{
+  const b=$('ui-body');b.hidden=!b.hidden;
+  $('col-btn').textContent=b.hidden?'+':'–';
+};
+
+// ══════════════════════════════════════════════════
+//  ROOM DETAILS DISPLAY
+// ══════════════════════════════════════════════════
+function showRoomDetails(f,i){
+  const R=D.R[f][i];
+  $('inf').innerHTML=`<b>${R[4]?R[4]+' ':''}${R[5]||'Space'}</b> · ${CAT[R[6]][0]} · ${FL[f]} floor <button id="sf">From</button> <button class="p" id="st2">Go here</button>`;
+  const t=`${R[5]}${R[4]?' '+R[4]:''} · ${FL[f]}`;
+  if(R[5]){
+    $('sf').onclick=()=>{$('fr').value=t};
+    $('st2').onclick=()=>{$('to').value=t;$('go').click();};
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  POINTER / TOUCH CONTROLS
+// ══════════════════════════════════════════════════
+const ptr=new Map();let mvd=0,pd=0;const cv=$('cv');
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,e);mvd=0;pd=0});
+cv.addEventListener('pointermove',e=>{
+  const o=ptr.get(e.pointerId);if(!o)return;
+  const dx=e.clientX-o.clientX,dy=e.clientY-o.clientY;
+  mvd+=Math.abs(dx)+Math.abs(dy);ptr.set(e.pointerId,e);
+  if(ptr.size==2){
+    const[a,b]=[...ptr.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    if(pd)rd=Math.max(250,Math.min(3200,rd*pd/d));pd=d;
+  } else if(e.buttons==2||e.shiftKey){
+    setFol(false);const k=rd*.0013;
+    tg.x+=-dx*k*Math.cos(th)+dy*k*-Math.sin(th);
+    tg.z+=dx*k*Math.sin(th)+dy*k*-Math.cos(th);
+  } else {
+    if(mvd>6)setFol(false);
+    th-=dx*.006;ph=Math.max(.15,Math.min(1.5,ph-dy*.005));
+  }
+});
+cv.addEventListener('pointerup',e=>{
+  ptr.delete(e.pointerId);
+  if(mvd<6&&!ptr.size){
+    const r=cv.getBoundingClientRect();
+    const ray=new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1),camera);
+    const h=ray.intersectObjects(meshes.filter(m=>m.parent.visible))[0];
+    if(h){
+      const{f,i}=h.object.userData;
+      showRoomDetails(f,i);
+    }
+  }
+});
+cv.addEventListener('wheel',e=>{e.preventDefault();rd=Math.max(250,Math.min(3200,rd*(1+e.deltaY*.001)))},{passive:false});
+
+// ══════════════════════════════════════════════════
+//  RESIZE & INITIAL VIEW
+// ══════════════════════════════════════════════════
+function rs(){rd0.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
+addEventListener('resize',rs);rs();
+setView(-1);
+
+// ══════════════════════════════════════════════════
+//  RENDER LOOP — animated avatar + pulsing ring
+// ══════════════════════════════════════════════════
+let pulse=0;
+(function loop(){
+  requestAnimationFrame(loop);
+  if(wp.length>1){
+    mt=(mt+.55)%(wp.length-1);
+    const i=mt|0,f=fi[i];
+    mv.position.lerpVectors(wp[i],wp[Math.min(i+1,wp.length-1)],mt-i);
+    mv.visible=view<0||f==view;
+    // pulsing ring
+    pulse+=0.06;
+    const s=1+0.25*Math.sin(pulse);
+    avRing.scale.set(s,s,s);
+    avRing.material.opacity=0.4+0.3*Math.abs(Math.sin(pulse));
+    if(fol){
+      const j=Math.min(wp.length-1,i+8),dx=wp[j].x-wp[i].x,dz=wp[j].z-wp[i].z;
+      if(dx||dz){let d=Math.atan2(-dx,-dz)-th;th+=Math.atan2(Math.sin(d),Math.cos(d))*.05}
+      tg.lerp(mv.position,.12);ph=1;rd=320;
+      if(view>=0&&view!=f)setView(f);
+    }
+  }
+  cam();
+  rd0.render(scene,camera);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sahyadri Campus Navigator</title>
+<link rel="icon" href="../sahyadri-logo.png">
+<style>
+:root{--g:#1b5e3a;--g2:#26814f;--accent:#e8862b;--bg:#f4f6f5;--card:#ffffff;--txt:#1c2a22;--muted:#6b7a70;--line:#dde5e0;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10140f;--card:#1a221b;--txt:#e9efe8;--muted:#9fb0a6;--line:#2b362e;}}
+:root[data-theme="dark"]{--bg:#10140f;--card:#1a221b;--txt:#e9efe8;--muted:#9fb0a6;--line:#2b362e;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+header{background:linear-gradient(135deg,var(--g),var(--g2));color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;}
+header h1{font-size:1.15rem;margin:0;}
+header .sub{font-size:.78rem;opacity:.85;}
+header a.home{margin-left:auto;color:#fff;text-decoration:none;font-size:.78rem;border:1px solid rgba(255,255,255,.5);padding:6px 12px;border-radius:999px;white-space:nowrap;}
+header a.home:hover{background:rgba(255,255,255,.15);}
+.viewTabs{display:flex;gap:8px;justify-content:center;padding:14px 16px 0;max-width:1200px;margin:0 auto;flex-wrap:wrap;}
+.viewTabs button{padding:9px 18px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--txt);cursor:pointer;font-size:.88rem;font-weight:600;}
+.viewTabs button.active{background:var(--g);color:#fff;border-color:var(--g);}
+.wrap{max-width:1200px;margin:0 auto;padding:16px;display:flex;gap:16px;flex-wrap:wrap;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;}
+.sidebar{flex:1 1 320px;min-width:280px;max-width:360px;display:flex;flex-direction:column;gap:12px;}
+.main{flex:2 1 540px;min-width:300px;display:flex;flex-direction:column;gap:12px;}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--txt);font-size:.9rem;margin-bottom:6px;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.chip{padding:4px 10px;border-radius:16px;border:1px solid var(--line);font-size:.75rem;cursor:pointer;background:var(--bg);color:var(--txt);}
+.chip.active{background:var(--g);color:#fff;border-color:var(--g);}
+.roomList{max-height:320px;overflow-y:auto;overflow-x:auto;}
+.roomItem{display:flex;align-items:center;gap:6px;padding:6px 4px;border-bottom:1px solid var(--line);font-size:.82rem;flex-wrap:wrap;}
+.roomItem .fl{color:var(--muted);font-size:.7rem;margin-left:auto;}
+.roomItem button{font-size:.68rem;padding:2px 6px;border-radius:6px;border:1px solid var(--g);background:transparent;color:var(--g);cursor:pointer;}
+.roomItem button:hover{background:var(--g);color:#fff;}
+.floorTabs{display:flex;gap:6px;flex-wrap:wrap;}
+.floorTabs button{padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--txt);cursor:pointer;font-size:.85rem;}
+.floorTabs button.active{background:var(--g);color:#fff;border-color:var(--g);}
+svg{width:100%;height:auto;max-height:70vh;overflow:auto;background:var(--bg);border-radius:10px;}
+.node circle{fill:#8c8c8c;stroke:#fff;stroke-width:1.5;cursor:pointer;}
+.node text.icon{font-size:9px;text-anchor:middle;pointer-events:none;}
+.node text.lbl{font-size:6.5px;text-anchor:middle;fill:var(--txt);pointer-events:none;}
+.node.onpath circle{stroke:var(--accent);stroke-width:3;filter:drop-shadow(0 0 3px var(--accent));}
+.edge{stroke:var(--line);stroke-width:1.4;}
+.edge.path{stroke:var(--accent);stroke-width:3;}
+.arrow{fill:var(--accent);}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:.72rem;color:var(--muted);}
+.legend span{margin-right:2px;}
+.dirPanel ol{padding-left:18px;font-size:.85rem;}
+.dirPanel .eta{font-weight:600;color:var(--g2);margin-bottom:6px;}
+.muted{color:var(--muted);font-size:.85rem;}
+.btnMain{width:100%;padding:10px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;font-size:.9rem;}
+.btnMain:hover{opacity:.9;}
+label{font-size:.75rem;color:var(--muted);}
+
+/* ── Embedded 3D building views (floor-plan model + massing) ─── */
+.modeTabs{display:flex;gap:8px;flex-wrap:wrap;padding:2px 2px 10px;}
+.modeTabs button{padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--txt);cursor:pointer;font-size:.8rem;font-weight:600;}
+.modeTabs button.active{background:var(--g);color:#fff;border-color:var(--g);}
+#b3wrap,#f3wrap{position:relative;height:min(74vh,640px);min-height:380px;border-radius:10px;overflow:hidden;background:#cfe3d6;}
+#b3scene,#f3scene{position:absolute;inset:0;}
+#b3scene canvas,#f3scene canvas{display:block;touch-action:none;}
+#b3wrap .panel,#f3wrap .panel{position:absolute;background:rgba(255,255,255,.94);color:#1c2a22;border-radius:12px;padding:10px 12px;box-shadow:0 4px 18px rgba(0,0,0,.18);max-width:290px;}
+#b3title,#f3title{top:12px;left:12px;}
+#b3title h1,#f3title h1{font-size:.92rem;color:#1b5e3a;margin:0;}
+#b3title p,#f3title p{font-size:.72rem;color:#5c6b62;margin:6px 0 0;line-height:1.4;}
+#b3legend,#f3legend{top:12px;right:12px;display:flex;flex-direction:column;gap:4px;font-size:.72rem;max-height:78%;overflow:auto;}
+#b3legend b,#f3legend b{color:#1b5e3a;}
+.b3Row{cursor:pointer;padding:2px 6px;border-radius:6px;}
+.b3Row:hover{background:#eef2ee;}
+.b3Row.on{background:#1b5e3a;color:#fff;}
+#b3floorPanel{bottom:12px;left:12px;right:12px;max-width:440px;display:none;}
+#b3floorPanel h2{font-size:.88rem;color:#1b5e3a;margin:0 0 4px;}
+#b3floorPanel p{font-size:.76rem;margin:0;line-height:1.4;}
+#b3floorPanel button,#f3panel button{margin-top:8px;padding:5px 10px;border-radius:8px;border:1px solid #1b5e3a;background:transparent;color:#1b5e3a;font-size:.72rem;cursor:pointer;}
+#f3panel{bottom:12px;left:12px;right:12px;max-width:470px;max-height:54%;overflow:auto;display:none;}
+#f3panel h2{font-size:.9rem;color:#1b5e3a;margin:0 0 6px;}
+#f3panel p{font-size:.76rem;margin:0 0 4px;line-height:1.4;}
+#f3panel .f3chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+#f3panel .f3chip{font-size:.7rem;padding:3px 8px;border-radius:999px;border:1px solid #cfdcd4;background:#f2f7f3;color:#1c2a22;cursor:pointer;}
+#f3panel .f3chip:hover{background:#1b5e3a;border-color:#1b5e3a;color:#fff;}
+#f3panel .f3actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+#f3panel button.solid{background:#1b5e3a;color:#fff;}
+#b3fallback,#f3fallback{display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:24px;color:#1c2a22;}
+
+/* ── My Timetable (saved class rooms + one-tap routes) ───────── */
+.ttHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.ttHead h3{margin:0;font-size:.95rem;color:var(--g2);}
+.ttHead .spacer{margin-left:auto;}
+.ghostBtn{padding:5px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--txt);font-size:.72rem;cursor:pointer;}
+.ghostBtn:hover{background:var(--g);color:#fff;border-color:var(--g);}
+.ttDay{margin-bottom:14px;}
+.ttDay h4{margin:0 0 6px;font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.ttDay.today h4{color:var(--g2);}
+.ttRow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin-bottom:6px;flex-wrap:wrap;}
+.ttRow.now{border-color:var(--accent);box-shadow:0 0 0 2px rgba(232,134,43,.2);}
+.ttRow .time{font-weight:700;font-size:.85rem;color:var(--g);min-width:62px;}
+.ttRow .what{flex:1 1 150px;min-width:130px;font-size:.85rem;}
+.ttRow .what small{display:block;color:var(--muted);font-size:.72rem;}
+.ttRow .acts{display:flex;gap:6px;flex-wrap:wrap;}
+.ttRow .acts button{font-size:.7rem;padding:4px 8px;border-radius:8px;border:1px solid var(--g);background:transparent;color:var(--g);cursor:pointer;}
+.ttRow .acts button:hover{background:var(--g);color:#fff;}
+.ttRow .acts button.del{border-color:var(--line);color:var(--muted);}
+.ttRow .acts button.del:hover{background:#c0392b;border-color:#c0392b;color:#fff;}
+.badgeTime{font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(38,129,79,.12);color:var(--g2);}
+.nextCard{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.nextCard .big{font-size:1.9rem;}
+.nextCard .info{flex:1 1 220px;min-width:200px;}
+.nextCard .info b{display:block;font-size:1.02rem;}
+.nextCard .info span{display:block;font-size:.8rem;color:var(--muted);}
+.countdown{font-weight:700;color:var(--accent2);}
+.node.ttroom circle{stroke:var(--accent);stroke-width:3;stroke-dasharray:3 2;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<header>
+  <span style="font-size:1.6rem">🧭</span>
+  <div>
+    <h1>Sahyadri Campus Navigator</h1>
+    <div class="sub">Find any classroom, lab, department or office &amp; get the shortest walking route</div>
+  </div>
+  <a class="home" href="../college/index.html">← College Home</a>
+</header>
+
+<div class="viewTabs" id="viewTabs">
+  <button data-view="planner" class="active">🗺️ Route Planner</button>
+  <button data-view="model3d">🏛️ 3D Building View</button>
+  <button data-view="timetable">📅 My Timetable</button>
+</div>
+
+<div id="viewPlanner">
+  <div class="wrap">
+    <div class="sidebar">
+      <div class="card">
+        <label>Search rooms</label>
+        <input id="searchInput" placeholder="e.g. Computer Lab, MBA, Library...">
+        <div class="chips" id="catChips"></div>
+        <div class="roomList" id="listPanel"></div>
+      </div>
+      <div class="card">
+        <label>From</label>
+        <select id="fromSel"></select>
+        <label>To</label>
+        <select id="toSel"></select>
+        <button class="btnMain" onclick="findRoute()">Find Shortest Route</button>
+        <div id="dirPanel" class="dirPanel" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="card">
+        <div class="floorTabs" id="floorTabs"></div>
+        <div class="legend" id="legend" style="margin:8px 0"></div>
+        <svg id="floorSvg" viewBox="0 0 600 600"></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="view3d" style="display:none">
+  <div class="wrap">
+    <div class="main" style="flex:1 1 100%">
+      <div class="card" style="padding:10px">
+        <div class="modeTabs" id="b3modeTabs">
+          <button data-mode="plan" class="active">🗺️ From floor plan (rooms)</button>
+          <button data-mode="mass">🧱 Simple massing</button>
+        </div>
+        <div id="f3wrap">
+          <div id="f3scene"></div>
+          <div class="panel" id="f3title">
+            <h1>🗺️ Sahyadri College — rooms from the floor plan</h1>
+            <p>Generated from the same room list the router uses: every floor is a ring of rooms around the open courtyard. Drag to rotate · scroll/pinch to zoom · click a room for its name and a route to it.</p>
+          </div>
+          <div class="panel" id="f3legend"></div>
+          <div class="panel" id="f3panel"></div>
+          <div id="f3fallback"><p>This 3D view needs WebGL and an internet connection (Three.js loads from a CDN).</p></div>
+        </div>
+        <div id="b3wrap" style="display:none">
+          <div id="b3scene"></div>
+          <div class="panel" id="b3title">
+            <h1>🏛️ Sahyadri College — 3D Building Model</h1>
+            <p>Drag to rotate · scroll/pinch to zoom · click a floor slab or a name on the right to see what&apos;s on it.</p>
+          </div>
+          <div class="panel" id="b3legend"></div>
+          <div class="panel" id="b3floorPanel">
+            <h2 id="b3fpTitle"></h2>
+            <p id="b3fpBody"></p>
+            <button id="b3resetBtn">Show all floors</button>
+          </div>
+          <div id="b3fallback"><p>The 3D model needs WebGL and an internet connection (Three.js loads from a CDN).</p></div>
+        </div>
+        <p class="muted" style="margin:10px 2px 0">
+          Both models are the same building: <b>From floor plan</b> places one room wedge per
+          entry in the room list, ring by ring around the courtyard; <b>Simple massing</b> is the
+          stacked-slab outline with the attached workshop wing.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="viewTimetable" style="display:none">
+  <div class="wrap">
+    <div class="sidebar">
+      <div class="card">
+        <div class="ttHead"><h3>➕ Save a class room</h3></div>
+        <label>Day</label>
+        <select id="ttDay"></select>
+        <label>Starts at</label>
+        <input type="time" id="ttStart" value="09:00">
+        <label>Ends at (optional)</label>
+        <input type="time" id="ttEnd" value="10:00">
+        <label>Subject / activity (optional)</label>
+        <input id="ttSubject" placeholder="e.g. Data Structures">
+        <label>Room</label>
+        <select id="ttRoom"></select>
+        <button class="btnMain" id="ttAdd">Save class</button>
+        <p class="muted" id="ttHint" style="margin:8px 0 0">Saved in this browser, so it is there next time you open the navigator.</p>
+      </div>
+      <div class="card">
+        <div class="ttHead"><h3>📍 Where am I right now?</h3></div>
+        <select id="ttOrigin"></select>
+        <button class="btnMain" id="ttRouteNext">🧭 Route to my next class</button>
+        <p class="muted" style="margin:8px 0 0" id="ttOriginNote"></p>
+      </div>
+    </div>
+    <div class="main">
+      <div class="card" id="ttNextCard"></div>
+      <div class="card">
+        <div class="ttHead">
+          <h3>📅 My week</h3>
+          <span class="spacer"></span>
+          <button class="ghostBtn" id="ttDemo">Load example</button>
+          <button class="ghostBtn" id="ttClear">Clear all</button>
+        </div>
+        <div id="ttWeek"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ICONS={classroom:'🏫',lab:'🔬',office:'🗄️',library:'📚',seminar:'🎤',study:'📖',washroom:'🚻',food:'🍽️',stairs:'🪜',entry:'🚪',other:'▫️'};
+const COLORS={classroom:'#4f8cff',lab:'#ff7a45',office:'#8c8c8c',library:'#9254de',seminar:'#eb2f96',study:'#13a8a8',washroom:'#597ef7',food:'#fa8c16',stairs:'#2f9e44',entry:'#2f9e44',other:'#999'};
+
+const FLOORS=[
+["G","Ground Floor",[["Main Entry","entry"],["Principal's Chamber","office"],["Academic Section","office"],["Director's Chamber","office"],["Foundation Office","office"],["Examination Section","office"],["Establishment Section","office"],["Admission Section","office"],["Visitors Lounge","office"],["Board Room","office"],["Placement Office","office"],["CS Department Staff Room","office"],["Dept. Library (Ground)","library"],["Computer Lab 1","lab"],["Computer Lab 2","lab"],["Computer Lab 3","lab"],["Computer Lab 4","lab"],["Server Room (Ground)","office"],["Innovation Lab","lab"],["Centre for Excellence","lab"],["Seminar Hall (Ground)","seminar"],["Guest's Lounge","office"],["Interview Cabin","office"],["Store Room (Ground)","office"],["Rest Area / Cafeteria","food"],["Stairs / Lift Lobby - G","stairs"]]],
+["1","First Floor",[["MBA Director's Chamber","office"],["MBA Office","office"],["MBA Classroom","classroom"],["MBA CR 1","classroom"],["MBA CR 2","classroom"],["MBA Staff Room","office"],["MBA Library","library"],["CAED Lab","lab"],["Guest Faculty Room","office"],["Server Room (First Floor)","office"],["Ladies Room","washroom"],["Seminar Hall (First Floor)","seminar"],["Study Space (First Floor)","study"],["E&C Staff Room","office"],["E&C Labs (1-8)","lab"],["Digital Library","library"],["Aptitude Lab","lab"],["Library (First Floor)","library"],["Electrical Panel Room","office"],["Hostel Office","office"],["Sports Room","other"],["Stairs / Lift Lobby - 1","stairs"]]],
+["2","Second Floor",[["Student Lounge","study"],["Faculty Department","office"],["Mathematics Department","office"],["E&C Classroom","classroom"],["Placement / Seminar Room","seminar"],["MBA Classroom (2F)","classroom"],["Computer Lab (2F)","lab"],["Civil Computation Lab","lab"],["Drawing Room","classroom"],["Intel Lab","lab"],["Staff Room (2F)","office"],["Art & Culture Room","other"],["HOD & Dept. Library","library"],["CS Classroom (2F)","classroom"],["Physics Lab","lab"],["Chemistry Lab","lab"],["E-Waste Storage Room","other"],["IS Labs (2-5)","lab"],["Library (Second Floor)","library"],["Hands-on Lab 1 & 2","lab"],["Stairs / Lift Lobby - 2","stairs"]]],
+["3","Third Floor",[["Civil Classrooms","classroom"],["Civil Staff Room","office"],["Civil Library","library"],["Training Room","seminar"],["Study Space (3F)","study"],["ARM Lab","lab"],["CS Classroom (3F)","classroom"],["EC Classroom (3F)","classroom"],["IS Classroom (3F)","classroom"],["Environment Lab","lab"],["1st Year Classrooms (A-L)","classroom"],["Security Office","office"],["Hands-on Lab 3 & 4","lab"],["Stairs / Lift Lobby - 3","stairs"]]],
+["4","Fourth Floor",[["CS Classroom (4F)","classroom"],["CV Lab","lab"],["RPSS","office"],["Research Office","office"],["Tinkering / Fab Lab","lab"],["Furniture Store","other"],["Study Space (4F)","study"],["Rest Rooms (4F)","washroom"],["Workshop (4F)","lab"],["Stairs / Lift Lobby - 4","stairs"]]],
+["5","Fifth Floor",[["Incubation Centre","office"],["APTRA Lab","lab"],["Innovation / VR Lab","lab"],["Study Space (5F)","study"],["Rest Rooms (5F)","washroom"],["Stairs / Lift Lobby - 5","stairs"]]]
+];
+
+let nodes={}, edges=[], currentFloor='G', pathArr=null, pathSet=null, pathPairs=null;
+
+function buildGraph(){
+  nodes={}; edges=[];
+  FLOORS.forEach(([fk,fname,rooms])=>{
+    const N=rooms.length, cx=300,cy=300,rx=245,ry=235;
+    rooms.forEach((r,i)=>{
+      const ang=(i/N)*2*Math.PI - Math.PI/2;
+      nodes[fk+'_'+i]={name:r[0],cat:r[1],floor:fk,floorName:fname,x:cx+rx*Math.cos(ang),y:cy+ry*Math.sin(ang)};
+    });
+    for(let i=0;i<N;i++){
+      const a=fk+'_'+i,b=fk+'_'+((i+1)%N);
+      edges.push([a,b,Math.hypot(nodes[a].x-nodes[b].x,nodes[a].y-nodes[b].y)]);
+    }
+  });
+  const order=['G','1','2','3','4','5'];
+  for(let i=0;i<order.length-1;i++){
+    const s1=Object.keys(nodes).find(k=>nodes[k].floor===order[i]&&nodes[k].cat==='stairs');
+    const s2=Object.keys(nodes).find(k=>nodes[k].floor===order[i+1]&&nodes[k].cat==='stairs');
+    if(s1&&s2) edges.push([s1,s2,140]);
+  }
+}
+
+function dijkstra(start,end){
+  const dist={},prev={},visited=new Set(),adj={};
+  Object.keys(nodes).forEach(k=>dist[k]=Infinity);
+  dist[start]=0;
+  edges.forEach(([a,b,w])=>{(adj[a]=adj[a]||[]).push([b,w]);(adj[b]=adj[b]||[]).push([a,w]);});
+  while(true){
+    let u=null,best=Infinity;
+    for(const k in dist){if(!visited.has(k)&&dist[k]<best){best=dist[k];u=k;}}
+    if(u===null||u===end) break;
+    visited.add(u);
+    (adj[u]||[]).forEach(([v,w])=>{const nd=dist[u]+w; if(nd<dist[v]){dist[v]=nd; prev[v]=u;}});
+  }
+  if(dist[end]===Infinity) return {dist:Infinity,path:null};
+  const path=[end]; let cur=end;
+  while(cur!==start){cur=prev[cur]; path.unshift(cur);}
+  return {dist:dist[end],path};
+}
+
+function populateSelects(){
+  const fromSel=document.getElementById('fromSel'), toSel=document.getElementById('toSel');
+  fromSel.innerHTML=''; toSel.innerHTML='';
+  FLOORS.forEach(([fk,fname,rooms])=>{
+    const og1=document.createElement('optgroup'); og1.label=fname;
+    const og2=document.createElement('optgroup'); og2.label=fname;
+    rooms.forEach((r,i)=>{
+      const opt=`<option value="${fk}_${i}">${r[0]}</option>`;
+      og1.innerHTML+=opt; og2.innerHTML+=opt;
+    });
+    fromSel.appendChild(og1); toSel.appendChild(og2);
+  });
+}
+
+function renderLegend(){
+  document.getElementById('legend').innerHTML=Object.keys(ICONS).map(c=>`<span>${ICONS[c]} ${c}</span>`).join('');
+}
+
+function renderFloorTabs(){
+  const el=document.getElementById('floorTabs');
+  el.innerHTML=FLOORS.map(([fk,fname])=>`<button data-fk="${fk}" class="${fk===currentFloor?'active':''}">${fname}</button>`).join('');
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{currentFloor=b.dataset.fk; renderFloorTabs(); drawFloor();});
+}
+
+/* ── Bridges so other views (timetable, 3D models) can drive the planner ── */
+function routeToRoom(toId,fromId){
+  if(!nodes[toId]) return false;
+  document.getElementById('toSel').value=toId;
+  if(fromId&&nodes[fromId]) document.getElementById('fromSel').value=fromId;
+  showView('planner'); findRoute();
+  const dp=document.getElementById('dirPanel');
+  if(dp) dp.scrollIntoView({behavior:'smooth',block:'center'});
+  return true;
+}
+window.routeToRoom=routeToRoom;
+window.showRoomOnMap=function(id){
+  if(!nodes[id]) return false;
+  document.getElementById('toSel').value=id;
+  currentFloor=nodes[id].floor;
+  renderFloorTabs(); drawFloor(); showView('planner');
+  const svg=document.getElementById('floorSvg');
+  if(svg) svg.scrollIntoView({behavior:'smooth',block:'center'});
+  return true;
+};
+
+let activeCat='all';
+function renderChips(){
+  const cats=['all',...Object.keys(ICONS)];
+  const el=document.getElementById('catChips');
+  el.innerHTML=cats.map(c=>`<span class="chip ${c===activeCat?'active':''}" data-c="${c}">${c==='all'?'All':ICONS[c]+' '+c}</span>`).join('');
+  el.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{activeCat=c.dataset.c; renderChips(); renderList();});
+}
+
+function renderList(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  let html='';
+  FLOORS.forEach(([fk,fname,rooms])=>{
+    rooms.forEach((r,i)=>{
+      if(activeCat!=='all'&&r[1]!==activeCat) return;
+      if(q&&!r[0].toLowerCase().includes(q)) return;
+      html+=`<div class="roomItem"><span>${ICONS[r[1]]}</span><b>${r[0]}</b><span class="fl">${fname}</span>
+        <button data-role="route" data-id="${fk}_${i}">🧭 Path</button><button data-role="from" data-id="${fk}_${i}">From</button><button data-role="to" data-id="${fk}_${i}">To</button></div>`;
+    });
+  });
+  const lp=document.getElementById('listPanel');
+  lp.innerHTML=html||'<p class="muted">No rooms match.</p>';
+  lp.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    if(b.dataset.role==='route') routeToRoom(b.dataset.id);
+    else if(b.dataset.role==='from') document.getElementById('fromSel').value=b.dataset.id;
+    else document.getElementById('toSel').value=b.dataset.id;
+  });
+}
+
+function drawFloor(){
+  const svg=document.getElementById('floorSvg');
+  let html='';
+  edges.filter(e=>nodes[e[0]].floor===currentFloor&&nodes[e[1]].floor===currentFloor).forEach(e=>{
+    const a=nodes[e[0]],b=nodes[e[1]];
+    const onPath=pathPairs&&(pathPairs.has(e[0]+'|'+e[1]));
+    html+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" class="edge ${onPath?'path':''}"/>`;
+    if(onPath){   // arrowhead pointing the way you walk
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      const deg=Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+      html+=`<polygon points="-4,-3.5 4,0 -4,3.5" class="arrow" transform="translate(${mx.toFixed(1)} ${my.toFixed(1)}) rotate(${deg.toFixed(1)})"/>`;
+    }
+  });
+  Object.keys(nodes).filter(k=>nodes[k].floor===currentFloor).forEach(k=>{
+    const n=nodes[k]; const onp=pathSet&&pathSet.has(k);
+    const isTt=window.ttRoomIds&&window.ttRoomIds.has(k);
+    html+=`<g class="node ${onp?'onpath':''} ${isTt?'ttroom':''}" data-id="${k}">
+      <circle cx="${n.x}" cy="${n.y}" r="11" style="fill:${COLORS[n.cat]}"/>
+      <text x="${n.x}" y="${n.y+3.5}" class="icon">${ICONS[n.cat]}</text>
+      <text x="${n.x}" y="${n.y+20}" class="lbl">${n.name}</text>
+    </g>`;
+  });
+  svg.innerHTML=html;
+  svg.querySelectorAll('.node').forEach(g=>g.addEventListener('click',()=>{
+    routeToRoom(g.dataset.id);      // click a place on the map → show the path to it
+  }));
+}
+
+function findRoute(){
+  const s=document.getElementById('fromSel').value, t=document.getElementById('toSel').value;
+  const dp=document.getElementById('dirPanel');
+  if(!s||!t){dp.innerHTML='<p class="muted">Pick both From and To.</p>'; return;}
+  if(s===t){dp.innerHTML='<p class="muted">You are already there.</p>'; return;}
+  const {dist,path}=dijkstra(s,t);
+  if(!path){dp.innerHTML='<p class="muted">No route found.</p>'; return;}
+  pathArr=path; pathSet=new Set(path); pathPairs=new Set();
+  for(let i=0;i<path.length-1;i++){pathPairs.add(path[i]+'|'+path[i+1]); pathPairs.add(path[i+1]+'|'+path[i]);}
+  renderDirections(path,dist);
+  currentFloor=nodes[path[0]].floor;
+  renderFloorTabs(); drawFloor();
+}
+
+/* Signed turn angle (degrees) at b walking a → b → c. SVG y grows downward,
+   so a positive result is a right turn on screen. */
+function turnAngle(a,b,c){
+  const ax=b.x-a.x, ay=b.y-a.y, bx=c.x-b.x, by=c.y-b.y;
+  return Math.atan2(ax*by-ay*bx, ax*bx+ay*by)*180/Math.PI;
+}
+
+function renderDirections(path,dist){
+  const P=path.map(k=>nodes[k]);
+  const steps=[`Start at <b>${P[0].name}</b> (${P[0].floorName})`];
+  let straight=0, landmark=null, curFloor=P[0].floor;
+  const flush=()=>{
+    if(straight>0){
+      steps.push(`🚶 Walk straight past ${straight} room${straight>1?'s':''}, to <b>${landmark.name}</b>`);
+      straight=0;
+    }
+  };
+  for(let i=1;i<P.length-1;i++){
+    const prev=P[i-1], cur=P[i], next=P[i+1];
+    if(cur.floor!==curFloor){          // floor change gets its own step
+      flush();
+      steps.push(`🪜 Take the stairs / lift to <b>${cur.floorName}</b>`);
+      curFloor=cur.floor;
+      straight=0; landmark=cur;
+      continue;
+    }
+    if(next.floor!==curFloor) continue; // the stairs step below handles that move
+    const ang=turnAngle(prev,cur,next), mag=Math.abs(ang);
+    if(mag<40){ straight++; landmark=cur; continue; }   // not a real turn — keep going
+    flush();
+    if(mag>150) steps.push(`↩️ Turn around at <b>${cur.name}</b>`);
+    else steps.push(`${ang>0?'➡️ Turn right':'⬅️ Turn left'} at <b>${cur.name}</b>`);
+  }
+  flush();
+  const last=P[P.length-1];
+  steps.push(`Arrive at <b>${last.name}</b> ✅ (${last.floorName})`);
+  /* Route lengths come from the floor diagrams, where the 600-unit plan spans
+     roughly 60 m — so 1 unit ≈ 0.1 m. Budget ~75 m/min of walking, plus a
+     little for each floor change. */
+  const metres=dist*0.1;
+  let floorChanges=0;
+  for(let i=1;i<path.length;i++) if(nodes[path[i]].floor!==nodes[path[i-1]].floor) floorChanges++;
+  const mins=Math.max(1,Math.round(metres/75+floorChanges*0.4));
+  const distText=metres<1000?`~${Math.round(metres)} m`:`~${(metres/1000).toFixed(1)} km`;
+  const changeText=floorChanges?` · ${floorChanges} floor change${floorChanges>1?'s':''}`:'';
+  document.getElementById('dirPanel').innerHTML=`<div class="eta">📏 ${distText} · 🚶 ~${mins} min walk${changeText}</div><ol>${steps.map(s=>`<li>${s}</li>`).join('')}</ol>`;
+}
+
+document.getElementById('searchInput').addEventListener('input',renderList);
+buildGraph(); populateSelects(); renderLegend(); renderFloorTabs(); renderChips(); renderList(); drawFloor();
+
+/* ── View switching (Route Planner ⇄ 3D Building View) ─────────── */
+function showView(v){
+  document.querySelectorAll('#viewTabs button').forEach(b=>b.classList.toggle('active', b.dataset.view===v));
+  document.getElementById('viewPlanner').style.display = v==='planner' ? '' : 'none';
+  document.getElementById('view3d').style.display = v==='model3d' ? '' : 'none';
+  document.getElementById('viewTimetable').style.display = v==='timetable' ? '' : 'none';
+  if(v==='model3d') set3dMode(active3d);
+  if(v==='timetable' && window.ttRefresh) window.ttRefresh();
+}
+
+/* the 3D tab carries two models: generated from the floor plan, and the pasted massing */
+let active3d='plan';
+function set3dMode(mode){
+  active3d=mode;
+  document.querySelectorAll('#b3modeTabs button').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));
+  document.getElementById('f3wrap').style.display = mode==='plan' ? '' : 'none';
+  document.getElementById('b3wrap').style.display = mode==='mass' ? '' : 'none';
+  if(mode==='plan' && window.f3Start) window.f3Start();
+  if(mode==='mass' && window.b3Start) window.b3Start();
+}
+document.querySelectorAll('#b3modeTabs button').forEach(b=>b.onclick=()=>set3dMode(b.dataset.mode));
+document.querySelectorAll('#viewTabs button').forEach(b=>b.onclick=()=>showView(b.dataset.view));
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   My Timetable — save the room of each class once, then get a
+   one-tap walking route to the next class. Bridges into the route
+   planner (same graph), and persists in localStorage per browser.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  const TT_KEY='sahyadri.timetable.v1';
+  const ORIGIN_KEY='sahyadri.nav.origin.v1';
+  const AUTO='__auto__';
+  const DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const WEEK_ORDER=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+  const ALL=[];
+  FLOORS.forEach(([fk,fname,rooms])=>rooms.forEach((r,i)=>ALL.push({id:fk+'_'+i,name:r[0],cat:r[1],floor:fk,floorName:fname})));
+  const byId=id=>ALL.find(r=>r.id===id)||null;
+  const $=id=>document.getElementById(id);
+
+  let list=[], origin=AUTO;
+
+  const toMin=t=>{const p=String(t||'0:0').split(':');return (parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0);};
+  const nowMin=()=>{const d=new Date();return d.getHours()*60+d.getMinutes();};
+  const todayName=()=>DAYS[new Date().getDay()];
+  function addMin(t,m){const tot=toMin(t)+m;return String(Math.floor(tot/60)%24).padStart(2,'0')+':'+String(tot%60).padStart(2,'0');}
+  function fmt(t){if(!t)return '';const p=t.split(':');const H=parseInt(p[0],10)||0,M=parseInt(p[1],10)||0;return ((H+11)%12+1)+':'+String(M).padStart(2,'0')+' '+(H>=12?'PM':'AM');}
+  function uid(){return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+  const roomOf=c=>{const r=byId(c.roomId);return r?r.name:(c.roomName||'Unknown room');};
+  const floorOf=c=>{const r=byId(c.roomId);return r?r.floorName:(c.floorName||'floor unknown');};
+  const label=c=>roomOf(c)+' · '+floorOf(c);
+  const endOf=c=>(c.end&&toMin(c.end)>toMin(c.start))?c.end:addMin(c.start,60);
+  const classesOn=day=>list.filter(c=>c.day===day).sort((a,b)=>toMin(a.start)-toMin(b.start));
+
+  function readStore(){
+    try{const raw=JSON.parse(localStorage.getItem(TT_KEY));list=Array.isArray(raw)?raw.filter(x=>x&&x.day&&x.start&&x.roomId):[];}catch(e){list=[];}
+    try{origin=localStorage.getItem(ORIGIN_KEY)||AUTO;}catch(e){origin=AUTO;}
+    if(origin!==AUTO&&!byId(origin)) origin=AUTO;
+    list.forEach(c=>{c.id=c.id||uid();c.end=c.end||'';c.subject=c.subject||'';});
+  }
+  const writeStore=()=>{try{localStorage.setItem(TT_KEY,JSON.stringify(list));}catch(e){}};
+  const writeOrigin=()=>{try{localStorage.setItem(ORIGIN_KEY,origin);}catch(e){}};
+  const flash=msg=>{const el=$('ttHint');if(el)el.textContent=msg;};
+
+  function roomOptions(sel,withAuto){
+    let html=withAuto?`<option value="${AUTO}">Auto — continue from my last class</option>`:'';
+    FLOORS.forEach(([fk,fname,rooms])=>{html+=`<optgroup label="${fname}">`+rooms.map((r,i)=>`<option value="${fk}_${i}">${r[0]}</option>`).join('')+'</optgroup>';});
+    sel.innerHTML=html;
+  }
+
+  /* where the student is right now: ongoing class → last finished class → Main Entry */
+  function autoOrigin(){
+    const now=nowMin(), todays=classesOn(todayName());
+    const ongoing=todays.find(c=>toMin(c.start)<=now&&now<toMin(endOf(c)));
+    if(ongoing) return ongoing;
+    const ended=todays.filter(c=>toMin(endOf(c))<=now);
+    return ended.length?ended[ended.length-1]:null;
+  }
+  function originRoom(){
+    if(origin!==AUTO) return origin;
+    const c=autoOrigin();
+    if(c) return c.roomId;
+    const entry=ALL.find(r=>r.cat==='entry');
+    return entry?entry.id:(ALL[0]?ALL[0].id:null);
+  }
+  function originNote(){
+    if(origin!==AUTO){const r=byId(origin);return 'Starting from '+(r?r.name:'your selected room')+'.';}
+    const c=autoOrigin();
+    return c?('Starting from '+roomOf(c)+' — your '+fmt(c.start)+' class.'):'Starting from Main Entry.';
+  }
+
+  /* the bridge: hand a pair of rooms to the route planner and run it */
+  function routeBetween(fromId,toId){
+    if(!fromId||!toId||!nodes[fromId]||!nodes[toId]){flash('That room is no longer on the map — pick the room again.');return;}
+    window.routeToRoom(toId,fromId);
+  }
+
+  function nextUpcoming(){
+    const d=new Date();
+    for(let i=1;i<=7;i++){
+      const cs=classesOn(DAYS[new Date(d.getTime()+i*86400000).getDay()]);
+      if(cs.length) return {c:cs[0],inDays:i};
+    }
+    return null;
+  }
+
+  function renderNextCard(){
+    const el=$('ttNextCard'); if(!el) return;
+    const now=nowMin(), todays=classesOn(todayName());
+    const ongoing=todays.find(c=>toMin(c.start)<=now&&now<toMin(endOf(c)));
+    const next=todays.find(c=>toMin(c.start)>now);
+    const up=nextUpcoming();
+    let html='', action='';
+    if(ongoing){
+      html=`<div class="nextCard"><span class="big">🟠</span><div class="info">
+        <b>In class now — ${ongoing.subject||roomOf(ongoing)}</b>
+        <span>${label(ongoing)} · ${fmt(ongoing.start)}–${fmt(endOf(ongoing))}</span>
+        <span>${next?('Next: '+(next.subject||roomOf(next))+' at '+fmt(next.start)+' · '+label(next)):'No more classes after this one today.'}</span></div>
+        ${next?`<button class="ghostBtn" data-go="hop">➡️ Route to next class</button>`:''}</div>`;
+      if(next) action=()=>routeBetween(ongoing.roomId,next.roomId);
+    } else if(next){
+      html=`<div class="nextCard"><span class="big">⏰</span><div class="info">
+        <b>Up next — ${next.subject||roomOf(next)}</b>
+        <span>${label(next)} · starts ${fmt(next.start)} · <span class="countdown">in ${toMin(next.start)-now} min</span></span>
+        <span>${originNote()}</span></div>
+        <button class="ghostBtn" data-go="now">🧭 Navigate now</button></div>`;
+      action=()=>routeBetween(originRoom(),next.roomId);
+    } else if(up){
+      html=`<div class="nextCard"><span class="big">✅</span><div class="info">
+        <b>No more classes today</b>
+        <span>Next up: ${up.c.subject||roomOf(up.c)} · ${up.c.day} ${fmt(up.c.start)} · ${label(up.c)}</span>
+        <span>${originNote()}</span></div>
+        <button class="ghostBtn" data-go="up">🧭 Plan that route</button></div>`;
+      action=()=>routeBetween(originRoom(),up.c.roomId);
+    } else {
+      html=`<div class="nextCard"><span class="big">📅</span><div class="info">
+        <b>No classes saved yet</b>
+        <span>Save the room of each class on the left — you will then get one-tap routes between them, all week.</span></div></div>`;
+    }
+    el.innerHTML=html;
+    const btn=el.querySelector('button[data-go]');
+    if(btn&&action) btn.onclick=action;
+    const note=$('ttOriginNote'); if(note) note.textContent=originNote();
+  }
+
+  function renderWeek(){
+    const el=$('ttWeek'); if(!el) return;
+    const tn=todayName(); let html='';
+    WEEK_ORDER.forEach(day=>{
+      const cs=classesOn(day);
+      if(!cs.length) return;
+      const isToday=day===tn;
+      html+=`<div class="ttDay ${isToday?'today':''}"><h4>${day}${isToday?' · today':''}</h4>`;
+      cs.forEach((c,i)=>{
+        const nxt=cs[i+1];
+        const mins=Math.max(5,toMin(endOf(c))-toMin(c.start));
+        const ongoing=isToday&&toMin(c.start)<=nowMin()&&nowMin()<toMin(endOf(c));
+        const known=!!nodes[c.roomId];
+        html+=`<div class="ttRow ${ongoing?'now':''}">
+          <span class="time">${fmt(c.start)}</span>
+          <span class="what"><b>${c.subject||roomOf(c)}</b><small>${known?'':'⚠️ '}${label(c)}</small></span>
+          <span class="badgeTime">⏱ ${mins} min</span>
+          <span class="acts">
+            <button data-act="go" data-id="${c.id}">🧭 Go</button>
+            ${nxt?`<button data-act="hop" data-id="${c.id}">➡️ To next class</button>`:''}
+            <button data-act="origin" data-id="${c.id}">↩️ Start here</button>
+            <button data-act="del" data-id="${c.id}" class="del">✕</button>
+          </span></div>`;
+      });
+      html+='</div>';
+    });
+    el.innerHTML=html||'<p class="muted">Nothing saved yet. Add your class rooms on the left, or tap “Load example”.</p>';
+    el.querySelectorAll('button[data-act]').forEach(b=>b.onclick=()=>{
+      const c=list.find(x=>x.id===b.dataset.id); if(!c) return;
+      const act=b.dataset.act;
+      if(act==='go') routeBetween(originRoom(),c.roomId);
+      else if(act==='hop'){const cs=classesOn(c.day),n=cs[cs.indexOf(c)+1];if(n) routeBetween(c.roomId,n.roomId);}
+      else if(act==='origin'){origin=c.roomId;writeOrigin();$('ttOrigin').value=origin;renderAll();}
+      else if(act==='del'){list=list.filter(x=>x.id!==c.id);writeStore();renderAll();}
+    });
+  }
+
+  /* ring today's class rooms on the floor map */
+  function syncMapHighlight(){
+    window.ttRoomIds=new Set(classesOn(todayName()).map(c=>c.roomId).filter(id=>nodes[id]));
+    drawFloor();
+  }
+
+  const renderAll=()=>{renderWeek();renderNextCard();syncMapHighlight();};
+
+  function overlap(a,b){
+    const aEnd=a.end||addMin(a.start,60), bEnd=b.end||addMin(b.start,60);
+    return toMin(a.start)<toMin(bEnd)&&toMin(b.start)<toMin(aEnd);
+  }
+
+  function boot(){
+    readStore();
+    $('ttDay').innerHTML=WEEK_ORDER.map(d=>`<option value="${d}">${d}</option>`).join('');
+    $('ttDay').value=todayName();
+    roomOptions($('ttRoom'));
+    roomOptions($('ttOrigin'),true);
+    $('ttOrigin').value=origin;
+    $('ttOrigin').onchange=()=>{origin=$('ttOrigin').value;writeOrigin();renderNextCard();};
+
+    $('ttAdd').onclick=()=>{
+      const day=$('ttDay').value, start=$('ttStart').value, end=$('ttEnd').value||'', subject=$('ttSubject').value.trim();
+      const roomId=$('ttRoom').value, r=byId(roomId);
+      if(!start){flash('Pick a start time first.');return;}
+      if(!r){flash('Pick a room first.');return;}
+      if(end&&toMin(end)<=toMin(start)){flash('The end time must be after the start time.');return;}
+      const clash=classesOn(day).find(c=>c.roomId!==roomId&&overlap({start,end},c));
+      list.push({id:uid(),day,start,end,subject,roomId,roomName:r.name,floorName:r.floorName});
+      writeStore();
+      $('ttSubject').value='';
+      renderAll();
+      flash(`Saved ${subject||r.name} · ${day} ${fmt(start)}.${clash?` ⚠️ Overlaps ${clash.subject||roomOf(clash)} at ${fmt(clash.start)}.`:''}`);
+    };
+
+    $('ttRouteNext').onclick=()=>{
+      const now=nowMin(), next=classesOn(todayName()).find(c=>toMin(c.start)>now);
+      if(!next){flash('No more classes today — save tomorrow\u2019s classes to get routes to them.');return;}
+      routeBetween(originRoom(),next.roomId);
+    };
+
+    $('ttDemo').onclick=()=>{
+      const find=n=>ALL.find(r=>r.name.toLowerCase()===n.toLowerCase())||ALL.find(r=>r.name.toLowerCase().includes(n.toLowerCase()));
+      [['Monday','09:00','10:00','Data Structures','Computer Lab 1'],
+       ['Monday','10:00','11:00','Discrete Mathematics','CS Classroom (3F)'],
+       ['Monday','11:15','12:15','Physics Lab','Physics Lab'],
+       ['Tuesday','09:00','10:00','DBMS Lab','Computer Lab (2F)'],
+       ['Wednesday','14:00','15:00','Tech Talk','Seminar Hall (First Floor)']
+      ].forEach(([day,start,end,subject,room])=>{
+        const r=find(room); if(!r) return;
+        list.push({id:uid(),day,start,end,subject,roomId:r.id,roomName:r.name,floorName:r.floorName});
+      });
+      writeStore(); renderAll();
+      flash('Example timetable loaded — tweak the rooms/times or clear it any time.');
+    };
+
+    $('ttClear').onclick=()=>{
+      if(!list.length){flash('Nothing saved yet.');return;}
+      if(confirm('Clear your saved timetable?')){list=[];writeStore();renderAll();flash('Timetable cleared.');}
+    };
+
+    renderAll();
+    setInterval(()=>{if($('viewTimetable').style.display!=='none')renderNextCard();},60000);
+    window.ttRefresh=renderAll;
+  }
+  boot();
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   3D Building Model (embedded) — drag to rotate, scroll to zoom,
+   click a floor slab or a floor name to see what's on it.
+   Self-contained: uses Three.js r128 from the CDN above.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  const FLOOR_NAMES=["Ground Floor","1st Floor","2nd Floor","3rd Floor","4th Floor","5th Floor"];
+  const FLOOR_SUMMARY=[
+    "Admin block: Principal's & Director's chambers, Academic/Examination/Admission sections, CS Department, Computer Labs 1-4, Innovation Lab, Seminar Hall, Placement Office, Dept. Library.",
+    "MBA Department (classrooms, staff room, library), CAED Lab, E&C Labs (1-8), Digital Library, Aptitude Lab, Seminar Hall, Electrical Panel Room, Hostel Office.",
+    "Physics & Chemistry Labs, Civil Computation Lab, Intel Lab, CS/Drawing classrooms, Mathematics & Faculty Departments, Dept. Library, IS Labs, hands-on workshop labs.",
+    "Civil Engineering department block: Civil classrooms & staff room, 1st-Year classrooms (A-L), ARM Lab, Environment Lab, Training Room, workshop labs 3 & 4.",
+    "CS classrooms, CV Lab, RPSS, Research Office, Tinkering/Fab Lab, Study Space, top-floor workshop bay.",
+    "Incubation Centre, APTRA Lab, Innovation/VR Lab — smallest footprint, mostly rooftop-level labs around the courtyard."
+  ];
+  const SCALE=[1,1,0.95,0.88,0.72,0.52];
+  const BASE_W=10,BASE_D=7,FLOOR_H=1.15;
+
+  let scene,camera,renderer,raycaster,floorMeshes=[],selected=null;
+  let dragging=false,lastX=0,lastY=0,downX=0,downY=0,theta=0.9,phi=1.05,radius=26,target=null;
+  let started=false;
+  let dirty=true, frames=0;   // render only when the view actually changes
+
+  const wrapEl=()=>document.getElementById('b3wrap');
+  const size=()=>{const w=wrapEl(); return {w:Math.max(320,w.clientWidth), h:Math.max(300,w.clientHeight)};};
+
+  function windowTexture(){
+    const c=document.createElement('canvas');c.width=256;c.height=256;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='#f3ede1';ctx.fillRect(0,0,256,256);
+    ctx.fillStyle='#33506b';
+    for(let y=18;y<256;y+=34){for(let x=10;x<256;x+=26){ctx.fillRect(x,y,18,20);}}
+    const tex=new THREE.CanvasTexture(c);
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+    return tex;
+  }
+
+  function floorShape(w,d,hw,hd){
+    const s=new THREE.Shape();
+    s.moveTo(-w/2,-d/2);s.lineTo(w/2,-d/2);s.lineTo(w/2,d/2);s.lineTo(-w/2,d/2);s.lineTo(-w/2,-d/2);
+    const h=new THREE.Path();
+    h.moveTo(-hw/2,-hd/2);h.lineTo(hw/2,-hd/2);h.lineTo(hw/2,hd/2);h.lineTo(-hw/2,hd/2);h.lineTo(-hw/2,-hd/2);
+    s.holes.push(h);
+    return s;
+  }
+
+  function labelSprite(text){
+    const c=document.createElement('canvas');c.width=256;c.height=64;
+    const ctx=c.getContext('2d');
+    ctx.fillStyle='rgba(27,94,58,0.92)';
+    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(0,0,256,64,14);ctx.fill();}else{ctx.fillRect(0,0,256,64);}
+    ctx.fillStyle='#fff';ctx.font='bold 28px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(text,128,32);
+    const tex=new THREE.CanvasTexture(c);
+    const mat=new THREE.SpriteMaterial({map:tex,transparent:true});
+    const sp=new THREE.Sprite(mat);sp.scale.set(2.6,0.65,1);
+    return sp;
+  }
+
+  function init(){
+    const {w:W,h:H}=size();
+    scene=new THREE.Scene();
+    scene.background=new THREE.Color(0xcfe3d6);
+    scene.fog=new THREE.Fog(0xcfe3d6,25,60);
+    camera=new THREE.PerspectiveCamera(48,W/H,0.1,500);
+    renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    renderer.setSize(W,H);
+    document.getElementById('b3scene').appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff,0.65));
+    const sun=new THREE.DirectionalLight(0xffffff,0.85);
+    sun.position.set(15,25,10);
+    scene.add(sun);
+
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshStandardMaterial({color:0x9fc4a3}));
+    ground.rotation.x=-Math.PI/2; ground.position.y=-0.02; scene.add(ground);
+    const plaza=new THREE.Mesh(new THREE.PlaneGeometry(BASE_W+2,4),new THREE.MeshStandardMaterial({color:0xd8d3c4}));
+    plaza.rotation.x=-Math.PI/2; plaza.position.set(0,0,BASE_D/2+2); scene.add(plaza);
+
+    const tex=windowTexture();
+    FLOOR_NAMES.forEach((name,i)=>{
+      const w=BASE_W*SCALE[i], d=BASE_D*SCALE[i], hw=w*0.4, hd=d*0.32;
+      const shape=floorShape(w,d,hw,hd);
+      const geo=new THREE.ExtrudeGeometry(shape,{depth:FLOOR_H,bevelEnabled:false});
+      geo.rotateX(-Math.PI/2);
+      const t=tex.clone(); t.needsUpdate=true; t.repeat.set(w/1.3,1);
+      const mat=new THREE.MeshStandardMaterial({map:t,color:0xffffff,roughness:0.85,transparent:true,opacity:1});
+      const mesh=new THREE.Mesh(geo,mat);
+      mesh.position.y=i*FLOOR_H;
+      mesh.userData.idx=i;
+      scene.add(mesh); floorMeshes.push(mesh);
+
+      const band=new THREE.Mesh(new THREE.BoxGeometry(w+0.3,0.16,d+0.3),new THREE.MeshStandardMaterial({color:0x1b5e3a}));
+      band.position.y=i*FLOOR_H+FLOOR_H-0.06; scene.add(band);
+
+      const lbl=labelSprite(i===0?"G":String(i));
+      lbl.position.set(-w/2-1.4,i*FLOOR_H+FLOOR_H/2,0);
+      scene.add(lbl);
+    });
+
+    // Entrance canopy + signage at ground floor front
+    const canopy=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.15,1.4),new THREE.MeshStandardMaterial({color:0x1b5e3a}));
+    canopy.position.set(0,1.4,BASE_D/2+0.7); scene.add(canopy);
+    const sign=labelSprite("SAHYADRI"); sign.scale.set(3.2,0.8,1);
+    sign.position.set(0,FLOOR_H*1.4,BASE_D/2+0.05); scene.add(sign);
+
+    // Workshop wing (attached side block, all floors)
+    const wingH=FLOOR_H*6;
+    const wing=new THREE.Mesh(new THREE.BoxGeometry(2.4,wingH,3.2),new THREE.MeshStandardMaterial({map:tex,roughness:0.9}));
+    wing.position.set(BASE_W/2+1.4,wingH/2,-1.2); scene.add(wing);
+    const wingLbl=labelSprite("Workshops"); wingLbl.position.set(BASE_W/2+1.4,wingH+0.6,-1.2); scene.add(wingLbl);
+
+    target=new THREE.Vector3(0,3.5,0);
+    updateCam();
+
+    const el=renderer.domElement;
+    el.addEventListener('pointerdown',e=>{dragging=true;lastX=downX=e.clientX;lastY=downY=e.clientY;});
+    window.addEventListener('pointerup',()=>dragging=false);
+    window.addEventListener('pointermove',e=>{
+      if(!dragging) return;
+      const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
+      theta-=dx*0.006; phi=Math.min(Math.max(phi-dy*0.006,0.35),1.5);
+      updateCam();
+    });
+    el.addEventListener('wheel',e=>{e.preventDefault(); radius=Math.min(Math.max(radius+e.deltaY*0.02,10),50); updateCam();},{passive:false});
+    el.addEventListener('click',onClick);
+    window.addEventListener('resize',onResize);
+
+    raycaster=new THREE.Raycaster();
+    renderLegend();
+    document.getElementById('b3resetBtn').onclick=resetView;
+    animate();
+  }
+
+  function renderLegend(){
+    const el=document.getElementById('b3legend');
+    el.innerHTML='<b>Floors</b>'+FLOOR_NAMES.map((n,i)=>`<div class="b3Row" data-i="${i}">${n}</div>`).join('');
+    el.querySelectorAll('.b3Row').forEach(r=>r.onclick=()=>selectFloor(parseInt(r.dataset.i)));
+  }
+
+  function selectFloor(i){
+    selected=i;
+    floorMeshes.forEach(m=>{m.material.opacity=(m.userData.idx===i)?1:0.22;});
+    dirty=true;
+    document.getElementById('b3floorPanel').style.display='block';
+    document.getElementById('b3fpTitle').textContent=FLOOR_NAMES[i];
+    document.getElementById('b3fpBody').textContent=FLOOR_SUMMARY[i];
+  }
+
+  function resetView(){
+    selected=null;
+    floorMeshes.forEach(m=>m.material.opacity=1);
+    document.getElementById('b3floorPanel').style.display='none';
+    dirty=true;
+  }
+
+  function onClick(e){
+    if(Math.abs(e.clientX-downX)>5||Math.abs(e.clientY-downY)>5) return; // ignore drags
+    const rect=renderer.domElement.getBoundingClientRect();
+    const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1, -((e.clientY-rect.top)/rect.height)*2+1);
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(floorMeshes);
+    if(hits.length) selectFloor(hits[0].object.userData.idx);
+  }
+
+  function updateCam(){
+    if(!camera||!target) return;
+    camera.position.x=target.x+radius*Math.sin(phi)*Math.sin(theta);
+    camera.position.z=target.z+radius*Math.sin(phi)*Math.cos(theta);
+    camera.position.y=target.y+radius*Math.cos(phi);
+    camera.lookAt(target);
+    dirty=true;
+  }
+
+  function onResize(){
+    if(!started||!renderer||!camera) return;
+    const {w:W,h:H}=size();
+    camera.aspect=W/H; camera.updateProjectionMatrix();
+    renderer.setSize(W,H);
+    dirty=true;
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+    const w=wrapEl();
+    if(renderer&&scene&&camera&&w&&w.offsetParent!==null&&(dirty||dragging)){
+      renderer.render(scene,camera);
+      dirty=false; frames++;
+    }
+  }
+
+  // Lazily boot the 3D view the first time the tab is opened.
+  window.b3Start=function(){
+    if(started){ onResize(); return; }
+    const fallback=document.getElementById('b3fallback');
+    if(typeof THREE==='undefined'){
+      if(fallback) fallback.style.display='flex';
+      return;
+    }
+    started=true;
+    init();
+  };
+  window.__b3dbg=()=>({dirty,frames,started,hasRenderer:!!renderer,
+    offsetNull:wrapEl().offsetParent===null,wrapDisplay:wrapEl().style.display});
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   Floor-plan 3D model (embedded) — the geometry is GENERATED from
+   the same FLOORS data that drives the route planner: one wedge
+   (annular sector) per room, stacked floor by floor around the
+   open courtyard, with a lift core and an entrance canopy.
+   Click a room for its details and a one-tap route to it.
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  const FLOOR_H=1.15, SLAB=0.12, rCourt=2.5, rCorr=3.4, rOut=6.5;
+  const TAPER=[1,1,0.97,0.93,0.88,0.82];   // upper floors pull in a little
+  const GAP=0.035;                         // fraction of each wedge left as wall
+
+  /* shape space is XY; every mesh is rotated -90° about X, so a shape point
+     (r cos a, r sin a) lands at world (r cos a, y, -r sin a). at() matches that. */
+  const at=(r,a)=>[r*Math.cos(a),-r*Math.sin(a)];
+
+  /* ── pure layout maths (no THREE) so it can be checked on its own ────── */
+  function buildBuildingPlan(){
+    const floors=[], rooms=[];
+    FLOORS.forEach(([fk,fname,list],fi)=>{
+      const N=list.length, step=2*Math.PI/N, y0=fi*FLOOR_H, ro=rOut*TAPER[fi];
+      const info={index:fi,fk,fname,y0,ro,roomCount:N,counts:{},rooms:[],stairsAngle:null};
+      list.forEach(([name,cat],i)=>{
+        const a0=i*step-Math.PI/2+step*GAP, a1=(i+1)*step-Math.PI/2-step*GAP;
+        const mid=(a0+a1)/2, rmid=(rCorr+ro)/2;
+        const [x,z]=at(rmid,mid), [lx,lz]=at(ro+0.85,mid);
+        const room={id:fk+'_'+i,name,cat,floor:fk,floorName:fname,fi,i,y0,a0,a1,mid,
+          inner:rCorr,outer:ro,height:FLOOR_H-SLAB,widthDeg:(a1-a0)*180/Math.PI,x,z,lx,lz};
+        rooms.push(room); info.rooms.push(room);
+        info.counts[cat]=(info.counts[cat]||0)+1;
+        if(cat==='stairs'&&info.stairsAngle===null) info.stairsAngle=mid;
+      });
+      floors.push(info);
+    });
+    return {floors,rooms,totalRooms:rooms.length,height:FLOORS.length*FLOOR_H,
+      FLOOR_H,SLAB,rCourt,rCorr,rOut};
+  }
+  window.buildBuildingPlan=buildBuildingPlan;
+
+  let scene,camera,renderer,raycaster,plan,groups=[],roomMeshes=[],labelGroup=null;
+  let started=false,focused=null,selected=null;
+  let dragging=false,lastX=0,lastY=0,downX=0,downY=0,theta=0.85,phi=1.02,radius=21,target=null;
+  let dirty=true, frames=0;   // render only when the view actually changes
+
+  const $=id=>document.getElementById(id);
+  const wrapEl=()=>$('f3wrap');
+  const size=()=>{const w=wrapEl();return {w:Math.max(320,(w&&w.clientWidth)||640),h:Math.max(300,(w&&w.clientHeight)||420)};};
+  const icon=cat=>(typeof ICONS!=='undefined'&&ICONS[cat])||'▫️';
+  const colorOf=cat=>new THREE.Color((typeof COLORS!=='undefined'&&COLORS[cat])||'#8c8c8c');
+
+  /* annular sector (a room) and full ring (a floor slab with the courtyard open) */
+  function wedge(ri,ro,a0,a1){
+    const s=new THREE.Shape();
+    s.absarc(0,0,ro,a0,a1,false);
+    s.absarc(0,0,ri,a1,a0,true);
+    return s;
+  }
+  function ring(ri,ro){
+    const s=new THREE.Shape();
+    s.absarc(0,0,ro,0,Math.PI*2,false);
+    const h=new THREE.Path();
+    h.absarc(0,0,ri,0,Math.PI*2,false);
+    s.holes.push(h);
+    return s;
+  }
+  function textSprite(text,height,fill){
+    const FONT='bold 30px system-ui', PAD=16, CH=56;
+    const c=document.createElement('canvas');
+    let ctx=c.getContext('2d');
+    ctx.font=FONT;
+    const w=Math.min(900,Math.ceil(ctx.measureText(text).width)+PAD*2);
+    c.width=w; c.height=CH;
+    ctx=c.getContext('2d');
+    ctx.font=FONT;
+    ctx.fillStyle=fill||'rgba(27,94,58,.92)';
+    if(ctx.roundRect){ctx.beginPath();ctx.roundRect(0,0,w,CH,16);ctx.fill();}else{ctx.fillRect(0,0,w,CH);}
+    ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(text,w/2,CH/2+1);
+    const tex=new THREE.CanvasTexture(c);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));
+    sp.scale.set(height*(w/CH),height,1);
+    return sp;
+  }
+
+  function init(){
+    plan=buildBuildingPlan();
+    const {w:W,h:H}=size();
+    scene=new THREE.Scene();
+    scene.background=new THREE.Color(0xd9e7dc);
+    scene.fog=new THREE.Fog(0xd9e7dc,30,80);
+    camera=new THREE.PerspectiveCamera(46,W/H,0.1,600);
+    renderer=new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(W,H);
+    $('f3scene').appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff,0.74));
+    const sun=new THREE.DirectionalLight(0xffffff,0.78); sun.position.set(14,26,12); scene.add(sun);
+    const fill=new THREE.DirectionalLight(0xffffff,0.22); fill.position.set(-16,9,-14); scene.add(fill);
+
+    const ground=new THREE.Mesh(new THREE.PlaneGeometry(95,95),new THREE.MeshStandardMaterial({color:0xa8c8ab}));
+    ground.rotation.x=-Math.PI/2; scene.add(ground);
+    const court=new THREE.Mesh(new THREE.CircleGeometry(plan.rCourt,56),new THREE.MeshStandardMaterial({color:0x8fbf93}));
+    court.rotation.x=-Math.PI/2; court.position.y=0.02; scene.add(court);
+
+    plan.floors.forEach((f,fi)=>{
+      const g=new THREE.Group(); scene.add(g);
+      groups[fi]={group:g,meshes:[],labels:[]};
+
+      const slabGeo=new THREE.ExtrudeGeometry(ring(plan.rCourt,f.ro),{depth:SLAB,bevelEnabled:false});
+      slabGeo.rotateX(-Math.PI/2);
+      const slab=new THREE.Mesh(slabGeo,new THREE.MeshStandardMaterial({color:0xe9e4d8,roughness:0.95}));
+      slab.position.y=f.y0; slab.userData.floor=fi;
+      g.add(slab); groups[fi].meshes.push(slab);
+
+      const corrGeo=new THREE.ExtrudeGeometry(ring(plan.rCourt,plan.rCorr),{depth:0.05,bevelEnabled:false});
+      corrGeo.rotateX(-Math.PI/2);
+      const corr=new THREE.Mesh(corrGeo,new THREE.MeshStandardMaterial({color:0xd6d1c4,roughness:0.95}));
+      corr.position.y=f.y0+SLAB+0.01;
+      g.add(corr);
+
+      f.rooms.forEach(room=>{
+        const geo=new THREE.ExtrudeGeometry(wedge(room.inner,room.outer,room.a0,room.a1),{depth:room.height,bevelEnabled:false});
+        geo.rotateX(-Math.PI/2);
+        const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:colorOf(room.cat),roughness:0.72,transparent:true,opacity:1}));
+        mesh.position.y=f.y0+SLAB;
+        mesh.userData.room=room; mesh.userData.floor=fi;
+        g.add(mesh); roomMeshes.push(mesh); groups[fi].meshes.push(mesh);
+      });
+
+      const lbl=textSprite(f.fname,0.52);
+      const [lx,lz]=at(f.ro+1.1,-Math.PI/2);
+      lbl.position.set(lx,f.y0+FLOOR_H*0.55,lz);
+      g.add(lbl); groups[fi].labels.push(lbl);
+    });
+
+    // lift / stair core, one shaft per floor, rising through the building
+    plan.floors.forEach(f=>{
+      if(f.stairsAngle===null) return;
+      const [cx,cz]=at((plan.rCorr+f.ro)/2,f.stairsAngle);
+      const top=f.y0+FLOOR_H;
+      const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,top,18),
+        new THREE.MeshStandardMaterial({color:0x1b5e3a,roughness:0.6,metalness:0.15}));
+      shaft.position.set(cx,top/2,cz); scene.add(shaft);
+    });
+
+    // entrance canopy + signage at the ground-floor Main Entry wedge
+    const entry=plan.floors[0].rooms.find(r=>r.cat==='entry')||plan.floors[0].rooms[0];
+    const [ex,ez]=at(plan.rOut+0.95,entry.mid);
+    const canopy=new THREE.Mesh(new THREE.BoxGeometry(2.8,0.14,1.4),new THREE.MeshStandardMaterial({color:0x1b5e3a}));
+    canopy.position.set(ex,1.5,ez); scene.add(canopy);
+    const sign=textSprite('SAHYADRI',0.62); sign.position.set(ex,2.05,ez); scene.add(sign);
+
+    target=new THREE.Vector3(0,plan.height*0.5,0);
+    updateCam();
+
+    const dom=renderer.domElement;
+    dom.addEventListener('pointerdown',e=>{dragging=true;lastX=downX=e.clientX;lastY=downY=e.clientY;});
+    window.addEventListener('pointerup',()=>dragging=false);
+    window.addEventListener('pointermove',e=>{
+      if(!dragging) return;
+      const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY;
+      theta-=dx*0.006; phi=Math.min(Math.max(phi-dy*0.006,0.25),1.5);
+      updateCam();
+    });
+    dom.addEventListener('wheel',e=>{e.preventDefault();radius=Math.min(Math.max(radius+e.deltaY*0.02,9),60);updateCam();},{passive:false});
+    dom.addEventListener('click',onClick);
+    window.addEventListener('resize',onResize);
+    raycaster=new THREE.Raycaster();
+
+    renderLegend(); clearPanel(); animate();
+    window.__f3={ready:true,rooms:plan.totalRooms,floors:plan.floors.length,meshes:roomMeshes.length,frames:0};
+    window.__f3dbg=()=>({dirty,frames,started,hasRenderer:!!renderer,hasScene:!!scene,
+      offsetNull:wrapEl().offsetParent===null,wrapDisplay:wrapEl().style.display});
+  }
+
+  function updateCam(){
+    if(!camera||!target) return;
+    camera.position.x=target.x+radius*Math.sin(phi)*Math.sin(theta);
+    camera.position.z=target.z+radius*Math.sin(phi)*Math.cos(theta);
+    camera.position.y=target.y+radius*Math.cos(phi);
+    camera.lookAt(target);
+    dirty=true;
+  }
+
+  function renderLegend(){
+    const p=$('f3legend');
+    p.innerHTML='<b>Floors</b>'+plan.floors.slice().reverse()
+      .map(f=>`<div class="b3Row ${focused===f.index?'on':''}" data-i="${f.index}">${f.fname} · ${f.roomCount} rooms</div>`).join('')
+      +`<div class="b3Row ${focused===null?'on':''}" data-i="all">All floors</div>`;
+    p.querySelectorAll('.b3Row').forEach(r=>r.onclick=()=>{
+      if(r.dataset.i==='all') resetView();
+      else focusFloor(parseInt(r.dataset.i,10));
+    });
+  }
+
+  function focusFloor(fi){
+    focused=fi;
+    groups.forEach((g,gi)=>{
+      const on=gi===fi;
+      g.meshes.forEach(m=>{m.material.transparent=true;m.material.opacity=on?1:0.14;});
+      g.labels.forEach(s=>{s.visible=on;});
+    });
+    buildRoomLabels(fi);
+    showFloorPanel(fi);
+    renderLegend();
+    dirty=true;
+  }
+
+  function buildRoomLabels(fi){
+    if(labelGroup){scene.remove(labelGroup);labelGroup=null;}
+    labelGroup=new THREE.Group(); scene.add(labelGroup);
+    plan.floors[fi].rooms.forEach(room=>{
+      const sp=textSprite(room.name,0.34,'rgba(20,37,28,.86)');
+      sp.position.set(room.lx,room.y0+FLOOR_H*0.55,room.lz);
+      labelGroup.add(sp);
+    });
+  }
+
+  function resetView(){
+    focused=null; selected=null; clearHighlight();
+    groups.forEach(g=>{
+      g.meshes.forEach(m=>{m.material.transparent=true;m.material.opacity=1;});
+      g.labels.forEach(s=>{s.visible=true;});
+    });
+    if(labelGroup){scene.remove(labelGroup);labelGroup=null;}
+    clearPanel(); renderLegend();
+    dirty=true;
+  }
+
+  function clearHighlight(){roomMeshes.forEach(m=>{if(m.material.emissive) m.material.emissive.setHex(0x000000);});}
+
+  function selectRoom(room){
+    if(focused!==room.fi) focusFloor(room.fi);
+    clearHighlight(); selected=room;
+    roomMeshes.forEach(m=>{if(m.userData.room===room){m.material.emissive=colorOf(room.cat);m.material.emissiveIntensity=0.5;}});
+    showRoomPanel(room);
+    dirty=true;
+  }
+
+  function showFloorPanel(fi){
+    const f=plan.floors[fi];
+    const cats=Object.keys(f.counts).sort((a,b)=>f.counts[b]-f.counts[a])
+      .map(c=>`${icon(c)} ${c} ×${f.counts[c]}`).join(' · ');
+    const p=$('f3panel');
+    p.innerHTML=`<h2>${f.fname} · ${f.roomCount} rooms</h2>
+      <p>${cats}</p>
+      <div class="f3chips">${f.rooms.map(r=>`<span class="f3chip" data-id="${r.id}">${r.name}</span>`).join('')}</div>
+      <div class="f3actions"><button id="f3all">Show all floors</button></div>`;
+    p.style.display='block';
+    p.querySelectorAll('.f3chip').forEach(c=>c.onclick=()=>{const r=plan.rooms.find(x=>x.id===c.dataset.id);if(r) selectRoom(r);});
+    $('f3all').onclick=resetView;
+  }
+
+  function showRoomPanel(room){
+    const p=$('f3panel');
+    p.innerHTML=`<h2>${icon(room.cat)} ${room.name}</h2>
+      <p>${room.floorName} · ${room.cat} · ${room.widthDeg.toFixed(0)}° of the ring (id ${room.id})</p>
+      <div class="f3actions">
+        <button class="solid" id="f3route">🧭 Route here</button>
+        <button id="f3map">🗺️ Show on floor map</button>
+        <button id="f3back">← ${room.floorName}</button>
+      </div>
+      <p id="f3note" class="muted"></p>`;
+    p.style.display='block';
+    $('f3route').onclick=()=>{
+      if(window.routeToRoom&&typeof nodes!=='undefined'&&nodes[room.id]) window.routeToRoom(room.id);
+      else $('f3note').textContent='That room is not on the route map.';
+    };
+    $('f3map').onclick=()=>{if(window.showRoomOnMap&&typeof nodes!=='undefined'&&nodes[room.id]) window.showRoomOnMap(room.id);};
+    $('f3back').onclick=()=>{clearHighlight();selected=null;showFloorPanel(room.fi);dirty=true;};
+  }
+
+  function clearPanel(){const p=$('f3panel');p.style.display='none';p.innerHTML='';}
+
+  function onClick(e){
+    if(Math.abs(e.clientX-downX)>5||Math.abs(e.clientY-downY)>5) return;   // ignore drags
+    const rect=renderer.domElement.getBoundingClientRect();
+    const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(roomMeshes.concat(groups.map(g=>g.meshes[0])),false);
+    if(!hits.length) return;
+    const o=hits[0].object;
+    if(o.userData.room) selectRoom(o.userData.room);
+    else if(o.userData.floor!==undefined) focusFloor(o.userData.floor);
+  }
+
+  function onResize(){
+    if(!started||!renderer||!camera) return;
+    const {w:W,h:H}=size();
+    camera.aspect=W/H; camera.updateProjectionMatrix(); renderer.setSize(W,H);
+    dirty=true;
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+    const w=wrapEl();
+    if(renderer&&scene&&camera&&w&&w.offsetParent!==null&&(dirty||dragging)){
+      renderer.render(scene,camera);
+      dirty=false; frames++;
+      if(window.__f3) window.__f3.frames=frames;
+    }
+  }
+
+  // Built lazily the first time the 3D tab is opened in floor-plan mode.
+  window.f3Start=function(){
+    if(started){ onResize(); return; }
+    const fb=$('f3fallback');
+    if(typeof THREE==='undefined'){ if(fb) fb.style.display='flex'; return; }
+    started=true; init();
+  };
+})();
+</script>
+</body>
+</html>

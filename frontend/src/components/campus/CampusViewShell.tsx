@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Images, Navigation, Ruler } from "lucide-react";
+import { ArrowLeft, Images, Map, Navigation, Ruler } from "lucide-react";
 import CampusGallery from "./CampusGallery";
 import BlueprintViewer from "./BlueprintViewer";
 import CampusNavigatorView from "./CampusNavigatorView";
@@ -11,10 +11,22 @@ import { CAMPUS } from "@/lib/campusData";
 
 const TABS = [
   {
+    key: "map",
+    label: "Campus Map",
+    icon: Map,
+    hint: "Official Sahyadri College full campus overview map (from College map.pdf) with building markers, facilities, and outdoor walking routes.",
+  },
+  {
+    key: "navigation",
+    label: "3D Floor Navigator",
+    icon: Navigation,
+    hint: "Search a start and destination, then route through all six floors with 3D wayfinding.",
+  },
+  {
     key: "gallery",
     label: "Campus Gallery",
     icon: Images,
-    hint: "Photos from across the campus — riverfront, courtyards, labs and seminar halls.",
+    hint: "Real campus photos from across Sahyadri — riverfront, food court, sports grounds, and academic blocks.",
   },
   {
     key: "blueprints",
@@ -22,24 +34,18 @@ const TABS = [
     icon: Ruler,
     hint: "High-resolution floor plans — pan, pinch and zoom from Ground to Fifth floor.",
   },
-  {
-    key: "navigation",
-    label: "Campus Navigation",
-    icon: Navigation,
-    hint: "Search a start and destination, then hand off seamlessly to the 3D multi-floor navigator.",
-  },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
 
 export default function CampusViewShell() {
-  const [tab, setTab] = useState<TabKey>("gallery");
+  const [tab, setTab] = useState<TabKey>("map");
   const active = TABS.find((t) => t.key === tab) ?? TABS[0];
 
-  /* Deep-link: /campus-view?tab=blueprints|navigation|gallery */
+  /* Deep-link: /campus-view?tab=map|blueprints|navigation|gallery */
   useEffect(() => {
     const t = new URLSearchParams(window.location.search).get("tab");
-    if (t === "gallery" || t === "blueprints" || t === "navigation") setTab(t);
+    if (t === "map" || t === "gallery" || t === "blueprints" || t === "navigation") setTab(t);
   }, []);
 
   return (
@@ -117,6 +123,16 @@ export default function CampusViewShell() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
         >
+          {tab === "map" && (
+            <div className="relative h-[calc(100vh-210px)] min-h-[580px] w-full overflow-hidden rounded-3xl border border-[#262626] bg-[#12161A] shadow-2xl">
+              <iframe
+                src="/campus-map.html"
+                title="Sahyadri Full Campus Map"
+                className="h-full w-full border-0"
+                allow="fullscreen"
+              />
+            </div>
+          )}
           {tab === "gallery" && <CampusGallery />}
           {tab === "blueprints" && <BlueprintViewer />}
           {tab === "navigation" && <CampusNavigatorView />}

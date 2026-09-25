@@ -96,6 +96,15 @@ small,#inf{color:var(--mu);font-size:11px}
     <h2>🏫 SCEM Campus Navigator</h2>
     <button id="col-btn" title="Collapse panel">–</button>
   </div>
+  <!-- Campus Map shortcut banner -->
+  <a href="campus-map.html" target="_blank" style="
+      display:flex;align-items:center;gap:8px;padding:7px 10px;
+      background:linear-gradient(135deg,#0b6e4f,#1aab78);
+      color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;
+      border:none;cursor:pointer;">
+    🗺️ Open Full Campus Map
+    <span style="margin-left:auto;opacity:.75;font-size:10px">outdoor →</span>
+  </a>
   <div id="ui-body">
     <input id="fr" list="rl" placeholder="From (blank = Main Entry)" autocomplete="off">
     <input id="to" list="rl" placeholder="To: room, lab, office, library…" autocomplete="off">
@@ -154,7 +163,7 @@ small,#inf{color:var(--mu);font-size:11px}
 // ══════════════════════════════════════════════════
 //  DATA — verbatim from source
 // ══════════════════════════════════════════════════
-const D={"R":[[[125,197,80,105,"","Toilets","t"],[215,200,100,78,"13","Interview Cabin","o"],[318,200,47,28,"","Toilet","t"],[365,200,45,82,"14","Dept. of Placement","o"],[413,200,92,78,"13","Group Discussion","o"],[507,200,33,78,"12","Career Counsel.","o"],[545,200,45,78,"11","Store Room","r"],[592,200,33,78,"10","","x"],[628,200,65,78,"9","Director's Chamber","o"],[697,200,45,78,"","","x"],[745,200,120,90,"1","Foundation Office","o"],[740,305,125,105,"2","Principal's Chamber","o"],[740,415,125,105,"3","Academic Section","o"],[658,553,100,82,"6","CR","c"],[762,553,38,82,"5","Toilet","t"],[803,553,45,82,"4","Toilet","t"],[440,312,75,83,"8","Examination Section","o"],[440,418,75,92,"7","Section","o"],[137,322,75,318,"18","Dept. Wise Placement Office","o"],[237,540,203,100,"19","Seminar Hall (GF)","m"],[467,553,73,162,"20","Maintenance Office","o"],[137,645,76,100,"44","Board Room","o"],[130,750,90,80,"43","Study Space","s"],[440,748,105,50,"21","Study Space","s"],[545,748,50,47,"22","Comp. Maint.","u"],[597,748,153,87,"23","Dept. of CS Staff Room","o"],[752,748,28,87,"","HOD","o"],[782,750,68,85,"","Dept Library","b"],[770,845,95,205,"24","Computer Lab-5","l"],[770,1050,90,30,"","Toilets","t"],[137,832,33,50,"42","Student Society","o"],[172,832,40,50,"41","Stationary","o"],[335,820,65,60,"35","Store Room","r"],[405,820,35,60,"34","Record Room","r"],[443,822,82,113,"32","Innovation Lab","l"],[443,940,82,30,"","Discussion Area","x"],[443,975,82,100,"31","Lab (unclear)","l"],[295,940,95,80,"36","Guest's Lounge","g"],[295,1022,95,50,"","Rest Area","g"],[135,945,100,55,"40","Office (unclear)","o"],[135,1002,45,40,"","Discussion Rm","o"],[135,1080,45,20,"39","Counter","o"],[135,1102,75,90,"38","Visitor's Lounge","g"],[262,1105,83,85,"37","Admission Section","o"],[395,1105,100,85,"30","Computer Lab","l"],[498,1105,97,85,"29","Computer Lab","l"],[598,1105,117,85,"28","Computer Lab","l"],[718,1105,32,85,"","Server Room","u"],[752,1105,110,85,"27","Computer Lab","l"],[548,835,197,25,"33","Study Space","s"]],[[45,200,90,120,"114/115","Toilets","t"],[140,200,110,85,"113","Ladies Room","t"],[255,200,200,85,"112","CAED Lab","l"],[458,200,37,85,"","Server","u"],[497,200,48,85,"111","Guest Faculty","o"],[548,200,112,85,"110","MBA Class","c"],[663,200,47,85,"109","MBA Office","o"],[713,200,112,85,"101","MBA Director's Chamber","o"],[710,320,115,110,"102","MBA CR","c"],[710,432,115,113,"103","MBA CR","c"],[733,572,42,78,"105","Boys Toilet","t"],[777,572,45,78,"104","Girls Toilet","t"],[620,572,110,83,"106","MBA Staff Room","o"],[500,575,75,80,"107","Study Space","s"],[385,320,85,215,"108","MBA Library","b"],[62,325,78,170,"","Lab / Room","l"],[62,495,78,70,"116","Aptitude Lab","l"],[62,565,78,95,"","Lab / Room","l"],[62,662,78,158,"","Lab / Room","l"],[65,822,75,113,"137","Digital Library","b"],[170,560,220,100,"117","Seminar Hall (FF)","m"],[415,575,82,170,"118","Electrical Panel Room","u"],[400,745,155,50,"119","Study Space","s"],[500,800,50,30,"120","E&C Library","b"],[553,772,52,78,"126A","Office E&C","o"],[608,775,104,60,"121","E&C Staff Room","o"],[715,775,35,60,"","HOD","o"],[752,775,73,75,"","Dept Library","b"],[740,865,85,210,"122","E&C Lab-1","l"],[740,1075,85,25,"124","Toilets","t"],[500,860,240,28,"133","Study Space","s"],[150,825,90,30,"136","Study Space","s"],[275,848,110,82,"134","E&C Lab-8","l"],[390,848,85,77,"132","E&C Lab-7","l"],[390,925,85,50,"131","","x"],[390,975,85,125,"130","E&C Lab-6","l"],[65,965,225,235,"135","LIBRARY (First Floor)","b"],[155,900,80,65,"","Entry Library","b"],[340,1130,105,85,"129","E&C Lab-5","l"],[448,1130,107,85,"128","E&C Lab-4","l"],[558,1130,47,85,"127","Cabin","o"],[608,1130,110,85,"126","E&C Lab-3","l"],[722,1130,103,85,"125","E&C Lab-2","l"]],[[50,200,80,60,"216","Ladies Toilet","t"],[50,262,80,60,"217","Gents Toilet","t"],[145,205,110,85,"215","Student Lounge","g"],[258,205,130,85,"214","Faculty Dept","o"],[390,205,120,85,"213","Mathematics Dept","o"],[512,205,60,85,"212","CR","c"],[575,205,90,85,"211","E&C CR","c"],[668,205,50,85,"210","Room","x"],[722,205,110,85,"201","MBA Placement","o"],[720,320,110,105,"202","MBA CR","c"],[720,428,110,105,"203","MBA CR","c"],[735,568,45,80,"205","Girls Toilet","t"],[785,568,45,80,"204","Boys Toilet","t"],[632,568,100,80,"206","IS CR","c"],[510,575,75,80,"207","Study Space","s"],[395,330,80,105,"209","Computer Lab","l"],[395,435,80,100,"208","Civil Computer Lab","l"],[65,340,85,270,"218","Physics Lab","l"],[65,610,85,290,"240","Chemistry Lab","l"],[180,562,220,100,"219","Drawing Room","c"],[420,575,85,100,"220","Intel Lab","l"],[512,772,50,35,"222","Art & Culture","e"],[565,770,50,65,"223","Room","x"],[618,770,120,65,"224","Staff Room","o"],[742,770,30,65,"","HOD","o"],[775,770,60,70,"","Dept Library","b"],[750,860,85,95,"225","Lab (unclear)","l"],[750,955,85,105,"226","CS CR","c"],[750,1065,85,30,"227/228","Toilets","t"],[400,848,85,100,"236","CS CR","c"],[400,948,85,40,"235","E-Waste Storage","r"],[400,990,85,105,"234","CS CR","c"],[285,848,110,85,"238","CS CR","c"],[500,865,240,28,"237","Study Space","s"],[240,828,150,28,"221","Study Space","s"],[65,965,225,235,"239","LIBRARY (Second Floor)","b"],[345,1130,105,85,"233","IS Lab-5","l"],[452,1130,110,85,"232","IS Lab-4","l"],[565,1130,50,85,"231","Server","u"],[618,1130,110,85,"230","IS Lab-3","l"],[732,1130,100,85,"229","IS Lab-2","l"]],[[45,200,80,110,"","Toilets","t"],[130,205,100,85,"315","1st Yr-K CR","c"],[235,205,100,85,"314","1st Yr-L CR","c"],[340,205,105,85,"313","Civil CR","c"],[500,205,105,85,"","Civil CR","c"],[608,205,100,85,"311","Civil Staff Room","o"],[710,205,50,85,"","Civil Library","b"],[760,205,70,85,"301","Civil Staff Room","o"],[715,320,115,210,"302","Civil CR","c"],[715,535,115,30,"303","Civil CR","c"],[630,568,105,85,"306","Civil CR","c"],[740,568,90,85,"","Toilets","t"],[390,330,85,100,"309","Civil CR","c"],[390,435,85,100,"308","Civil CR","c"],[55,340,85,95,"318","1st Yr CR","c"],[55,440,85,110,"319","1st Yr-I CR","c"],[55,555,85,100,"320","1st Yr-H CR","c"],[55,660,85,100,"346/347","Civil M-Tech CR","c"],[55,765,85,90,"345","CR","c"],[145,860,60,60,"344","CS-M Lab","l"],[170,560,220,100,"321","ENV Lab","l"],[400,575,80,100,"","Training","l"],[485,575,70,80,"307","Store Room","r"],[400,690,90,90,"322","Room","x"],[495,715,55,50,"323","Office","o"],[500,775,50,80,"","CR","c"],[555,775,95,80,"325","1st Yr-e CR","c"],[655,775,90,80,"326","1st Yr-d CR","c"],[750,775,80,110,"327","1st Yr-c CR","c"],[750,890,80,120,"","CR","c"],[750,1015,80,55,"328","1st Yr-b CR","c"],[750,1075,80,25,"","Toilets","t"],[290,848,100,85,"343","1st Yr-F CR","c"],[400,855,85,90,"341","ARM Lab","l"],[400,950,85,70,"340","EC CR","c"],[400,1025,85,75,"339","CS CR","c"],[500,865,240,28,"342","Study Space","s"],[340,1130,95,85,"337","CR","c"],[438,1130,80,85,"336","IS CR","c"],[522,1130,80,85,"335","IS CR","c"],[606,1130,90,85,"334","IS CR","c"],[700,1130,50,85,"333","IS CR","c"],[752,1130,80,85,"","1st Yr-a CR","c"],[290,1178,48,37,"338","Security","u"]],[[65,205,70,50,"415","Ladies Toilet","t"],[65,255,70,45,"416","Gents Toilet","t"],[135,205,120,85,"414","Girls Common Room","g"],[258,205,95,85,"413","E&C Class Room","c"],[355,205,100,85,"412","E&C Class Room","c"],[490,205,50,85,"411","Sahyadri Green Cell","o"],[545,205,110,85,"410","CV Lab","l"],[658,205,50,85,"409","SPSS","l"],[710,205,115,85,"401","Research Office","o"],[705,320,120,215,"402","E&C Engineering","c"],[65,340,80,105,"417","Class Room","c"],[65,450,80,100,"418","Class Room","c"],[65,555,80,90,"419","E&C Class Room","c"],[385,320,80,215,"","CS Class Room","c"],[170,565,115,90,"420","CS Class Room","c"],[290,565,115,90,"421","CS Class Room","c"],[410,570,95,90,"422","Furniture Store","r"],[510,570,60,80,"406","Study Space","s"],[615,570,90,80,"405","Rest Room","t"],[710,570,50,80,"404","","t"],[762,570,68,80,"403","Rest Room","t"]],[[390,205,270,85,"510","Incubation Centre","o"],[665,205,55,85,"511","Entrepreneur Cell","o"],[722,205,110,85,"501","Chairman's Cabin","o"],[715,320,115,215,"502","Dreamers R&D","l"],[390,320,75,110,"509","APTRA","o"],[390,435,75,110,"508","IT Start-up","o"],[390,585,110,90,"507","Room","c"],[505,580,115,90,"506","Study Space","s"],[625,585,110,90,"505","Lab / Staff Room","l"],[738,585,45,90,"504","Pantry","u"],[785,585,45,90,"503","Toilets","t"]]],"F":[[[125,195],[865,195],[865,1200],[125,1200]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[60,195],[835,195],[835,660],[60,660]],[[385,205],[835,205],[835,680],[385,680]]],"C":[[[[237,308],[437,308],[437,498],[237,498]],[[543,310],[715,310],[715,520],[543,520]],[[240,655],[440,655],[440,785],[240,785]],[[548,862],[745,862],[745,1075],[548,1075]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[175,325],[385,325],[385,495],[175,495]],[[497,325],[680,325],[680,545],[497,545]]],[[[505,325],[680,325],[680,550],[505,550]]]],"X":[[[50,940],[350,940],[350,1200],[50,1200]],[[545,635],[865,635],[865,745],[545,745]]]};
+const D={"R":[[[125,197,80,105,"","Toilets","t"],[215,200,100,78,"13","Interview Cabin","o"],[318,200,47,28,"","Toilet","t"],[365,200,45,82,"14","Dept. of Placement","o"],[413,200,92,78,"13","Group Discussion","o"],[507,200,33,78,"12","Career Counsel.","o"],[545,200,45,78,"11","Store Room","r"],[592,200,33,78,"10","","x"],[628,200,65,78,"9","Director's Chamber","o"],[697,200,45,78,"","","x"],[745,200,120,90,"1","Foundation Office","o"],[740,305,125,105,"2","Principal's Chamber","o"],[740,415,125,105,"3","Academic Section","o"],[658,553,100,82,"6","CR","c"],[762,553,38,82,"5","Toilet","t"],[803,553,45,82,"4","Toilet","t"],[440,312,75,83,"8","Examination Section","o"],[440,418,75,92,"7","Section","o"],[137,322,75,318,"18","Dept. Wise Placement Office","o"],[237,540,203,100,"19","Seminar Hall (GF)","m"],[467,553,73,162,"20","Maintenance Office","o"],[137,645,76,100,"44","Board Room","o"],[130,750,90,80,"43","Study Space","s"],[440,748,105,50,"21","Study Space","s"],[545,748,50,47,"22","Comp. Maint.","u"],[597,748,153,87,"23","Dept. of CS Staff Room","o"],[752,748,28,87,"","HOD","o"],[782,750,68,85,"","Dept Library","b"],[770,845,95,205,"24","Computer Lab-5","l"],[770,1050,90,30,"","Toilets","t"],[137,832,33,50,"42","Student Society","o"],[172,832,40,50,"41","Stationary","o"],[335,820,65,60,"35","Store Room","r"],[405,820,35,60,"34","Record Room","r"],[443,822,82,113,"32","Innovation Lab","l"],[443,940,82,30,"","Discussion Area","x"],[443,975,82,100,"31","Lab (unclear)","l"],[295,940,95,80,"36","Guest's Lounge","g"],[295,1022,95,50,"","Rest Area","g"],[135,945,100,55,"40","Office (unclear)","o"],[135,1002,45,40,"","Discussion Rm","o"],[135,1080,45,20,"39","Counter","o"],[135,1102,75,90,"38","Visitor's Lounge","g"],[262,1105,83,85,"37","Admission Section","o"],[395,1105,100,85,"30","Computer Lab","l"],[498,1105,97,85,"29","Computer Lab","l"],[598,1105,117,85,"28","Computer Lab","l"],[718,1105,32,85,"","Server Room","u"],[752,1105,110,85,"27","Computer Lab","l"],[548,835,197,25,"33","Study Space","s"]],[[45,200,90,120,"114/115","Toilets","t"],[140,200,110,85,"113","Ladies Room","t"],[255,200,200,85,"112","CAED Lab","l"],[458,200,37,85,"","Server","u"],[497,200,48,85,"111","Guest Faculty","o"],[548,200,112,85,"110","MBA Class","c"],[663,200,47,85,"109","MBA Office","o"],[713,200,112,85,"101","MBA Director's Chamber","o"],[710,320,115,110,"102","MBA CR","c"],[710,432,115,113,"103","MBA CR","c"],[733,572,42,78,"105","Boys Toilet","t"],[777,572,45,78,"104","Girls Toilet","t"],[620,572,110,83,"106","MBA Staff Room","o"],[500,575,75,80,"107","Study Space","s"],[385,320,85,215,"108","MBA Library","b"],[62,325,78,170,"","Lab / Room","l"],[62,495,78,70,"116","Aptitude Lab","l"],[62,565,78,95,"","Lab / Room","l"],[62,662,78,158,"","Lab / Room","l"],[65,822,75,113,"137","Digital Library","b"],[170,560,220,100,"117","Seminar Hall (FF)","m"],[415,575,82,170,"118","Electrical Panel Room","u"],[400,745,155,50,"119","Study Space","s"],[500,800,50,30,"120","E&C Library","b"],[553,772,52,78,"126A","Office E&C","o"],[608,775,104,60,"121","E&C Staff Room","o"],[715,775,35,60,"","HOD","o"],[752,775,73,75,"","Dept Library","b"],[740,865,85,210,"122","E&C Lab-1","l"],[740,1075,85,25,"124","Toilets","t"],[500,860,240,28,"133","Study Space","s"],[150,825,90,30,"136","Study Space","s"],[275,848,110,82,"134","E&C Lab-8","l"],[390,848,85,77,"132","E&C Lab-7","l"],[390,925,85,50,"131","","x"],[390,975,85,125,"130","E&C Lab-6","l"],[65,965,225,235,"135","LIBRARY (First Floor)","b"],[155,900,80,65,"","Entry Library","b"],[340,1130,105,85,"129","AIML_Lab","l"],[448,1130,107,85,"128","AIML_ROOM","c"],[558,1130,47,85,"127","Cabin","o"],[608,1130,110,85,"126","AIML_DEPT","o"],[722,1130,103,85,"125","AIML_DEPT","o"]],[[50,200,80,60,"216","Ladies Toilet","t"],[50,262,80,60,"217","Gents Toilet","t"],[145,205,110,85,"215","Student Lounge","g"],[258,205,130,85,"214","Faculty Dept","o"],[390,205,120,85,"213","Mathematics Dept","o"],[512,205,60,85,"212","CR","c"],[575,205,90,85,"211","E&C CR","c"],[668,205,50,85,"210","Room","x"],[722,205,110,85,"201","MBA Placement","o"],[720,320,110,105,"202","MBA CR","c"],[720,428,110,105,"203","MBA CR","c"],[735,568,45,80,"205","Girls Toilet","t"],[785,568,45,80,"204","Boys Toilet","t"],[632,568,100,80,"206","IS CR","c"],[510,575,75,80,"207","Study Space","s"],[395,330,80,105,"209","Computer Lab","l"],[395,435,80,100,"208","Civil Computer Lab","l"],[65,340,85,270,"218","Physics Lab","l"],[65,610,85,290,"240","Chemistry Lab","l"],[180,562,220,100,"219","Drawing Room","c"],[420,575,85,100,"220","Intel Lab","l"],[512,772,50,35,"222","Art & Culture","e"],[565,770,50,65,"223","Room","x"],[618,770,120,65,"224","Staff Room","o"],[742,770,30,65,"","HOD","o"],[775,770,60,70,"","Dept Library","b"],[750,860,85,95,"225","Lab (unclear)","l"],[750,955,85,105,"226","CS CR","c"],[750,1065,85,30,"227/228","Toilets","t"],[400,848,85,100,"236","CS CR","c"],[400,948,85,40,"235","E-Waste Storage","r"],[400,990,85,105,"234","CS CR","c"],[285,848,110,85,"238","CS CR","c"],[500,865,240,28,"237","Study Space","s"],[240,828,150,28,"221","Study Space","s"],[65,965,225,235,"239","LIBRARY (Second Floor)","b"],[345,1130,105,85,"233","IS Lab-5","l"],[452,1130,110,85,"232","IS Lab-4","l"],[565,1130,50,85,"231","Server","u"],[618,1130,110,85,"230","IS Lab-3","l"],[732,1130,100,85,"229","IS Lab-2","l"]],[[45,200,80,110,"","Toilets","t"],[130,205,100,85,"315","1st Yr-K CR","c"],[235,205,100,85,"314","1st Yr-L CR","c"],[340,205,105,85,"313","Civil CR","c"],[500,205,105,85,"","Civil CR","c"],[608,205,100,85,"311","Civil Staff Room","o"],[710,205,50,85,"","Civil Library","b"],[760,205,70,85,"301","Civil Staff Room","o"],[715,320,115,210,"302","Civil CR","c"],[715,535,115,30,"303","Civil CR","c"],[630,568,105,85,"306","Civil CR","c"],[740,568,90,85,"","Toilets","t"],[390,330,85,100,"309","Civil CR","c"],[390,435,85,100,"308","Civil CR","c"],[55,340,85,95,"318","1st Yr CR","c"],[55,440,85,110,"319","1st Yr-I CR","c"],[55,555,85,100,"320","1st Yr-H CR","c"],[55,660,85,100,"346/347","Civil M-Tech CR","c"],[55,765,85,90,"345","CR","c"],[145,860,60,60,"344","CS-M Lab","l"],[170,560,220,100,"321","ENV Lab","l"],[400,575,80,100,"","Training","l"],[485,575,70,80,"307","Store Room","r"],[400,690,90,90,"322","Room","x"],[495,715,55,50,"323","Office","o"],[500,775,50,80,"","CR","c"],[555,775,95,80,"325","1st Yr-e CR","c"],[655,775,90,80,"326","1st Yr-d CR","c"],[750,775,80,110,"327","1st Yr-c CR","c"],[750,890,80,120,"","CR","c"],[750,1015,80,55,"328","1st Yr-b CR","c"],[750,1075,80,25,"","Toilets","t"],[290,848,100,85,"343","1st Yr-F CR","c"],[400,855,85,90,"341","ARM Lab","l"],[400,950,85,70,"340","EC CR","c"],[400,1025,85,75,"339","CS CR","c"],[500,865,240,28,"342","Study Space","s"],[340,1130,95,85,"337","CR","c"],[438,1130,80,85,"336","IS CR","c"],[522,1130,80,85,"335","IS CR","c"],[606,1130,90,85,"334","IS CR","c"],[700,1130,50,85,"333","IS CR","c"],[752,1130,80,85,"","1st Yr-a CR","c"],[290,1178,48,37,"338","Security","u"]],[[65,205,70,50,"415","Ladies Toilet","t"],[65,255,70,45,"416","Gents Toilet","t"],[135,205,120,85,"414","Girls Common Room","g"],[258,205,95,85,"413","E&C Class Room","c"],[355,205,100,85,"412","E&C Class Room","c"],[490,205,50,85,"411","Sahyadri Green Cell","o"],[545,205,110,85,"410","CV Lab","l"],[658,205,50,85,"409","SPSS","l"],[710,205,115,85,"401","Research Office","o"],[705,320,120,215,"402","E&C Engineering","c"],[65,340,80,105,"417","Class Room","c"],[65,450,80,100,"418","Class Room","c"],[65,555,80,90,"419","E&C Class Room","c"],[385,320,80,215,"","CS Class Room","c"],[170,565,115,90,"420","CS Class Room","c"],[290,565,115,90,"421","CS Class Room","c"],[410,570,95,90,"422","Furniture Store","r"],[510,570,60,80,"406","Study Space","s"],[615,570,90,80,"405","Rest Room","t"],[710,570,50,80,"404","","t"],[762,570,68,80,"403","Rest Room","t"]],[[390,205,270,85,"510","Incubation Centre","o"],[665,205,55,85,"511","Entrepreneur Cell","o"],[722,205,110,85,"501","Chairman's Cabin","o"],[715,320,115,215,"502","Dreamers R&D","l"],[390,320,75,110,"509","APTRA","o"],[390,435,75,110,"508","IT Start-up","o"],[390,585,110,90,"507","Room","c"],[505,580,115,90,"506","Study Space","s"],[625,585,110,90,"505","Lab / Staff Room","l"],[738,585,45,90,"504","Pantry","u"],[785,585,45,90,"503","Toilets","t"]]],"F":[[[125,195],[865,195],[865,1200],[125,1200]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[45,195],[835,195],[835,660],[500,660],[500,770],[835,770],[835,1220],[45,1220]],[[60,195],[835,195],[835,660],[60,660]],[[385,205],[835,205],[835,680],[385,680]]],"C":[[[[237,308],[437,308],[437,498],[237,498]],[[543,310],[715,310],[715,520],[543,520]],[[240,655],[440,655],[440,785],[240,785]],[[548,862],[745,862],[745,1075],[548,1075]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[172,320],[385,320],[385,492],[172,492]],[[497,320],[680,320],[680,542],[497,542]],[[175,680],[385,680],[385,820],[175,820]],[[500,960],[600,960],[600,890],[712,890],[712,1100],[500,1100]]],[[[175,325],[385,325],[385,495],[175,495]],[[497,325],[680,325],[680,545],[497,545]]],[[[505,325],[680,325],[680,550],[505,550]]]],"X":[[[50,940],[350,940],[350,1200],[50,1200]],[[545,635],[865,635],[865,745],[545,745]]]};
 
 // ══════════════════════════════════════════════════
 //  CONSTANTS
@@ -391,19 +400,146 @@ D.R.forEach((rs,f)=>{
   if(SL.length)g.add(merged(SL,0xd9a441));
 });
 
-// labels
-function spr(g,t,x,y,w0,yy){
-  const c=document.createElement('canvas');c.width=320;c.height=64;
-  const x2=c.getContext('2d');x2.font='bold 28px system-ui,sans-serif';x2.textAlign='center';x2.textBaseline='middle';
-  let s=t;while(x2.measureText(s).width>306&&s.length>3)s=s.slice(0,-2);if(s!=t)s+='…';
-  x2.lineWidth=6;x2.strokeStyle='#fff';x2.strokeText(s,160,32);x2.fillStyle='#111';x2.fillText(s,160,32);
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));
-  const w=Math.max(60,Math.min(130,w0));sp.scale.set(w,w/5,1);sp.position.set(x-450,yy,y-660);sp.renderOrder=5;g.add(sp);
+// ── labels ──────────────────────────────────────────────────────────────
+// style: 'normal' | 'dim' | 'start' (green pill) | 'dest' (orange pill)
+function makeSpriteCanvas(t, style) {
+  const c = document.createElement('canvas');
+  c.width = 300;
+  c.height = 60;
+  const ctx = c.getContext('2d');
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  let s = t;
+  ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+  while (ctx.measureText(s).width > 275 && s.length > 3) s = s.slice(0, -2);
+  if (s !== t) s += '…';
+
+  const w = 300, h = 60;
+  const rx = 10;
+
+  if (style === 'dest') {
+    // Highlighted destination pill: Warm, elegant terracotta/amber (not extreme)
+    ctx.fillStyle = '#ea580c';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(3, 4, w - 6, h - 8, rx); ctx.fill(); }
+    else ctx.fillRect(3, 4, w - 6, h - 8);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3.5;
+    if (ctx.roundRect) { ctx.stroke(); }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(s, w / 2, h / 2);
+  } else if (style === 'start') {
+    // Highlighted origin pill: Fresh, elegant university green
+    ctx.fillStyle = '#15803d';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(3, 4, w - 6, h - 8, rx); ctx.fill(); }
+    else ctx.fillRect(3, 4, w - 6, h - 8);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3.5;
+    if (ctx.roundRect) { ctx.stroke(); }
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(s, w / 2, h / 2);
+  } else if (style === 'dim') {
+    // During active navigation: very faint soft neutral pill
+    ctx.fillStyle = 'rgba(240, 245, 250, 0.35)';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(3, 4, w - 6, h - 8, rx); ctx.fill(); }
+    else ctx.fillRect(3, 4, w - 6, h - 8);
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+    ctx.lineWidth = 1;
+    if (ctx.roundRect) { ctx.stroke(); }
+    ctx.fillStyle = 'rgba(51, 65, 85, 0.45)';
+    ctx.fillText(s, w / 2, h / 2);
+  } else {
+    // Normal: Light, soft, elegant pearl/slate pill — NOT black! NOT dark!
+    ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(3, 4, w - 6, h - 8, rx); ctx.fill(); }
+    else ctx.fillRect(3, 4, w - 6, h - 8);
+    ctx.strokeStyle = 'rgba(100, 116, 139, 0.45)';
+    ctx.lineWidth = 1.5;
+    if (ctx.roundRect) { ctx.stroke(); }
+    ctx.fillStyle = '#1e293b';
+    ctx.fillText(s, w / 2, h / 2);
+  }
+  return c;
 }
-function mkLab(f){
-  const g=new THREE.Group();gr[f].add(g);lab[f]=g;
-  D.R[f].forEach(r=>{if(r[5]||r[4])spr(g,(r[4]?r[4]+' ':'')+r[5],r[0]+r[2]/2,r[1]+r[3]/2,r[2]*1.4,RH+8)});
-  CORES.forEach(K=>{if(K.c[f]>=0){const[x,y]=pos(K.c[f]);spr(g,'⇅ Stairs '+K.n,x,y,90,26)}});
+
+// labMap[f] = array of {sp, rawText, ri} — one entry per room on floor f with a label
+const labMap = [];
+
+function spr(g, t, x, y, w0, yy, style) {
+  style = style || 'normal';
+  const c = makeSpriteCanvas(t, style);
+  const isHL = style === 'start' || style === 'dest';
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c),
+    depthTest: false,
+    transparent: true,
+    opacity: style === 'dim' ? 0.14 : (isHL ? 1.0 : 0.75)
+  }));
+  // Compact, unobtrusive scale so labels NEVER cover the 3D building or route!
+  const baseW = isHL ? Math.max(46, Math.min(76, w0 * 0.7)) : Math.max(26, Math.min(48, w0 * 0.38));
+  sp.scale.set(baseW, baseW / 5.2, 1);
+  sp.position.set(x-450, yy, y-660);
+  sp.renderOrder = isHL ? 14 : 4;
+  g.add(sp);
+  return sp;
+}
+
+function mkLab(f) {
+  const g = new THREE.Group(); gr[f].add(g); lab[f] = g;
+  labMap[f] = [];
+  D.R[f].forEach((r, ri) => {
+    if (!r[5] && !r[4]) return;
+    const txt = (r[4] ? r[4] + ' ' : '') + r[5];
+    const sp = spr(g, txt, r[0]+r[2]/2, r[1]+r[3]/2, r[2]*1.4, RH+8, 'normal');
+    labMap[f].push({sp, txt, ri, rx: r[0]+r[2]/2, ry: r[1]+r[3]/2, w: r[2]*1.4});
+  });
+  CORES.forEach(K => { if (K.c[f] >= 0) { const[x,y]=pos(K.c[f]); spr(g,'⇅ Stairs '+K.n,x,y,65,22,'normal'); } });
+}
+
+// Update label styles for a floor based on which rooms are start/dest
+// startKey = f*1000+i of start room, destKey = f*1000+i of dest room (or -1)
+function refreshLabels(f, startKey, destKey) {
+  if (!labMap[f]) return;
+  labMap[f].forEach(({sp, txt, ri, rx, ry, w}) => {
+    const key = f * 1000 + ri;
+    let style = 'dim';
+    if (key === startKey) style = 'start';
+    else if (key === destKey) style = 'dest';
+    const c = makeSpriteCanvas(txt, style);
+    sp.material.map = new THREE.CanvasTexture(c);
+    sp.material.map.needsUpdate = true;
+    
+    // Highlighted nodes get full opacity & prominent size; all others drop to low opacity (0.14)
+    if (style === 'start' || style === 'dest') {
+      sp.material.opacity = 1.0;
+      const hw = Math.max(48, Math.min(80, w * 0.72));
+      sp.scale.set(hw, hw / 5.0, 1);
+      sp.renderOrder = 14;
+    } else {
+      sp.material.opacity = 0.14;
+      const dw = Math.max(22, Math.min(38, w * 0.3));
+      sp.scale.set(dw, dw / 5.2, 1);
+      sp.renderOrder = 2;
+    }
+    sp.material.needsUpdate = true;
+  });
+}
+
+// Reset all labels to normal on all built floors
+function resetAllLabels() {
+  labMap.forEach((entries, f) => {
+    if (!entries) return;
+    entries.forEach(({sp, txt, rx, ry, w}) => {
+      const c = makeSpriteCanvas(txt, 'normal');
+      sp.material.map = new THREE.CanvasTexture(c);
+      sp.material.map.needsUpdate = true;
+      sp.material.opacity = 0.75;
+      const nw = Math.max(26, Math.min(48, w * 0.38));
+      sp.scale.set(nw, nw / 5.2, 1);
+      sp.renderOrder = 4;
+      sp.material.needsUpdate = true;
+    });
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -430,7 +566,11 @@ function setView(v){
       g.traverse(o=>{if(o.material){o.material.transparent=false;o.material.opacity=1.0;}});
     }
   });
-  if(v>=0&&!lab[v])mkLab(v);
+  if(v>=0&&!lab[v]){
+    mkLab(v);
+    // re-apply label highlighting if a route is active
+    if(activeDestKey>=0) refreshLabels(v, activeStartKey, activeDestKey);
+  }
   lab.forEach((l,f)=>l&&(l.visible=v<0||v===f));
   tg.set(0,(v<0?2.2:v)*GAP,0);
   rd=v<0?1750:1000;ph=v<0?1:.85;
@@ -455,26 +595,27 @@ flLabels.forEach((t,i)=>{
 // ══════════════════════════════════════════════════
 //  ROUTE VISUALIZATION MATERIALS
 // ══════════════════════════════════════════════════
-// Thick orange tube material
-const tubeMat=new THREE.MeshBasicMaterial({color:0xff6b1a});
+// Thick orange tube material (depthTest:false so route is never hidden)
+const tubeMat=new THREE.MeshBasicMaterial({color:0xff6b1a,depthTest:false});
 // Arrow head material (white)
-const arrowMat=new THREE.MeshBasicMaterial({color:0xffffff});
+const arrowMat=new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false});
 // Vertical stair connector material (bright orange)
-const stairMat=new THREE.MeshBasicMaterial({color:0xff3300});
+const stairMat=new THREE.MeshBasicMaterial({color:0xff4500,depthTest:false});
 
 // Animated avatar sphere (yellow, glowing)
 const avGeom=new THREE.SphereGeometry(8,16,16);
-const avMat=new THREE.MeshBasicMaterial({color:0xffd400});
-const mv=new THREE.Mesh(avGeom,avMat);mv.visible=false;scene.add(mv);
+const avMat=new THREE.MeshBasicMaterial({color:0xffd400,depthTest:false});
+const mv=new THREE.Mesh(avGeom,avMat);mv.visible=false;mv.renderOrder=25;scene.add(mv);
 // glow ring around avatar
 const ringGeom=new THREE.TorusGeometry(10,2,8,24);
-const ringMat=new THREE.MeshBasicMaterial({color:0xff9900,transparent:true,opacity:.6});
-const avRing=new THREE.Mesh(ringGeom,ringMat);avRing.rotation.x=Math.PI/2;mv.add(avRing);
+const ringMat=new THREE.MeshBasicMaterial({color:0xff9900,transparent:true,opacity:.8,depthTest:false});
+const avRing=new THREE.Mesh(ringGeom,ringMat);avRing.rotation.x=Math.PI/2;avRing.renderOrder=24;mv.add(avRing);
 
 // ══════════════════════════════════════════════════
 //  ROUTING STATE
 // ══════════════════════════════════════════════════
 let hl=[],wp=[],fi=[],pi=[],mt=0;
+let activeStartKey=-1, activeDestKey=-1;  // track current route endpoints for label highlighting
 const paint=(f,i,c)=>{M[f][i].material.color.set(c);hl.push([f,i])};
 
 function clr(){
@@ -482,6 +623,8 @@ function clr(){
   hl.forEach(([f,i])=>M[f][i].material.color.set(CAT[D.R[f][i][6]][1]));
   hl=[];$('dirs').innerHTML='';$('dirs-wrap').classList.remove('show');
   wp=[];mv.visible=false;$('inf').textContent='';setFol(false);
+  activeStartKey=-1; activeDestKey=-1;
+  resetAllLabels();
 }
 function setFol(v){fol=v;$('fw').classList.toggle('on',v)}
 
@@ -509,20 +652,20 @@ function draw(pts){
       const vc=new THREE.Mesh(new THREE.CylinderGeometry(5,5,L,10),stairMat);
       vc.position.copy(a).add(b).multiplyScalar(.5);
       vc.quaternion.setFromUnitVectors(V3(0,1,0),dir);
-      vc.userData={f:f0,f2:f1};scene.add(vc);RT.push(vc);
+      vc.userData={f:f0,f2:f1};vc.renderOrder=20;scene.add(vc);RT.push(vc);
     } else {
       // Thick orange tube (radius 3.5)
       const tube=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,L,10),tubeMat);
       tube.position.copy(a).add(b).multiplyScalar(.5);
       tube.quaternion.setFromUnitVectors(V3(0,1,0),dir);
-      tube.userData={f:f0,f2:f0};scene.add(tube);RT.push(tube);
+      tube.userData={f:f0,f2:f0};tube.renderOrder=20;scene.add(tube);RT.push(tube);
       // White directional arrow cones every ~50 units
       for(let t=30;t<L;t+=50){
         const cone=new THREE.Mesh(new THREE.ConeGeometry(5,14,8),arrowMat);
         cone.position.copy(a).lerp(b,t/L);
         cone.position.y+=4;
         cone.quaternion.setFromUnitVectors(V3(0,1,0),dir);
-        cone.userData={f:f0,f2:f0};
+        cone.userData={f:f0,f2:f0};cone.renderOrder=21;
         scene.add(cone);RT.push(cone);
       }
     }
@@ -674,6 +817,9 @@ function route(fo,tk){
   if(destDoor){pts.push([f,destDoor.x,destDoor.y]);}
   pts.push([f,R[0]+R[2]/2,R[1]+R[3]/2]);
   const ex=[f*1000+i];if(!fo.e)ex.push(fo.f*1000+fo.i);
+  const startKey=fo.e ? -1 : fo.f*1000+fo.i;
+  const destKey=f*1000+i;
+  activeStartKey=startKey; activeDestKey=destKey;   // persist for floor-switch re-apply
   if(!fo.e)paint(fo.f,fo.i,'#4caf50');
   paint(f,i,'#ff8a00');
   draw(pts);
@@ -682,6 +828,11 @@ function route(fo,tk){
   if(fs.length>1)setView(-1);
   else setView(fs[0]);
   $('to').value=`${R[5]}${R[4]?' '+R[4]:''} · ${FL[f]}`;
+  // Dim all labels and highlight only start + destination
+  fs.forEach(flr => {
+    if(!lab[flr]) mkLab(flr);
+    refreshLabels(flr, startKey, destKey);
+  });
 }
 
 // ══════════════════════════════════════════════════
@@ -771,6 +922,38 @@ cv.addEventListener('wheel',e=>{e.preventDefault();rd=Math.max(250,Math.min(3200
 function rs(){rd0.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
 addEventListener('resize',rs);rs();
 setView(-1);
+
+// ══════════════════════════════════════════════════
+//  URL PARAMETER & CROSS-WINDOW ROUTE HANDOFF
+// ══════════════════════════════════════════════════
+function applyUrlRoute() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const qFrom = params.get('from');
+    const qTo = params.get('to');
+    if (qFrom) $('fr').value = qFrom;
+    if (qTo) {
+      $('to').value = qTo;
+      setTimeout(() => {
+        if ($('go')) $('go').click();
+      }, 350);
+    }
+  } catch (err) {
+    console.warn("Could not parse route query params:", err);
+  }
+}
+window.addEventListener('load', applyUrlRoute);
+setTimeout(applyUrlRoute, 450);
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'ROUTE') {
+    if (e.data.from !== undefined) $('fr').value = e.data.from;
+    if (e.data.to) {
+      $('to').value = e.data.to;
+      $('go').click();
+    }
+  }
+});
 
 // ══════════════════════════════════════════════════
 //  RENDER LOOP — animated avatar + pulsing ring

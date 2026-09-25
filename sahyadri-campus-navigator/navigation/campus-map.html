@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sahyadri Campus Map</title>
+<link rel="icon" href="../sahyadri-logo.png">
+<style>
+/* ── Design tokens ── */
+:root{
+  --bg:#eef2f5;--pn:#fff;--tx:#14202b;--mu:#5b6b78;--ac:#0b6e4f;--bd:#d3dce3;
+  --or:#ff6b1a;--or2:#ffb347;--red:#d63031;--yellow:#f9ca24;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1720;--pn:#18232e;--tx:#e8eef3;--mu:#9bacba;--ac:#3ecf9b;--bd:#2c3b48;
+  --or:#ff8c44;--or2:#ffc87a;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1720;--pn:#18232e;--tx:#e8eef3;--mu:#9bacba;--ac:#3ecf9b;--bd:#2c3b48;
+  --or:#ff8c44;--or2:#ffc87a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);
+  font:13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+
+/* ── Map viewport ── */
+#map-viewport{position:fixed;inset:0;overflow:hidden;cursor:grab;user-select:none}
+#map-viewport.grabbing{cursor:grabbing}
+#map-stage{
+  position:absolute;top:0;left:0;
+  transform-origin:0 0;
+  will-change:transform;
+}
+#pdf-canvas{display:block;image-rendering:crisp-edges}
+#svg-overlay{
+  position:absolute;top:0;left:0;
+  pointer-events:none;overflow:visible;
+}
+/* Pins respond to clicks */
+.pin-group{pointer-events:all;cursor:pointer}
+.pin-group:focus{outline:none}
+
+/* ── Left sidebar ── */
+#ui{
+  position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));
+  width:min(300px,calc(100vw - 20px));
+  max-height:calc(100vh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  overflow-y:auto;overflow-x:hidden;
+  background:var(--pn);border:1px solid var(--bd);border-radius:12px;
+  padding:10px;box-shadow:0 4px 22px #0004;
+  display:flex;flex-direction:column;gap:7px;
+  z-index:100;
+}
+#ui h2{font-size:14px;font-weight:700;white-space:nowrap;color:var(--ac)}
+input,select{
+  width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;
+  background:var(--bg);color:var(--tx);font:inherit;outline:none;
+}
+input:focus,select:focus{border-color:var(--ac)}
+button{
+  border:1px solid var(--bd);background:var(--bg);color:var(--tx);
+  border-radius:7px;padding:5px 9px;font:inherit;cursor:pointer;transition:background .15s;
+}
+button:hover{background:var(--bd)}
+button.primary{background:var(--ac);color:#fff;border-color:var(--ac)}
+button.primary:hover{filter:brightness(1.1)}
+button.orange{background:var(--or);color:#fff;border-color:var(--or)}
+button.orange:hover{filter:brightness(1.1)}
+.row{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+small{color:var(--mu);font-size:11px}
+#inf{color:var(--mu);font-size:12px;line-height:1.5;min-height:1.4em}
+#inf b{color:var(--tx);font-weight:700}
+
+/* ── Directions panel ── */
+#dirs-wrap{overflow-y:auto;max-height:230px;border-top:1px solid var(--bd);padding-top:6px;display:none}
+#dirs-wrap.show{display:block}
+#dirs{list-style:none;display:flex;flex-direction:column;gap:3px}
+#dirs li{
+  display:flex;align-items:flex-start;gap:6px;
+  padding:5px 7px;border-radius:7px;font-size:12px;line-height:1.4;
+  border:1px solid transparent;transition:background .12s;cursor:pointer;
+}
+#dirs li:hover{background:var(--bg)}
+#dirs li.active{background:#ff6b1a22;border-color:var(--or);color:var(--or)}
+#dirs li .ic{font-size:15px;flex-shrink:0;margin-top:1px}
+#dirs li .num{font-weight:700;flex-shrink:0;min-width:18px;color:var(--mu);font-size:11px}
+#dirs li .ds{color:var(--mu);font-size:10px;margin-left:auto;white-space:nowrap;padding-left:4px}
+
+/* ── Legend ── */
+#leg{border-top:1px solid var(--bd);padding-top:6px}
+#leg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1px solid #0002}
+
+/* ── Zoom controls ── */
+#zoom-ctrl{
+  position:fixed;right:14px;bottom:calc(48px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;gap:4px;z-index:100;
+}
+#zoom-ctrl button{
+  width:36px;height:36px;font-size:18px;font-weight:700;
+  border-radius:8px;padding:0;border:1px solid var(--bd);
+  background:var(--pn);box-shadow:0 2px 8px #0002;
+}
+
+/* ── Compass ── */
+#compass{
+  position:fixed;right:14px;top:calc(14px + env(safe-area-inset-top,0px));
+  width:52px;height:52px;pointer-events:none;z-index:100;
+}
+
+/* ── Hint bar ── */
+#hint{
+  position:fixed;left:10px;bottom:calc(6px + env(safe-area-inset-bottom,0px));
+  color:var(--mu);font-size:10px;pointer-events:none;z-index:100;
+}
+
+/* ── Popup card ── */
+#popup{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  background:var(--pn);border:1px solid var(--bd);border-radius:12px;
+  padding:12px 16px;box-shadow:0 6px 28px #0005;
+  max-width:min(340px,calc(100vw - 24px));z-index:200;
+  display:none;
+}
+#popup h3{font-size:14px;font-weight:700;margin-bottom:4px;color:var(--ac)}
+#popup p{font-size:12px;color:var(--mu);margin-bottom:8px;line-height:1.5}
+#popup .row{gap:6px}
+#popup button{font-size:12px;padding:5px 10px}
+#popup-close{position:absolute;top:8px;right:8px;border:none;background:transparent;font-size:16px;cursor:pointer;color:var(--mu)}
+
+/* ── Loading overlay ── */
+#loading{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;z-index:500;
+}
+#loading p{color:var(--mu);font-size:13px}
+.spinner{
+  width:40px;height:40px;border:3px solid var(--bd);
+  border-top-color:var(--ac);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SVG path animation ── */
+.route-path{
+  stroke:var(--or);stroke-width:5;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 4px rgba(255,107,26,.5));
+}
+.route-path-dash{
+  stroke:rgba(255,255,255,0.7);stroke-width:2;fill:none;
+  stroke-dasharray:8 12;stroke-linecap:round;
+  animation:dash 1s linear infinite;
+}
+@keyframes dash{to{stroke-dashoffset:-20}}
+.start-marker{fill:#0b6e4f;stroke:#fff;stroke-width:2}
+.end-marker{fill:var(--or);stroke:#fff;stroke-width:2}
+
+/* collapse button */
+#col-btn{padding:3px 8px;font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Loading campus map…</p>
+</div>
+
+<!-- Map viewport -->
+<div id="map-viewport">
+  <div id="map-stage">
+    <canvas id="pdf-canvas"></canvas>
+    <svg id="svg-overlay"></svg>
+  </div>
+</div>
+
+<!-- Compass -->
+<div id="compass">
+  <svg viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="26" cy="26" r="24" fill="#ffffffcc" stroke="#aaa" stroke-width="1"/>
+    <polygon points="26,4 30,26 22,26" fill="#d63031"/>
+    <polygon points="26,48 30,26 22,26" fill="#636e72"/>
+    <text x="26" y="14" text-anchor="middle" dominant-baseline="middle" font-size="7" font-weight="700" fill="#d63031">N</text>
+    <text x="26" y="44" text-anchor="middle" dominant-baseline="middle" font-size="6" fill="#636e72">S</text>
+    <text x="7"  y="28" text-anchor="middle" dominant-baseline="middle" font-size="6" fill="#636e72">W</text>
+    <text x="45" y="28" text-anchor="middle" dominant-baseline="middle" font-size="6" fill="#636e72">E</text>
+  </svg>
+</div>
+
+<!-- Zoom controls -->
+<div id="zoom-ctrl">
+  <button id="zin" title="Zoom in">+</button>
+  <button id="zout" title="Zoom out">–</button>
+  <button id="zfit" title="Fit map" style="font-size:13px">⊡</button>
+</div>
+
+<!-- Left sidebar -->
+<div id="ui">
+  <div class="row" style="justify-content:space-between">
+    <h2>🗺️ Campus Map</h2>
+    <button id="col-btn" title="Collapse">–</button>
+  </div>
+  <div id="ui-body">
+    <div>
+      <small>Search location</small>
+      <input id="search" list="loc-list" placeholder="e.g. Library, Gate, Canteen…" autocomplete="off">
+      <datalist id="loc-list"></datalist>
+    </div>
+    <div>
+      <small>From</small>
+      <select id="from-sel"></select>
+      <small>To</small>
+      <select id="to-sel"></select>
+    </div>
+    <div class="row">
+      <button class="primary" id="route-btn">🧭 Get Route</button>
+      <button id="clear-btn">✕ Clear</button>
+      <button id="indoor-btn" title="Open indoor floor navigator" style="font-size:11px">🏛️ Indoor Nav</button>
+    </div>
+    <div id="inf"></div>
+    <div id="dirs-wrap"><small style="font-weight:600">Walking directions</small><ol id="dirs"></ol></div>
+    <!-- Legend -->
+    <div id="leg">
+      <small style="font-weight:600">Legend</small>
+      <div id="leg-grid"></div>
+    </div>
+    <small>Map is schematic – distances approximate. North is up.</small>
+  </div>
+</div>
+
+<!-- Location popup -->
+<div id="popup">
+  <button id="popup-close">×</button>
+  <h3 id="popup-name"></h3>
+  <p id="popup-desc"></p>
+  <div class="row">
+    <button class="primary" id="popup-from">📍 Set as From</button>
+    <button class="orange" id="popup-to">🎯 Set as To</button>
+    <button id="popup-indoor" style="display:none;font-size:11px">🏛️ Indoor Map</button>
+  </div>
+</div>
+
+<div id="hint">Drag: pan · Wheel/pinch: zoom · Tap pin: details</div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+'use strict';
+// ══════════════════════════════════════════════════════════
+//  CAMPUS LOCATION DATA
+//  All x,y coordinates are in the PDF's native pixel space
+//  (page 1 of College map.pdf = 1944 × 2075 px).
+//  Positions are assumed from a standard Sahyadri SCEM layout;
+//  adjust by tapping a pin and noting its ID if needed.
+// ══════════════════════════════════════════════════════════
+const CAT = {
+  gate:     { label:'Gate',            color:'#e17055', icon:'🚧' },
+  building: { label:'Academic Block',  color:'#0984e3', icon:'🏛️' },
+  admin:    { label:'Admin / Office',  color:'#6c5ce7', icon:'🏢' },
+  library:  { label:'Library',         color:'#d4a017', icon:'📚' },
+  canteen:  { label:'Canteen / Food',  color:'#00b894', icon:'🍽️' },
+  sports:   { label:'Sports',          color:'#55efc4', icon:'⚽' },
+  hostel:   { label:'Hostel',          color:'#fd79a8', icon:'🏠' },
+  parking:  { label:'Parking',         color:'#b2bec3', icon:'🅿️' },
+  lab:      { label:'Lab / Centre',    color:'#a29bfe', icon:'🔬' },
+  utility:  { label:'Utility',         color:'#74b9ff', icon:'🔧' },
+  medical:  { label:'Medical',         color:'#ff7675', icon:'🏥' },
+  seminar:  { label:'Seminar Hall',    color:'#fdcb6e', icon:'🎤' },
+  recreation:{ label:'Recreation',     color:'#81ecec', icon:'🌳' },
+  security: { label:'Security',        color:'#636e72', icon:'🔒' },
+};
+
+// Each node: { id, name, cat, x, y, desc, indoor? }
+const NODES = [
+  { id:'main_gate',       name:'Main Gate',                cat:'gate',     x:972,  y:2020, desc:'Primary entrance to Sahyadri campus. Security check post for all visitors.' },
+  { id:'security',        name:'Security Cabin',           cat:'security', x:972,  y:1960, desc:'24/7 security post at the main entrance.' },
+  { id:'parking_front',   name:'Front Parking',            cat:'parking',  x:720,  y:1900, desc:'Two-wheeler and four-wheeler parking near the main gate.' },
+  { id:'parking_right',   name:'Right Parking',            cat:'parking',  x:1220, y:1900, desc:'Additional parking on the right side near the entrance.' },
+  { id:'admin_block',     name:'Admin Block',              cat:'admin',    x:972,  y:1760, desc:'Principal\'s chamber, registrar office, exam section, HR and administration.', indoor:true },
+  { id:'canteen',         name:'Main Canteen',             cat:'canteen',  x:760,  y:1660, desc:'Primary campus canteen serving breakfast, lunch, snacks and dinner.' },
+  { id:'atm',             name:'ATM',                      cat:'utility',  x:1160, y:1760, desc:'ATM facility inside campus for students and staff.' },
+  { id:'medical',         name:'Medical Centre',           cat:'medical',  x:1340, y:1660, desc:'On-campus health centre with doctor on duty.' },
+  { id:'seminar_gf',      name:'Seminar Hall (Ground)',    cat:'seminar',  x:820,  y:1540, desc:'Large seminar hall on the ground floor for events and guest lectures.' },
+  { id:'main_block',      name:'Main Academic Block',      cat:'building', x:972,  y:1480, desc:'Core academic building housing classrooms, labs and faculty offices.', indoor:true },
+  { id:'placement',       name:'Placement & Career Cell',  cat:'admin',    x:1180, y:1480, desc:'Training, internship and placement support for all departments.' },
+  { id:'cs_is_block',     name:'CS & IS Department',       cat:'building', x:640,  y:1300, desc:'Computer Science and Information Science department — labs, classrooms and staff rooms.', indoor:true },
+  { id:'ec_block',        name:'E&C Department',           cat:'building', x:1300, y:1300, desc:'Electronics & Communication Engineering department block.', indoor:true },
+  { id:'library',         name:'Central Library',          cat:'library',  x:972,  y:1220, desc:'Central library with reading rooms, digital library and e-resources.' },
+  { id:'mba_block',       name:'MBA Block',                cat:'building', x:1300, y:1060, desc:'Management studies block with classrooms and faculty offices.', indoor:true },
+  { id:'civil_block',     name:'Civil Engineering Dept',   cat:'building', x:640,  y:1060, desc:'Civil engineering department — drawing halls, labs and classrooms.', indoor:true },
+  { id:'workshop',        name:'Workshop Block',           cat:'building', x:400,  y:1220, desc:'Engineering workshop — carpentry, welding, fitting and electrical practice.' },
+  { id:'cafeteria2',      name:'Staff Cafeteria',          cat:'canteen',  x:972,  y:1100, desc:'Staff and faculty cafeteria with vending machines.' },
+  { id:'water_station',   name:'Water Station',            cat:'utility',  x:780,  y:1080, desc:'RO drinking water station accessible to all students.' },
+  { id:'garden',          name:'Campus Garden',            cat:'recreation',x:580, y:900,  desc:'Green landscaped garden — popular relaxation spot for students.' },
+  { id:'incubation',      name:'Incubation Centre',        cat:'lab',      x:1320, y:900,  desc:'Startup incubation, innovation lab and Dreamers R&D centre on the 5th floor.', indoor:true },
+  { id:'lab_complex',     name:'Advanced Lab Complex',     cat:'lab',      x:972,  y:820,  desc:'APTRA lab, VR/AR lab, instrumentation and research labs.' },
+  { id:'amphitheater',    name:'Open Amphitheater',        cat:'recreation',x:1200,y:760,  desc:'Outdoor amphitheater used for cultural events, fests and open-air performances.' },
+  { id:'sports_ground',   name:'Main Sports Ground',       cat:'sports',   x:480,  y:680,  desc:'Football and cricket ground — major outdoor sports facility.' },
+  { id:'basketball',      name:'Basketball Court',         cat:'sports',   x:340,  y:560,  desc:'Outdoor basketball court and volleyball court.' },
+  { id:'indoor_stadium',  name:'Indoor Stadium',           cat:'sports',   x:620,  y:500,  desc:'Multipurpose indoor sports hall — badminton, table tennis, chess.' },
+  { id:'back_parking',    name:'Back Parking',             cat:'parking',  x:1500, y:820,  desc:'Rear campus parking for faculty and staff vehicles.' },
+  { id:'boys_hostel',     name:'Boys Hostel',              cat:'hostel',   x:1560, y:520,  desc:'On-campus boys hostel with mess, common room and Wi-Fi.' },
+  { id:'girls_hostel',    name:'Girls Hostel',             cat:'hostel',   x:1680, y:740,  desc:'On-campus girls hostel with all amenities.' },
+  { id:'north_gate',      name:'North Gate (Back Entrance)',cat:'gate',    x:972,  y:180,  desc:'Rear campus entrance — connects to residential areas behind the campus.' },
+];
+
+// Graph edges: [nodeA_id, nodeB_id] — weight computed as Euclidean distance between nodes
+// We list logical walking connections
+const EDGE_PAIRS = [
+  ['main_gate','security'],
+  ['security','parking_front'],
+  ['security','parking_right'],
+  ['security','admin_block'],
+  ['parking_front','admin_block'],
+  ['parking_right','admin_block'],
+  ['admin_block','canteen'],
+  ['admin_block','atm'],
+  ['admin_block','seminar_gf'],
+  ['admin_block','main_block'],
+  ['atm','medical'],
+  ['atm','placement'],
+  ['canteen','seminar_gf'],
+  ['canteen','cs_is_block'],
+  ['seminar_gf','main_block'],
+  ['medical','placement'],
+  ['medical','ec_block'],
+  ['main_block','cs_is_block'],
+  ['main_block','ec_block'],
+  ['main_block','library'],
+  ['main_block','placement'],
+  ['cs_is_block','workshop'],
+  ['cs_is_block','library'],
+  ['cs_is_block','civil_block'],
+  ['ec_block','library'],
+  ['ec_block','mba_block'],
+  ['ec_block','back_parking'],
+  ['library','civil_block'],
+  ['library','mba_block'],
+  ['library','cafeteria2'],
+  ['civil_block','workshop'],
+  ['civil_block','water_station'],
+  ['civil_block','garden'],
+  ['mba_block','incubation'],
+  ['mba_block','back_parking'],
+  ['cafeteria2','water_station'],
+  ['cafeteria2','lab_complex'],
+  ['cafeteria2','incubation'],
+  ['water_station','garden'],
+  ['water_station','lab_complex'],
+  ['garden','sports_ground'],
+  ['garden','indoor_stadium'],
+  ['incubation','lab_complex'],
+  ['incubation','amphitheater'],
+  ['incubation','back_parking'],
+  ['lab_complex','amphitheater'],
+  ['lab_complex','indoor_stadium'],
+  ['lab_complex','north_gate'],
+  ['amphitheater','back_parking'],
+  ['amphitheater','boys_hostel'],
+  ['sports_ground','basketball'],
+  ['sports_ground','indoor_stadium'],
+  ['basketball','indoor_stadium'],
+  ['indoor_stadium','north_gate'],
+  ['back_parking','boys_hostel'],
+  ['back_parking','girls_hostel'],
+  ['boys_hostel','girls_hostel'],
+  ['boys_hostel','north_gate'],
+  ['girls_hostel','north_gate'],
+];
+
+// ══════════════════════════════════════════════════════════
+//  GRAPH SETUP — build adjacency + Dijkstra
+// ══════════════════════════════════════════════════════════
+const nodeMap = {};
+NODES.forEach(n => { nodeMap[n.id] = n; });
+
+function dist2D(a, b) {
+  return Math.hypot(nodeMap[b].x - nodeMap[a].x, nodeMap[b].y - nodeMap[a].y);
+}
+
+const adj = {};
+NODES.forEach(n => { adj[n.id] = []; });
+EDGE_PAIRS.forEach(([a, b]) => {
+  const w = Math.round(dist2D(a, b));
+  adj[a].push([b, w]);
+  adj[b].push([a, w]);
+});
+
+function dijkstra(start, end) {
+  const dist = {}, prev = {}, visited = new Set();
+  NODES.forEach(n => dist[n.id] = Infinity);
+  dist[start] = 0;
+  // simple priority queue via sorted array
+  const pq = [[0, start]];
+  while (pq.length) {
+    pq.sort((a, b) => a[0] - b[0]);
+    const [d, u] = pq.shift();
+    if (visited.has(u)) continue;
+    visited.add(u);
+    if (u === end) break;
+    for (const [v, w] of (adj[u] || [])) {
+      const nd = d + w;
+      if (nd < dist[v]) { dist[v] = nd; prev[v] = u; pq.push([nd, v]); }
+    }
+  }
+  if (dist[end] === Infinity) return null;
+  const path = [];
+  let cur = end;
+  while (cur !== undefined) { path.unshift(cur); cur = prev[cur]; }
+  return { path, dist: dist[end] };
+}
+
+// Pixel scale → metres: PDF page is 1944×2075 representing ~540m×595m campus
+const PX_TO_M = 0.278;
+
+// ══════════════════════════════════════════════════════════
+//  DOM REFS
+// ══════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const viewport = $('map-viewport');
+const stage = $('map-stage');
+const pdfCanvas = $('pdf-canvas');
+const svgOvl = $('svg-overlay');
+const popup = $('popup');
+const loading = $('loading');
+
+// ══════════════════════════════════════════════════════════
+//  PDF.JS RENDERING
+// ══════════════════════════════════════════════════════════
+let pdfW = 1944, pdfH = 2075; // fallback sizes before render
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+async function loadPDF() {
+  try {
+    const candidates = [
+      'College map.pdf',
+      '/College map.pdf',
+      '../College map.pdf',
+      './College map.pdf',
+      'College%20map.pdf',
+      '/College%20map.pdf',
+      '../College%20map.pdf'
+    ];
+    let pdf = null;
+    for (const url of candidates) {
+      try {
+        pdf = await pdfjsLib.getDocument(url).promise;
+        if (pdf) break;
+      } catch (err) {}
+    }
+    if (!pdf) throw new Error("Could not find College map.pdf in candidate paths");
+    const page = await pdf.getPage(1);
+    const vp = page.getViewport({ scale: 1 });
+    pdfW = vp.width; pdfH = vp.height;
+    pdfCanvas.width  = pdfW;
+    pdfCanvas.height = pdfH;
+    svgOvl.setAttribute('width',  pdfW);
+    svgOvl.setAttribute('height', pdfH);
+    svgOvl.setAttribute('viewBox', `0 0 ${pdfW} ${pdfH}`);
+    await page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport: vp }).promise;
+  } catch (e) {
+    // PDF failed to load — show a plain background with a message
+    pdfW = 1944; pdfH = 2075;
+    pdfCanvas.width  = pdfW;
+    pdfCanvas.height = pdfH;
+    const ctx = pdfCanvas.getContext('2d');
+    ctx.fillStyle = '#dde6e0';
+    ctx.fillRect(0, 0, pdfW, pdfH);
+    ctx.strokeStyle = '#b0c8b8';
+    ctx.setLineDash([20, 10]);
+    for (let y = 0; y < pdfH; y += 80) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(pdfW,y); ctx.stroke(); }
+    for (let x = 0; x < pdfW; x += 80) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,pdfH); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#5b6b78';
+    ctx.font = 'bold 28px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sahyadri Campus — Schematic Map', pdfW/2, pdfH/2 - 20);
+    ctx.font = '18px system-ui';
+    ctx.fillText('(map image unavailable — showing approximate pin positions)', pdfW/2, pdfH/2 + 20);
+    svgOvl.setAttribute('width',  pdfW);
+    svgOvl.setAttribute('height', pdfH);
+    svgOvl.setAttribute('viewBox', `0 0 ${pdfW} ${pdfH}`);
+  }
+  buildOverlay();
+  fitMap();
+  loading.style.display = 'none';
+  populateUI();
+}
+
+// ══════════════════════════════════════════════════════════
+//  SVG OVERLAY — pins + labels
+// ══════════════════════════════════════════════════════════
+function buildOverlay() {
+  svgOvl.innerHTML = '';
+  // Defs for marker
+  const defs = mkEl('defs');
+  // Drop-shadow filter for pins
+  const filt = mkEl('filter'); filt.id = 'pin-shadow';
+  filt.setAttribute('x','-40%'); filt.setAttribute('y','-40%');
+  filt.setAttribute('width','180%'); filt.setAttribute('height','180%');
+  const feBlur = mkEl('feDropShadow');
+  feBlur.setAttribute('dx','0'); feBlur.setAttribute('dy','2');
+  feBlur.setAttribute('stdDeviation','3'); feBlur.setAttribute('flood-opacity','0.4');
+  filt.appendChild(feBlur);
+  defs.appendChild(filt);
+  svgOvl.appendChild(defs);
+
+  // Path group (drawn below pins)
+  const pathGrp = mkEl('g'); pathGrp.id = 'path-grp';
+  svgOvl.appendChild(pathGrp);
+
+  // Pins group
+  const pinGrp = mkEl('g'); pinGrp.id = 'pin-grp';
+  svgOvl.appendChild(pinGrp);
+
+  NODES.forEach(n => {
+    const col = CAT[n.cat].color;
+    const g = mkEl('g');
+    g.setAttribute('class', 'pin-group');
+    g.setAttribute('id', 'pin-' + n.id);
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', n.name);
+
+    // Pin circle + teardrop
+    const pin = mkEl('path');
+    // Teardrop/pin shape: circle at (n.x, n.y-18), stem pointing down
+    const R = 13, cx = n.x, cy = n.y - 20;
+    pin.setAttribute('d',
+      `M${cx},${cy-R} A${R},${R},0,1,1,${cx},${cy+R} L${cx},${cy+R+14} Z`
+    );
+    pin.setAttribute('fill', col);
+    pin.setAttribute('stroke', '#fff');
+    pin.setAttribute('stroke-width', '2');
+    pin.setAttribute('filter', 'url(#pin-shadow)');
+
+    // Icon text
+    const ic = mkEl('text');
+    ic.setAttribute('x', cx); ic.setAttribute('y', cy + 5);
+    ic.setAttribute('text-anchor', 'middle');
+    ic.setAttribute('font-size', '12');
+    ic.textContent = CAT[n.cat].icon;
+
+    // Label background
+    const lblW = Math.max(70, n.name.length * 6.5 + 12);
+    const lbg = mkEl('rect');
+    lbg.setAttribute('x', cx - lblW/2);
+    lbg.setAttribute('y', n.y + 8);
+    lbg.setAttribute('width', lblW);
+    lbg.setAttribute('height', 16);
+    lbg.setAttribute('rx', '4');
+    lbg.setAttribute('fill', col);
+    lbg.setAttribute('fill-opacity', '0.88');
+
+    // Label text
+    const lbl = mkEl('text');
+    lbl.setAttribute('x', cx);
+    lbl.setAttribute('y', n.y + 20);
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.setAttribute('font-size', '10');
+    lbl.setAttribute('font-weight', '700');
+    lbl.setAttribute('fill', '#fff');
+    lbl.textContent = n.name;
+
+    g.appendChild(pin);
+    g.appendChild(ic);
+    g.appendChild(lbg);
+    g.appendChild(lbl);
+
+    g.addEventListener('click', () => openPopup(n));
+    g.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') openPopup(n); });
+    pinGrp.appendChild(g);
+  });
+
+  // Draw edge lines (walkable paths) faintly
+  const edgeGrp = mkEl('g'); edgeGrp.id = 'edge-grp';
+  edgeGrp.setAttribute('opacity', '0.18');
+  EDGE_PAIRS.forEach(([a, b]) => {
+    const na = nodeMap[a], nb = nodeMap[b];
+    const line = mkEl('line');
+    line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
+    line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
+    line.setAttribute('stroke', '#333');
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('stroke-dasharray', '6 5');
+    edgeGrp.appendChild(line);
+  });
+  // Insert edges before path group
+  svgOvl.insertBefore(edgeGrp, pathGrp);
+}
+
+function mkEl(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+
+// ══════════════════════════════════════════════════════════
+//  POPUP
+// ══════════════════════════════════════════════════════════
+let activeNode = null;
+
+function openPopup(n) {
+  activeNode = n;
+  $('popup-name').textContent = CAT[n.cat].icon + ' ' + n.name;
+  $('popup-desc').textContent = n.desc;
+  $('popup-indoor').style.display = n.indoor ? 'inline-block' : 'none';
+  popup.style.display = 'block';
+  highlightPin(n.id, true);
+}
+
+function closePopup() {
+  if (activeNode) highlightPin(activeNode.id, false);
+  popup.style.display = 'none';
+  activeNode = null;
+}
+
+function highlightPin(id, on) {
+  const g = document.getElementById('pin-' + id);
+  if (!g) return;
+  const pin = g.querySelector('path');
+  if (pin) pin.setAttribute('stroke-width', on ? '3.5' : '2');
+  g.style.transform = on ? `scale(1.25) translate(-${nodeMap[id].x*0.2}px, -${nodeMap[id].y*0.2}px)` : '';
+  // simpler: just scale around pin center
+  g.style.transformOrigin = nodeMap[id].x + 'px ' + nodeMap[id].y + 'px';
+  g.style.transform = on ? 'scale(1.3)' : '';
+}
+
+$('popup-close').onclick = closePopup;
+$('popup-from').onclick = () => {
+  if (activeNode) { $('from-sel').value = activeNode.id; closePopup(); }
+};
+$('popup-to').onclick = () => {
+  if (activeNode) { $('to-sel').value = activeNode.id; closePopup(); }
+};
+$('popup-indoor').onclick = () => {
+  window.open('SCEM Campus Navigator.html', '_blank');
+};
+
+// ══════════════════════════════════════════════════════════
+//  POPULATE UI SELECTS
+// ══════════════════════════════════════════════════════════
+function populateUI() {
+  // datalist for search
+  const dl = $('loc-list');
+  NODES.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n.name; dl.appendChild(opt);
+  });
+  // From/To selects grouped by category
+  const from = $('from-sel'), to = $('to-sel');
+  const bycat = {};
+  NODES.forEach(n => { (bycat[n.cat] = bycat[n.cat]||[]).push(n); });
+  [from, to].forEach(sel => {
+    sel.innerHTML = '<option value="">— choose —</option>';
+    Object.keys(CAT).forEach(cat => {
+      if (!bycat[cat]) return;
+      const og = document.createElement('optgroup');
+      og.label = CAT[cat].label;
+      bycat[cat].forEach(n => {
+        const o = document.createElement('option');
+        o.value = n.id; o.textContent = n.name;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+  });
+  // Legend
+  const lgrid = $('leg-grid');
+  lgrid.innerHTML = '';
+  Object.entries(CAT).forEach(([k, v]) => {
+    const d = document.createElement('div'); d.className = 'leg-item';
+    d.innerHTML = `<div class="leg-dot" style="background:${v.color}"></div><span>${v.label}</span>`;
+    lgrid.appendChild(d);
+  });
+
+  // Search input → pan to node
+  $('search').addEventListener('change', () => {
+    const val = $('search').value.trim().toLowerCase();
+    const node = NODES.find(n => n.name.toLowerCase() === val)
+               || NODES.find(n => n.name.toLowerCase().includes(val));
+    if (node) { panToNode(node); openPopup(node); $('search').value = ''; }
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  ROUTE DRAWING
+// ══════════════════════════════════════════════════════════
+let currentRoute = null;
+
+function drawRoute() {
+  const fromId = $('from-sel').value;
+  const toId   = $('to-sel').value;
+  const inf = $('inf');
+  if (!fromId || !toId) { inf.textContent = 'Pick both From and To.'; return; }
+  if (fromId === toId)  { inf.textContent = 'You are already there!'; return; }
+  const result = dijkstra(fromId, toId);
+  if (!result) { inf.textContent = 'No walking path found between these locations.'; return; }
+  currentRoute = result;
+  renderRoute(result.path, result.dist);
+}
+
+function renderRoute(path, totalPx) {
+  const grp = $('path-grp');
+  grp.innerHTML = '';
+
+  const pts = path.map(id => nodeMap[id]);
+
+  // Build polyline point string
+  const ptStr = pts.map(n => `${n.x},${n.y}`).join(' ');
+
+  // Thick orange glow line
+  const pline = mkEl('polyline');
+  pline.setAttribute('class', 'route-path');
+  pline.setAttribute('points', ptStr);
+  grp.appendChild(pline);
+
+  // Animated dashes on top
+  const dline = mkEl('polyline');
+  dline.setAttribute('class', 'route-path-dash');
+  dline.setAttribute('points', ptStr);
+  grp.appendChild(dline);
+
+  // Start marker
+  const sm = mkEl('circle');
+  sm.setAttribute('class', 'start-marker');
+  sm.setAttribute('cx', pts[0].x); sm.setAttribute('cy', pts[0].y);
+  sm.setAttribute('r', '11');
+  grp.appendChild(sm);
+  const si = mkEl('text');
+  si.setAttribute('x', pts[0].x); si.setAttribute('y', pts[0].y + 5);
+  si.setAttribute('text-anchor','middle'); si.setAttribute('font-size','12');
+  si.textContent = '🚶'; grp.appendChild(si);
+
+  // End marker
+  const em = mkEl('circle');
+  em.setAttribute('class', 'end-marker');
+  em.setAttribute('cx', pts[pts.length-1].x); em.setAttribute('cy', pts[pts.length-1].y);
+  em.setAttribute('r', '11');
+  grp.appendChild(em);
+  const ei = mkEl('text');
+  ei.setAttribute('x', pts[pts.length-1].x); ei.setAttribute('y', pts[pts.length-1].y + 5);
+  ei.setAttribute('text-anchor','middle'); ei.setAttribute('font-size','12');
+  ei.textContent = '🏁'; grp.appendChild(ei);
+
+  // Distance + time
+  const metres = Math.round(totalPx * PX_TO_M);
+  const mins   = Math.max(1, Math.round(metres / 80));
+  $('inf').innerHTML = `📏 ~${metres} m &nbsp;·&nbsp; 🚶 ~${mins} min walk`;
+
+  // Step-by-step directions
+  buildDirections(path);
+  panToFit(pts);
+}
+
+function buildDirections(path) {
+  const ol = $('dirs'); ol.innerHTML = '';
+  const wrap = $('dirs-wrap'); wrap.classList.add('show');
+  const steps = [];
+  steps.push({ ic:'🚶', text:'Start at: ' + nodeMap[path[0]].name, dist:'' });
+  for (let i = 1; i < path.length - 1; i++) {
+    const prev = nodeMap[path[i-1]], cur = nodeMap[path[i]], next = nodeMap[path[i+1]];
+    const ax = cur.x-prev.x, ay = cur.y-prev.y;
+    const bx = next.x-cur.x, by = next.y-cur.y;
+    const cross = ax*by - ay*bx;
+    const dot   = ax*bx + ay*by;
+    const ang   = Math.atan2(cross, dot) * 180 / Math.PI;
+    const d = Math.round(Math.hypot(cur.x-prev.x, cur.y-prev.y) * PX_TO_M);
+    if (Math.abs(ang) > 35) {
+      steps.push({
+        ic: ang < 0 ? '⬅️' : '➡️',
+        text: (ang < 0 ? 'Turn left' : 'Turn right') + ' at ' + cur.name,
+        dist: '≈' + d + ' m'
+      });
+    } else {
+      // merge straight steps silently — but add waypoint names for long stretches
+      if (i === 1 || i === path.length - 2) {
+        steps.push({ ic:'🚶', text:'Head towards ' + cur.name, dist:'≈' + d + ' m' });
+      }
+    }
+  }
+  const last = nodeMap[path[path.length-1]];
+  const dl = Math.round(Math.hypot(
+    last.x - nodeMap[path[path.length-2]].x,
+    last.y - nodeMap[path[path.length-2]].y
+  ) * PX_TO_M);
+  steps.push({ ic:'🏁', text:'Arrive at: ' + last.name, dist:'≈'+dl+' m' });
+
+  steps.forEach((s, idx) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="num">${idx+1}</span><span class="ic">${s.ic}</span><span style="flex:1">${s.text}</span>${s.dist?`<span class="ds">${s.dist}</span>`:''}`;
+    ol.appendChild(li);
+  });
+}
+
+function clearRoute() {
+  const grp = $('path-grp');
+  if (grp) grp.innerHTML = '';
+  $('dirs-wrap').classList.remove('show');
+  $('dirs').innerHTML = '';
+  $('inf').textContent = '';
+  $('from-sel').value = '';
+  $('to-sel').value = '';
+  currentRoute = null;
+}
+
+$('route-btn').onclick = drawRoute;
+$('clear-btn').onclick = clearRoute;
+$('indoor-btn').onclick = () => window.open('SCEM Campus Navigator.html', '_blank');
+$('col-btn').onclick = () => {
+  const b = $('ui-body'); b.hidden = !b.hidden;
+  $('col-btn').textContent = b.hidden ? '+' : '–';
+};
+
+// ══════════════════════════════════════════════════════════
+//  PAN / ZOOM
+// ══════════════════════════════════════════════════════════
+let tx = 0, ty = 0, scale = 1;
+const MIN_SCALE = 0.2, MAX_SCALE = 4;
+
+function applyTransform() {
+  stage.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+}
+
+function fitMap() {
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  const sx = vw / pdfW, sy = vh / pdfH;
+  scale = Math.min(sx, sy) * 0.95;
+  tx = (vw - pdfW * scale) / 2;
+  ty = (vh - pdfH * scale) / 2;
+  applyTransform();
+}
+
+function zoomAt(cx, cy, factor) {
+  const ns = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
+  const ratio = ns / scale;
+  tx = cx - ratio * (cx - tx);
+  ty = cy - ratio * (cy - ty);
+  scale = ns;
+  applyTransform();
+}
+
+function panToNode(n) {
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  tx = vw/2 - n.x * scale;
+  ty = vh/2 - n.y * scale;
+  applyTransform();
+}
+
+function panToFit(pts) {
+  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+  const vw=viewport.clientWidth, vh=viewport.clientHeight;
+  const pad=100;
+  const ns = Math.min(
+    (vw-pad) / (maxX-minX||1),
+    (vh-pad) / (maxY-minY||1),
+    MAX_SCALE
+  );
+  scale = Math.max(MIN_SCALE, ns);
+  tx = vw/2 - ((minX+maxX)/2) * scale;
+  ty = vh/2 - ((minY+maxY)/2) * scale;
+  applyTransform();
+}
+
+// Mouse drag
+let dragging = false, dragX = 0, dragY = 0, moved = 0;
+viewport.addEventListener('pointerdown', e => {
+  if (e.target.closest('.pin-group') || e.target.closest('#ui') || e.target.closest('#popup')) return;
+  dragging = true; moved = 0;
+  dragX = e.clientX; dragY = e.clientY;
+  viewport.setPointerCapture(e.pointerId);
+  viewport.classList.add('grabbing');
+});
+viewport.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - dragX, dy = e.clientY - dragY;
+  moved += Math.abs(dx) + Math.abs(dy);
+  tx += dx; ty += dy;
+  dragX = e.clientX; dragY = e.clientY;
+  applyTransform();
+});
+viewport.addEventListener('pointerup', () => {
+  dragging = false;
+  viewport.classList.remove('grabbing');
+});
+
+// Wheel zoom
+viewport.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  const rect = viewport.getBoundingClientRect();
+  zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
+}, { passive: false });
+
+// Pinch zoom
+let ptrs = new Map(), lastPinchDist = 0;
+viewport.addEventListener('pointerdown', e => { ptrs.set(e.pointerId, e); });
+viewport.addEventListener('pointermove', e => {
+  ptrs.set(e.pointerId, e);
+  if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+    if (lastPinchDist) {
+      const rect = viewport.getBoundingClientRect();
+      const cx = (a.clientX+b.clientX)/2 - rect.left;
+      const cy = (a.clientY+b.clientY)/2 - rect.top;
+      zoomAt(cx, cy, d/lastPinchDist);
+    }
+    lastPinchDist = d;
+  }
+});
+viewport.addEventListener('pointerup', e => { ptrs.delete(e.pointerId); lastPinchDist = 0; });
+
+// Zoom buttons
+$('zin').onclick  = () => { const r=viewport.getBoundingClientRect(); zoomAt(r.width/2,r.height/2,1.25); };
+$('zout').onclick = () => { const r=viewport.getBoundingClientRect(); zoomAt(r.width/2,r.height/2,0.8); };
+$('zfit').onclick = fitMap;
+
+// Close popup on map click
+viewport.addEventListener('click', e => {
+  if (!e.target.closest('.pin-group') && !e.target.closest('#popup')) closePopup();
+});
+
+// Window resize
+window.addEventListener('resize', () => { fitMap(); });
+
+// ══════════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════════
+loadPDF();
+</script>
+</body>
+</html>

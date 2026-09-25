@@ -85,7 +85,17 @@ section{padding:52px 0;}
 .badge.g{border-color:rgba(38,129,79,.35);color:var(--g2);}
 .badge.o{border-color:rgba(232,134,43,.4);color:var(--accent2);}
 .recruiters{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
-.recruiters span{font-size:.8rem;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 12px;}
+/* gallery */
+.galleryGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;}
+.galleryCard{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease;display:flex;flex-direction:column;}
+.galleryCard:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.1);}
+.galleryImgWrap{position:relative;width:100%;height:180px;overflow:hidden;background:#1a221b;}
+.galleryImgWrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease;}
+.galleryCard:hover .galleryImgWrap img{transform:scale(1.05);}
+.galleryTag{position:absolute;top:10px;left:10px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:rgba(0,0,0,.7);color:#e8862b;backdrop-filter:blur(4px);padding:3px 9px;border-radius:999px;}
+.galleryInfo{padding:12px 14px;}
+.galleryInfo h4{margin:0 0 4px;font-size:.88rem;color:var(--txt);}
+.galleryInfo p{margin:0;font-size:.75rem;color:var(--muted);line-height:1.4;}
 footer{background:#0f2b1d;color:rgba(255,255,255,.75);padding:34px 0;font-size:.84rem;}
 footer .wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:space-between;}
 footer a{color:#fff;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.4);}
@@ -108,6 +118,7 @@ footer b{color:#fff;}
       <a href="#about">About</a>
       <a href="#programs">Programs</a>
       <a href="#placement">Placements</a>
+      <a href="#gallery">Campus Gallery</a>
       <a class="ghost" href="https://www.sahyadri.edu.in/" target="_blank" rel="noopener">Official Site ↗</a>
       <a class="btnLogin" href="../edupulse/index.html">Login</a>
     </div>
@@ -284,6 +295,104 @@ footer b{color:#fff;}
         <li><b>Launchpads</b> — Dreamers, Challengers, SOSC and Maker Space skill-training ecosystem.</li>
         <li>Smart India Hackathons with MoE-AICTE support; internships and international exposure.</li>
       </ul>
+    </div>
+  </div>
+<!-- ══ Campus Gallery ═══════════════════════════════════════════ -->
+<section id="gallery">
+  <div class="wrap">
+    <div class="sectionHead">
+      <h2>Campus Photo Gallery</h2>
+      <p>Explore life at Sahyadri — our 35-acre riverside campus, academic architecture, food court and expansive athletic grounds.</p>
+    </div>
+
+    <div class="galleryGrid">
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Campus</span>
+          <img src="photos/sahyadri_Front.png" alt="Sahyadri Front Entrance & Façade" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Front Entrance &amp; Façade</h4>
+          <p>Main administrative entrance and iconic campus façade welcoming visitors and students.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Campus</span>
+          <img src="photos/sahyadri_Front_1.png" alt="Campus Approach" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Front Plaza &amp; Approach</h4>
+          <p>The grand entrance plaza and front approach road connecting to the campus concourse.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Architecture</span>
+          <img src="photos/Sahyadri_1.png" alt="Academic Complex Architecture" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Academic Complex Architecture</h4>
+          <p>Multi-tier academic wings featuring modern classrooms, research laboratories and open courtyards.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Campus</span>
+          <img src="photos/Sahyadri_2.png" alt="Riverside Campus Wing" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Riverside Campus Wing</h4>
+          <p>Lush green campus walkways alongside the scenic Netravati riverbank.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Food Court</span>
+          <img src="photos/food_court_1.png" alt="Food Court Main Dining" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Campus Food Court</h4>
+          <p>Vibrant dining hub with multi-cuisine food stalls, student seating and refreshment spaces.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Food Court</span>
+          <img src="photos/Food_court_front.png" alt="Food Court Entrance" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Food Court Entrance Plaza</h4>
+          <p>Open-air student gathering area outside the campus food court.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Sports</span>
+          <img src="photos/Sahyadri_Ground_4.png" alt="Main Sports Arena" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Main Sports Arena</h4>
+          <p>Full-size athletic grounds for cricket, football tournaments and annual university sports meets.</p>
+        </div>
+      </div>
+
+      <div class="galleryCard">
+        <div class="galleryImgWrap">
+          <span class="galleryTag">Sports</span>
+          <img src="photos/Sahyadri_Ground_1.png" alt="Athletic Track & Field" loading="lazy">
+        </div>
+        <div class="galleryInfo">
+          <h4>Sports Ground &amp; Athletic Track</h4>
+          <p>Expansive sports field and pavilion dedicated to collegiate fitness and athletics.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>

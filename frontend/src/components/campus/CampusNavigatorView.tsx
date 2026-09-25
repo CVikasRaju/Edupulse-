@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ArrowDownUp,
   ArrowRight,
@@ -14,9 +14,7 @@ import {
   Navigation2,
   Presentation,
 } from "lucide-react";
-import "mapbox-gl/dist/mapbox-gl.css";
 import {
-  CAMPUS,
   NAVIGATOR_PATH,
   PLACE_CATEGORIES,
   PLACES,
@@ -34,95 +32,23 @@ const CATEGORY_ICONS: Record<PlaceCategory, typeof FlaskConical> = {
   library: Library,
 };
 
-const { lat, lng } = CAMPUS.coords;
-
-/** Token-free outdoor context: OpenStreetMap embed (fallback) & deep links. */
-const OSM_EMBED = `https://www.openstreetmap.org/export/embed.html?bbox=${(
-  lng - 0.007
-).toFixed(5)}%2C${(lat - 0.005).toFixed(5)}%2C${(lng + 0.007).toFixed(
-  5,
-)}%2C${(lat + 0.005).toFixed(5)}&layer=mapnik&marker=${lat}%2C${lng}`;
-const OSM_LINK = `https://www.openstreetmap.org/#map=16/${lat}/${lng}`;
-
-/** Raster style — plain OSM tiles, no Mapbox token required. */
-const OSM_STYLE = {
-  version: 8 as const,
-  sources: {
-    osm: {
-      type: "raster" as const,
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-    },
-  },
-  layers: [{ id: "osm", type: "raster" as const, source: "osm" }],
-};
-
-interface MapLike {
-  remove: () => void;
-}
+/** Campus map with pins, PDF map, and full outdoor routing — no token needed */
+const CAMPUS_MAP_PATH = "/campus-map.html";
 
 export default function CampusNavigatorView() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [cat, setCat] = useState<PlaceCategory | null>("lab");
   const [mode, setMode] = useState<"map" | "3d">("map");
-  const [mapFailed, setMapFailed] = useState(false);
   const [iframeSrc, setIframeSrc] = useState<string>(NAVIGATOR_PATH);
   const [hint, setHint] = useState("");
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLike | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const filtered = useMemo(
     () => (cat ? PLACES.filter((p) => p.cat === cat) : []),
     [cat],
   );
-
-  /* ── Outdoor map: mapbox-gl with token-less OSM raster style ── */
-  useEffect(() => {
-    if (mode !== "map") return;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const mod: unknown = await import("mapbox-gl");
-        if (cancelled || !containerRef.current) return;
-        const mapboxgl =
-          (mod as { default?: Record<string, unknown> }).default ??
-          (mod as Record<string, unknown>);
-        const MapCtor = mapboxgl.Map as new (opts: Record<string, unknown>) => MapLike;
-        const MarkerCtor = mapboxgl.Marker as new (opts?: Record<string, unknown>) => {
-          setLngLat: (c: [number, number]) => { addTo: (m: MapLike) => unknown };
-        };
-
-        const map = new MapCtor({
-          container: containerRef.current,
-          style: OSM_STYLE,
-          center: [lng, lat],
-          zoom: 15.4,
-          attributionControl: false,
-        });
-        mapRef.current = map;
-
-        new MarkerCtor({ color: "#E8A87C" }).setLngLat([lng, lat]).addTo(map);
-      } catch (err) {
-        console.warn("Mapbox GL unavailable — falling back to OSM embed:", err);
-        if (!cancelled) setMapFailed(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      try {
-        mapRef.current?.remove();
-      } catch {
-        /* map already gone */
-      }
-      mapRef.current = null;
-    };
-  }, [mode, mapFailed]);
 
   /* ── Handoff helpers ─────────────────────────────────────── */
   const openNavigator = (withRoute: boolean) => {
@@ -337,16 +263,16 @@ export default function CampusNavigatorView() {
 
         {mode === "map" ? (
           <div className="absolute inset-0">
+            {/* Self-contained campus map HTML: PDF overlay, pins, Dijkstra routing, directions */}
             <iframe
               title="Sahyadri Full Campus Overview Map"
-              src="/campus-map.html"
+              src={CAMPUS_MAP_PATH}
               className="h-full w-full border-0"
               allow="fullscreen"
             />
-            {/* Quick action bar */}
             <div className="absolute right-3 top-16 z-20 flex gap-2">
               <a
-                href="/campus-map.html"
+                href={CAMPUS_MAP_PATH}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-xl border border-[#262626] bg-[#141414]/90 px-3 py-2 text-xs font-semibold text-[#A8A29E] backdrop-blur transition hover:text-[#FAFAF9]"

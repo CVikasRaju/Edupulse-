@@ -440,13 +440,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 async function loadPDF() {
   try {
     const candidates = [
+      '/navigation/College map.pdf',
+      '/navigation/College%20map.pdf',
       'College map.pdf',
       '/College map.pdf',
       '../College map.pdf',
       './College map.pdf',
       'College%20map.pdf',
       '/College%20map.pdf',
-      '../College%20map.pdf'
+      '../College%20map.pdf',
+      '/public/navigation/College map.pdf'
     ];
     let pdf = null;
     for (const url of candidates) {
@@ -637,7 +640,7 @@ $('popup-to').onclick = () => {
   if (activeNode) { $('to-sel').value = activeNode.id; closePopup(); }
 };
 $('popup-indoor').onclick = () => {
-  window.open('SCEM Campus Navigator.html', '_blank');
+  window.open('/navigation/SCEM Campus Navigator.html', '_blank');
 };
 
 // ══════════════════════════════════════════════════════════
@@ -809,7 +812,7 @@ function clearRoute() {
 
 $('route-btn').onclick = drawRoute;
 $('clear-btn').onclick = clearRoute;
-$('indoor-btn').onclick = () => window.open('SCEM Campus Navigator.html', '_blank');
+$('indoor-btn').onclick = () => window.open('/navigation/SCEM Campus Navigator.html', '_blank');
 $('col-btn').onclick = () => {
   const b = $('ui-body'); b.hidden = !b.hidden;
   $('col-btn').textContent = b.hidden ? '+' : '–';
